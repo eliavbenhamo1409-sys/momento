@@ -49,7 +49,7 @@ function SpreadNavArrow({
       aria-label={direction === 'prev' ? 'עמוד קודם' : 'עמוד הבא'}
       className="shrink-0 z-[5] w-10 h-10 md:w-11 md:h-11 rounded-full flex items-center justify-center text-secondary/40 hover:text-on-surface bg-white/60 backdrop-blur-sm hover:bg-white border border-black/[0.06] hover:border-black/[0.10] shadow-[0_2px_10px_rgba(45,40,35,0.06)] hover:shadow-[0_4px_16px_rgba(45,40,35,0.10)] disabled:opacity-0 disabled:pointer-events-none transition-all duration-300"
     >
-      <Icon name={direction === 'prev' ? 'chevron_left' : 'chevron_right'} size={22} />
+      <Icon name={direction === 'prev' ? 'chevron_right' : 'chevron_left'} size={22} />
     </motion.button>
   )
 }
