@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useUIStore } from '../../store/uiStore'
+import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 import LayoutPickerPanel from './LayoutPickerPanel'
 import TextInsertPanel from './TextInsertPanel'
@@ -65,7 +66,11 @@ function Separator() {
 }
 
 function PhotoEditPanel() {
-  const { selectedPhotoId, spreads, currentSpreadIndex } = useEditorStore()
+  const { selectedPhotoId, spreads, currentSpreadIndex } = useEditorStore(useShallow((s) => ({
+    selectedPhotoId: s.selectedPhotoId,
+    spreads: s.spreads,
+    currentSpreadIndex: s.currentSpreadIndex,
+  })))
 
   const spread = spreads[currentSpreadIndex]
   const slotId = selectedPhotoId?.replace(`${spread?.id}-`, '') ?? ''
@@ -92,14 +97,21 @@ function PhotoEditPanel() {
 }
 
 export default function EditorSidebar() {
-  const { selectedPhotoId, spreads, currentSpreadIndex, addSpread, deleteSpread, swapPhase, enterSwapMode, cancelSwapMode } = useEditorStore()
-  const { addToast } = useUIStore()
+  const { selectedPhotoId, spreadCount, currentSpreadId, swapPhase } = useEditorStore(useShallow((s) => ({
+    selectedPhotoId: s.selectedPhotoId,
+    spreadCount: s.spreads.length,
+    currentSpreadId: s.spreads[s.currentSpreadIndex]?.id ?? null,
+    swapPhase: s.swapPhase,
+  })))
+  const addSpread = useEditorStore((s) => s.addSpread)
+  const deleteSpread = useEditorStore((s) => s.deleteSpread)
+  const enterSwapMode = useEditorStore((s) => s.enterSwapMode)
+  const cancelSwapMode = useEditorStore((s) => s.cancelSwapMode)
+  const addToast = useUIStore((s) => s.addToast)
   const [activeTool, setActiveTool] = useState<ToolId>('select')
   const [showLayoutPicker, setShowLayoutPicker] = useState(false)
   const [showTextPanel, setShowTextPanel] = useState(false)
   const [showAIBg, setShowAIBg] = useState(false)
-
-  const currentSpread = spreads[currentSpreadIndex]
 
   const closeAll = useCallback(() => {
     setShowLayoutPicker(false)
@@ -203,8 +215,8 @@ export default function EditorSidebar() {
           onClick={() => {
             closeAll()
             run('delete', () => {
-              if (currentSpread && spreads.length > 1) {
-                deleteSpread(currentSpread.id)
+              if (currentSpreadId && spreadCount > 1) {
+                deleteSpread(currentSpreadId)
                 addToast('העמוד נמחק')
               } else {
                 addToast('לא ניתן למחוק את העמוד האחרון')

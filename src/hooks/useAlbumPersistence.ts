@@ -3,13 +3,38 @@ import { useEditorStore } from '../store/editorStore'
 import { useAlbumStore } from '../store/albumStore'
 import { useUIStore } from '../store/uiStore'
 import { saveAlbum, loadAlbum } from '../lib/albumService'
+import type { EditorSpread, PhotoElement } from '../types'
+
+function spreadsHaveBlobUrls(spreads: EditorSpread[]): boolean {
+  for (const s of spreads) {
+    if (s.leftPhotos?.some((u) => u?.startsWith('blob:'))) return true
+    if (s.rightPhotos?.some((u) => u?.startsWith('blob:'))) return true
+    if (s.design) {
+      for (const el of s.design.elements) {
+        if (el.type === 'photo' && (el as PhotoElement).photoUrl?.startsWith('blob:')) return true
+      }
+      const bg = s.design.background
+      if (bg.blurPhotoUrl?.startsWith('blob:')) return true
+      if (bg.generatedBgUrl?.startsWith('blob:')) return true
+      if (bg.generatedBgLeftUrl?.startsWith('blob:')) return true
+      if (bg.generatedBgRightUrl?.startsWith('blob:')) return true
+    }
+  }
+  return false
+}
 
 export function useAlbumSave() {
   const savingRef = useRef(false)
 
   const save = useCallback(async () => {
-    const { userId } = useUIStore.getState()
-    if (!userId || savingRef.current) return
+    if (savingRef.current) return
+
+    const { userId, openAuthModal, addToast } = useUIStore.getState()
+    if (!userId) {
+      addToast('יש להתחבר כדי לשמור את האלבום', 'info')
+      openAuthModal()
+      return
+    }
 
     const { albumId, albumTitle, config } = useAlbumStore.getState()
     const { spreads, setSaving, setLastSaved } = useEditorStore.getState()
@@ -25,7 +50,7 @@ export function useAlbumSave() {
       }
 
       const { spreads: updatedSpreads } = useEditorStore.getState()
-      const hasBlobUrls = JSON.stringify(updatedSpreads).includes('blob:')
+      const hasBlobUrls = spreadsHaveBlobUrls(updatedSpreads)
       if (hasBlobUrls) {
         const freshAlbum = await loadAlbum(id)
         if (freshAlbum) {
@@ -39,8 +64,8 @@ export function useAlbumSave() {
     } catch (err) {
       console.error('Save failed:', err)
       useUIStore.getState().addToast('שגיאה בשמירת האלבום', 'error')
-      setSaving(false)
     } finally {
+      setSaving(false)
       savingRef.current = false
     }
   }, [])
@@ -80,18 +105,15 @@ export function useAlbumLoad() {
 export function useAutoSave(intervalMs = 30000) {
   const save = useAlbumSave()
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  const lastSpreadsRef = useRef<string>('')
 
   useEffect(() => {
-    const unsub = useEditorStore.subscribe((state) => {
+    const unsub = useEditorStore.subscribe((state, prevState) => {
+      if (state.spreads === prevState.spreads) return
+
       const { userId } = useUIStore.getState()
       const { albumId } = useAlbumStore.getState()
       if (!userId || !albumId) return
       if (!state.isGenerated) return
-
-      const snapshot = JSON.stringify(state.spreads)
-      if (snapshot === lastSpreadsRef.current) return
-      lastSpreadsRef.current = snapshot
 
       clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {

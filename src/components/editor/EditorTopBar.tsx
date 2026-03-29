@@ -3,13 +3,20 @@ import { useNavigate } from 'react-router'
 import { motion } from 'motion/react'
 import { useAlbumStore } from '../../store/albumStore'
 import { useEditorStore } from '../../store/editorStore'
+import { useShallow } from 'zustand/react/shallow'
 import { useAlbumSave } from '../../hooks/useAlbumPersistence'
 import Icon from '../shared/Icon'
 
 export default function EditorTopBar() {
   const navigate = useNavigate()
-  const { albumTitle, setAlbumTitle } = useAlbumStore()
-  const { isSaving, lastSaved, togglePreview, currentSpreadIndex, spreads } = useEditorStore()
+  const { albumTitle, setAlbumTitle } = useAlbumStore(useShallow((s) => ({ albumTitle: s.albumTitle, setAlbumTitle: s.setAlbumTitle })))
+  const { isSaving, lastSaved, currentSpreadIndex, spreadCount } = useEditorStore(useShallow((s) => ({
+    isSaving: s.isSaving,
+    lastSaved: s.lastSaved,
+    currentSpreadIndex: s.currentSpreadIndex,
+    spreadCount: s.spreads.length,
+  })))
+  const togglePreview = useEditorStore((s) => s.togglePreview)
   const saveAlbum = useAlbumSave()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(albumTitle)
@@ -25,7 +32,7 @@ export default function EditorTopBar() {
     saveAlbum()
   }
 
-  const spreadLabel = `עמוד ${currentSpreadIndex * 2 + 1}–${currentSpreadIndex * 2 + 2} מתוך ${spreads.length * 2}`
+  const spreadLabel = `עמוד ${currentSpreadIndex * 2 + 1}–${currentSpreadIndex * 2 + 2} מתוך ${spreadCount * 2}`
 
   return (
     <header className="w-full z-20 bg-white/75 backdrop-blur-xl flex justify-between items-center px-8 py-3 border-b border-outline-variant/8 shrink-0 relative">

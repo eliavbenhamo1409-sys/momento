@@ -53,8 +53,8 @@ const CATEGORIES = [
 ]
 
 export default function TextInsertPanel({ onClose }: { onClose: () => void }) {
-  const { addTextToSpread } = useEditorStore()
-  const { addToast } = useUIStore()
+  const addTextToSpread = useEditorStore((s) => s.addTextToSpread)
+  const addToast = useUIStore((s) => s.addToast)
   const [text, setText] = useState('')
   const [selectedFont, setSelectedFont] = useState('Great Vibes')
   const [activeCategory, setActiveCategory] = useState<FontOption['category']>('script')

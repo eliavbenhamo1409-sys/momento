@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useUIStore } from '../../store/uiStore'
-import { generateCustomBackground } from '../../lib/openai'
+import { generateCustomBackground, imageUrlToDataUrl } from '../../lib/openai'
 import Icon from '../shared/Icon'
 
 type Target = 'spread' | 'left' | 'right'
@@ -23,14 +23,34 @@ const QUICK_PROMPTS = [
 ]
 
 export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) {
-  const { setSpreadGeneratedBg } = useEditorStore()
-  const { addToast } = useUIStore()
+  const setSpreadGeneratedBg = useEditorStore((s) => s.setSpreadGeneratedBg)
+  const addToast = useUIStore((s) => s.addToast)
   const [prompt, setPrompt] = useState('')
   const [target, setTarget] = useState<Target>('spread')
   const [isGenerating, setIsGenerating] = useState(false)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const selectedTarget = TARGETS.find((t) => t.id === target)!
+
+  const collectPagePhotos = useCallback(async (): Promise<string[]> => {
+    const { spreads, currentSpreadIndex } = useEditorStore.getState()
+    const spread = spreads[currentSpreadIndex]
+    if (!spread?.design) return []
+
+    const photoEls = spread.design.elements.filter(
+      (el): el is import('../../types').PhotoElement => el.type === 'photo' && !!(el as import('../../types').PhotoElement).photoUrl,
+    )
+
+    const filtered = target === 'spread'
+      ? photoEls
+      : target === 'left'
+        ? photoEls.filter((el) => el.x < 50)
+        : photoEls.filter((el) => el.x >= 50)
+
+    const urls = filtered.map((el) => el.photoUrl!).slice(0, 4)
+    const dataUrls = await Promise.all(urls.map((u) => imageUrlToDataUrl(u)))
+    return dataUrls.filter((u): u is string => u !== null)
+  }, [target])
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -42,7 +62,8 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
     setPreviewUrl(null)
 
     try {
-      const url = await generateCustomBackground(prompt, selectedTarget.ratio)
+      const pagePhotos = await collectPagePhotos()
+      const url = await generateCustomBackground(prompt, selectedTarget.ratio, pagePhotos)
 
       if (url) {
         setPreviewUrl(url)

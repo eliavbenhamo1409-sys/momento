@@ -10,7 +10,7 @@ interface Props {
 }
 
 export default function EditorAIFloatingPanel({ imageSrc }: Props) {
-  const { addToast } = useUIStore()
+  const addToast = useUIStore((s) => s.addToast)
   const [activeChips, setActiveChips] = useState<string[]>([])
   const [freeText, setFreeText] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)

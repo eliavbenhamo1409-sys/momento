@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useUIStore } from '../../store/uiStore'
+import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 import type { PhotoElement } from '../../types'
 
@@ -33,12 +34,15 @@ function PanPreview({
   onPositionChange: (pos: string) => void
 }) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
   const isDragging = useRef(false)
   const startPos = useRef({ x: 0, y: 0 })
   const startObjPos = useRef({ x: 50, y: 50 })
+  const localPosRef = useRef<string | null>(null)
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     isDragging.current = true
+    localPosRef.current = null
     startPos.current = { x: e.clientX, y: e.clientY }
     startObjPos.current = parseObjectPosition(objectPosition)
     ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
@@ -51,17 +55,25 @@ function PanPreview({
     const dx = e.clientX - startPos.current.x
     const dy = e.clientY - startPos.current.y
 
-    // Invert direction: dragging right should shift objectPosition left (show more of the left)
     const sensitivity = 100 / Math.max(rect.width, 1)
     const newX = Math.max(0, Math.min(100, startObjPos.current.x - dx * sensitivity))
     const newY = Math.max(0, Math.min(100, startObjPos.current.y - dy * sensitivity))
 
-    onPositionChange(`${Math.round(newX)}% ${Math.round(newY)}%`)
-  }, [onPositionChange])
+    const newPos = `${Math.round(newX)}% ${Math.round(newY)}%`
+    localPosRef.current = newPos
+    if (imgRef.current) {
+      imgRef.current.style.objectPosition = newPos
+      if (scale > 1) imgRef.current.style.transformOrigin = newPos
+    }
+  }, [scale])
 
   const handlePointerUp = useCallback(() => {
     isDragging.current = false
-  }, [])
+    if (localPosRef.current) {
+      onPositionChange(localPosRef.current)
+      localPosRef.current = null
+    }
+  }, [onPositionChange])
 
   return (
     <div
@@ -74,6 +86,7 @@ function PanPreview({
       onPointerCancel={handlePointerUp}
     >
       <img
+        ref={imgRef}
         src={photoUrl}
         alt=""
         draggable={false}
@@ -105,19 +118,19 @@ function PanPreview({
 // ─── Main Modal ──────────────────────────────────────────────────────
 
 export default function PhotoEditorModal() {
-  const {
-    selectedPhotoId,
-    spreads,
-    currentSpreadIndex,
-    selectPhoto,
-    updatePhotoObjectPosition,
-    updatePhotoScale,
-    updatePhotoSlotRadius,
-    resizePhotoSlot,
-    replacePhotoInSlot,
-    removePhotoFromSlot,
-  } = useEditorStore()
-  const { addToast } = useUIStore()
+  const { selectedPhotoId, spreads, currentSpreadIndex } = useEditorStore(useShallow((s) => ({
+    selectedPhotoId: s.selectedPhotoId,
+    spreads: s.spreads,
+    currentSpreadIndex: s.currentSpreadIndex,
+  })))
+  const selectPhoto = useEditorStore((s) => s.selectPhoto)
+  const updatePhotoObjectPosition = useEditorStore((s) => s.updatePhotoObjectPosition)
+  const updatePhotoScale = useEditorStore((s) => s.updatePhotoScale)
+  const updatePhotoSlotRadius = useEditorStore((s) => s.updatePhotoSlotRadius)
+  const resizePhotoSlot = useEditorStore((s) => s.resizePhotoSlot)
+  const replacePhotoInSlot = useEditorStore((s) => s.replacePhotoInSlot)
+  const removePhotoFromSlot = useEditorStore((s) => s.removePhotoFromSlot)
+  const addToast = useUIStore((s) => s.addToast)
   const fileRef = useRef<HTMLInputElement>(null)
   const [activeTab, setActiveTab] = useState<'position' | 'frame' | 'ai'>('position')
 

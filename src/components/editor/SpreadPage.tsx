@@ -3,8 +3,11 @@ import type {
   EditorSpread,
   SpreadDesign,
   ResolvedSpreadStyle,
+  ResolvedFrame,
   EnrichedSlotData,
   TemplateVariant,
+  PhotoElement,
+  QuoteElement,
 } from '../../types'
 import {
   AbsolutePhotoElement,
@@ -25,6 +28,7 @@ interface SpreadPageProps {
   spread: EditorSpread
   side: 'left' | 'right'
   isCurrent: boolean
+  isNearby: boolean
   selectedPhotoId: string | null
   selectedTextIndex: number | null
   selectPhoto: (id: string | null) => void
@@ -209,6 +213,70 @@ function PageBackground({
   )
 }
 
+const MemoPhotoWrapper = React.memo(function MemoPhotoWrapper({
+  element,
+  spreadId,
+  elementIndex,
+  pid,
+  isSelected,
+  isSwapSource,
+  isSwapTarget,
+  isSwapping,
+  onPhotoClick,
+}: {
+  element: PhotoElement
+  spreadId: string
+  elementIndex: number
+  pid: string
+  isSelected: boolean
+  isSwapSource: boolean
+  isSwapTarget: boolean
+  isSwapping: boolean
+  onPhotoClick: (slotId: string, pid: string) => void
+}) {
+  const handleSelect = useCallback(() => {
+    onPhotoClick(element.slotId, pid)
+  }, [onPhotoClick, element.slotId, pid])
+
+  return (
+    <AbsolutePhotoElement
+      element={element}
+      spreadId={spreadId}
+      elementIndex={elementIndex}
+      isSelected={isSelected}
+      isSwapSource={isSwapSource}
+      isSwapTarget={isSwapTarget}
+      isSwapping={isSwapping}
+      onSelect={handleSelect}
+    />
+  )
+})
+
+const MemoQuoteWrapper = React.memo(function MemoQuoteWrapper({
+  element,
+  elementIndex,
+  isSelected,
+  onQuoteClick,
+}: {
+  element: QuoteElement
+  elementIndex: number
+  isSelected: boolean
+  onQuoteClick: (gIdx: number) => void
+}) {
+  const handleSelect = useCallback(() => {
+    onQuoteClick(elementIndex)
+  }, [onQuoteClick, elementIndex])
+
+  return (
+    <AbsoluteQuoteElement
+      element={element}
+      elementIndex={elementIndex}
+      isSelected={isSelected}
+      onSelect={handleSelect}
+    />
+  )
+})
+
 function AbsolutePageElements({
   spread,
   design,
@@ -257,34 +325,39 @@ function AbsolutePageElements({
     }
   }, [isSwapping, onSwapClick, selectPhoto, selectedPhotoId])
 
+  const handleQuoteClick = useCallback((gIdx: number) => {
+    selectText(selectedTextIndex === gIdx ? null : gIdx)
+  }, [selectText, selectedTextIndex])
+
   return (
     <>
       {elements.map((el, i) => {
         if (el.type === 'photo') {
           const pid = `${spread.id}-${el.slotId}`
           return (
-            <AbsolutePhotoElement
+            <MemoPhotoWrapper
               key={pid}
               element={el}
               spreadId={spread.id}
               elementIndex={getGlobalIndex(el)}
+              pid={pid}
               isSelected={!isSwapping && selectedPhotoId === pid}
               isSwapSource={swapPhase === 'pick-target' && swapSourceSlotId === el.slotId}
               isSwapTarget={swapPhase === 'pick-target' && swapSourceSlotId !== el.slotId}
               isSwapping={isSwapping}
-              onSelect={() => handlePhotoClick(el.slotId, pid)}
+              onPhotoClick={handlePhotoClick}
             />
           )
         }
         if (el.type === 'quote') {
           const gIdx = getGlobalIndex(el)
           return (
-            <AbsoluteQuoteElement
+            <MemoQuoteWrapper
               key={`q-${side}-${gIdx}`}
               element={el}
               elementIndex={gIdx}
               isSelected={selectedTextIndex === gIdx}
-              onSelect={() => selectText(selectedTextIndex === gIdx ? null : gIdx)}
+              onQuoteClick={handleQuoteClick}
             />
           )
         }
@@ -293,6 +366,45 @@ function AbsolutePageElements({
     </>
   )
 }
+
+const MemoLegacyPhotoSlot = React.memo(function MemoLegacyPhotoSlot({
+  src,
+  photoId,
+  isSelected,
+  onToggleSelect,
+  objectPosition,
+  transform,
+  frame,
+  variant,
+  slotImportance,
+}: {
+  src: string
+  photoId: string
+  isSelected: boolean
+  onToggleSelect: (photoId: string) => void
+  objectPosition?: string
+  transform?: string
+  frame: ResolvedFrame
+  variant: TemplateVariant | null
+  slotImportance?: string
+}) {
+  const handleSelect = useCallback(() => {
+    onToggleSelect(photoId)
+  }, [onToggleSelect, photoId])
+
+  return (
+    <LegacyPhotoSlot
+      src={src}
+      isSelected={isSelected}
+      onSelect={handleSelect}
+      objectPosition={objectPosition}
+      transform={transform}
+      frame={frame}
+      variant={variant}
+      slotImportance={slotImportance}
+    />
+  )
+})
 
 function LegacyPageElements({
   spread,
@@ -314,6 +426,10 @@ function LegacyPageElements({
     [spread.slots],
   )
 
+  const handleToggleSelect = useCallback((photoId: string) => {
+    selectPhoto(selectedPhotoId === photoId ? null : photoId)
+  }, [selectPhoto, selectedPhotoId])
+
   const adj = variant?.adjustments
   const gapPx = adj?.gapOverride ?? style.spacing.photoGapPx
   const photos = side === 'left' ? spread.leftPhotos : spread.rightPhotos
@@ -333,11 +449,12 @@ function LegacyPageElements({
           const slotData = slotDataByUrl.get(src) as EnrichedSlotData | undefined
           const frame = slotData?.frame ?? style.frame
           return (
-            <LegacyPhotoSlot
+            <MemoLegacyPhotoSlot
               key={photoId}
               src={src}
+              photoId={photoId}
               isSelected={isSelected}
-              onSelect={() => selectPhoto(isSelected ? null : photoId)}
+              onToggleSelect={handleToggleSelect}
               objectPosition={slotData?.objectPosition}
               transform={slotData?.transform}
               frame={frame}
@@ -364,11 +481,12 @@ function LegacyPageElements({
         const slotData = slotDataByUrl.get(src) as EnrichedSlotData | undefined
         const frame = slotData?.frame ?? style.frame
         return (
-          <LegacyPhotoSlot
+          <MemoLegacyPhotoSlot
             key={photoId}
             src={src}
+            photoId={photoId}
             isSelected={isSelected}
-            onSelect={() => selectPhoto(isSelected ? null : photoId)}
+            onToggleSelect={handleToggleSelect}
             objectPosition={slotData?.objectPosition}
             transform={slotData?.transform}
             frame={frame}
@@ -395,6 +513,7 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
       spread,
       side,
       isCurrent,
+      isNearby,
       selectedPhotoId,
       selectedTextIndex,
       selectPhoto,
@@ -409,6 +528,24 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
     const variant = spread.variant ?? null
     const useAbs = !!design && design.elements.length > 0
     const bgColor = useAbs ? design!.background.color : style.background.color
+
+    if (!isNearby) {
+      return (
+        <div
+          ref={ref}
+          data-density="hard"
+          style={{
+            backgroundColor: bgColor,
+            width: '100%',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+            transform: 'scaleX(-1)',
+          }}
+        />
+      )
+    }
+
     const heroPhotoSrc = spread.leftPhotos?.[0] ?? spread.rightPhotos?.[0] ?? null
 
     return (

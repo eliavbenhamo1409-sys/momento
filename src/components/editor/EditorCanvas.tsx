@@ -232,6 +232,8 @@ export function AbsolutePhotoElement({
   const startPosRef = useRef<{ x: number; y: number; objX: number; objY: number } | null>(null)
   const didDragRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
+  const imgRef = useRef<HTMLImageElement>(null)
+  const localPosRef = useRef<string | null>(null)
   const emptyFileRef = useRef<HTMLInputElement>(null)
 
   const currentScale = element.scale ?? 1
@@ -257,6 +259,7 @@ export function AbsolutePhotoElement({
     const pos = parseObjectPosition()
     startPosRef.current = { x: e.clientX, y: e.clientY, objX: pos.x, objY: pos.y }
     didDragRef.current = false
+    localPosRef.current = null
 
     longPressTimer.current = setTimeout(() => {
       setIsDragging(true)
@@ -280,13 +283,22 @@ export function AbsolutePhotoElement({
     const newX = Math.min(100, Math.max(0, startPosRef.current.objX - dx * sensitivityX))
     const newY = Math.min(100, Math.max(0, startPosRef.current.objY - dy * sensitivityY))
 
-    updatePos(element.slotId, `${newX.toFixed(1)}% ${newY.toFixed(1)}%`)
-  }, [isDragging, element.slotId, updatePos])
+    const newPos = `${newX.toFixed(1)}% ${newY.toFixed(1)}%`
+    localPosRef.current = newPos
+    if (imgRef.current) {
+      imgRef.current.style.objectPosition = newPos
+      if (currentScale > 1) imgRef.current.style.transformOrigin = newPos
+    }
+  }, [isDragging, currentScale])
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     clearTimeout(longPressTimer.current)
 
     if (isDragging) {
+      if (localPosRef.current) {
+        updatePos(element.slotId, localPosRef.current)
+        localPosRef.current = null
+      }
       setIsDragging(false)
       containerRef.current?.releasePointerCapture(e.pointerId)
       return
@@ -297,7 +309,7 @@ export function AbsolutePhotoElement({
       onSelect()
     }
     startPosRef.current = null
-  }, [isDragging, onSelect])
+  }, [isDragging, onSelect, updatePos, element.slotId])
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!element.photoUrl) return
@@ -393,6 +405,7 @@ export function AbsolutePhotoElement({
       >
         {element.photoUrl ? (
           <img
+            ref={imgRef}
             src={element.photoUrl}
             alt=""
             className="w-full h-full object-cover select-none"
@@ -588,6 +601,8 @@ export function AbsoluteQuoteElement({
     ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
   }, [element.x, element.y, element.width, element.height])
 
+  const localQuotePosRef = useRef<{ x: number; y: number; w?: number; h?: number } | null>(null)
+
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
     if (!startRef.current) return
     const parent = containerRef.current?.parentElement
@@ -599,7 +614,11 @@ export function AbsoluteQuoteElement({
     if (isDragging) {
       const newX = Math.max(0, Math.min(95, startRef.current.elX + (dx / rect.width) * 100))
       const newY = Math.max(0, Math.min(95, startRef.current.elY + (dy / rect.height) * 100))
-      updateText(elementIndex, { x: newX, y: newY })
+      localQuotePosRef.current = { x: newX, y: newY }
+      if (containerRef.current) {
+        containerRef.current.style.left = `${newX}%`
+        containerRef.current.style.top = `${newY}%`
+      }
     }
 
     if (isResizing) {
@@ -616,15 +635,31 @@ export function AbsoluteQuoteElement({
       if (corner.includes('b')) newH = Math.max(8, startRef.current.elH + dyPct)
       if (corner.includes('t')) { newH = Math.max(8, startRef.current.elH - dyPct); newY = startRef.current.elY + dyPct }
 
-      updateText(elementIndex, { x: newX, y: newY, width: newW, height: newH })
+      localQuotePosRef.current = { x: newX, y: newY, w: newW, h: newH }
+      if (containerRef.current) {
+        containerRef.current.style.left = `${newX}%`
+        containerRef.current.style.top = `${newY}%`
+        containerRef.current.style.width = `${newW}%`
+        containerRef.current.style.height = `${newH}%`
+      }
     }
-  }, [isDragging, isResizing, elementIndex, updateText])
+  }, [isDragging, isResizing])
 
   const handlePointerUp = useCallback(() => {
+    if (localQuotePosRef.current) {
+      const pos = localQuotePosRef.current
+      updateText(elementIndex, {
+        x: pos.x,
+        y: pos.y,
+        ...(pos.w != null ? { width: pos.w } : {}),
+        ...(pos.h != null ? { height: pos.h } : {}),
+      })
+      localQuotePosRef.current = null
+    }
     setIsDragging(false)
     setIsResizing(false)
     startRef.current = null
-  }, [])
+  }, [updateText, elementIndex])
 
   const startResize = useCallback((e: React.PointerEvent, corner: string) => {
     e.stopPropagation()
@@ -1082,9 +1117,9 @@ export default function EditorCanvas() {
         className="flex items-center justify-center gap-2 sm:gap-4 md:gap-5 w-full max-w-[min(94vw,78rem)] mx-auto relative z-10"
       >
         <SpreadNavArrow
-          direction="next"
-          disabled={!canNext}
-          onClick={flipNext}
+          direction="prev"
+          disabled={!canPrev}
+          onClick={flipPrev}
         />
 
         <div
@@ -1121,12 +1156,14 @@ export default function EditorCanvas() {
           >
             {spreads.flatMap((s, spreadIdx) => {
               const isCurrent = spreadIdx === currentSpreadIndex
+              const isNearby = Math.abs(spreadIdx - currentSpreadIndex) <= 2
               return [
                 <SpreadPage
                   key={`${s.id}-R`}
                   spread={s}
                   side="right"
                   isCurrent={isCurrent}
+                  isNearby={isNearby}
                   selectedPhotoId={isCurrent ? selectedPhotoId : null}
                   selectedTextIndex={isCurrent ? selectedTextIndex : null}
                   selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
@@ -1140,6 +1177,7 @@ export default function EditorCanvas() {
                   spread={s}
                   side="left"
                   isCurrent={isCurrent}
+                  isNearby={isNearby}
                   selectedPhotoId={isCurrent ? selectedPhotoId : null}
                   selectedTextIndex={isCurrent ? selectedTextIndex : null}
                   selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
@@ -1170,9 +1208,9 @@ export default function EditorCanvas() {
         </div>
 
         <SpreadNavArrow
-          direction="prev"
-          disabled={!canPrev}
-          onClick={flipPrev}
+          direction="next"
+          disabled={!canNext}
+          onClick={flipNext}
         />
       </div>
     </div>

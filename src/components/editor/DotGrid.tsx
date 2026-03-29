@@ -7,6 +7,7 @@ const REVEAL_RADIUS = 90
 const REVEAL_ALPHA = 0.85
 const REVEAL_RADIUS_GROWTH = 1.4
 const DOT_COLOR = '50, 50, 50'
+const THROTTLE_MS = 33
 
 export default function DotGrid() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -20,6 +21,7 @@ export default function DotGrid() {
     baseCanvas: null as OffscreenCanvas | HTMLCanvasElement | null,
     baseW: 0,
     baseH: 0,
+    lastMoveTime: 0,
   })
 
   useEffect(() => {
@@ -134,6 +136,10 @@ export default function DotGrid() {
     state.running = false
 
     const onMove = (e: MouseEvent) => {
+      const now = performance.now()
+      if (now - state.lastMoveTime < THROTTLE_MS) return
+      state.lastMoveTime = now
+
       const rect = canvas.getBoundingClientRect()
       state.mx = e.clientX - rect.left
       state.my = e.clientY - rect.top
@@ -143,6 +149,8 @@ export default function DotGrid() {
     const onLeave = () => {
       state.mx = -9999
       state.my = -9999
+      cancelAnimationFrame(state.raf)
+      state.running = false
       startLoop()
     }
 
@@ -151,7 +159,7 @@ export default function DotGrid() {
       startLoop()
     }
 
-    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mousemove', onMove, { passive: true })
     document.documentElement.addEventListener('mouseleave', onLeave)
     window.addEventListener('resize', onResize)
     return () => {

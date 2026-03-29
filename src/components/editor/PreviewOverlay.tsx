@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
+import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 import type { PhotoElement, EditorSpread } from '../../types'
 
@@ -146,7 +147,11 @@ function PreviewSpread({ spread }: { spread: EditorSpread }) {
 }
 
 export default function PreviewOverlay() {
-  const { isPreviewOpen, togglePreview, spreads } = useEditorStore()
+  const { isPreviewOpen, spreads } = useEditorStore(useShallow((s) => ({
+    isPreviewOpen: s.isPreviewOpen,
+    spreads: s.spreads,
+  })))
+  const togglePreview = useEditorStore((s) => s.togglePreview)
   const navigate = useNavigate()
   const [activeIdx, setActiveIdx] = useState(0)
 

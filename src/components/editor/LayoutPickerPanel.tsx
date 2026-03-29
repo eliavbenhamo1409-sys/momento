@@ -81,10 +81,9 @@ function MiniPreview({ layout, isActive }: { layout: LayoutOption; isActive: boo
 }
 
 export default function LayoutPickerPanel({ onClose }: { onClose: () => void }) {
-  const { spreads, currentSpreadIndex, changeSpreadTemplate } = useEditorStore()
-  const { addToast } = useUIStore()
-
-  const currentTemplate = spreads[currentSpreadIndex]?.templateId ?? ''
+  const currentTemplate = useEditorStore((s) => s.spreads[s.currentSpreadIndex]?.templateId ?? '')
+  const changeSpreadTemplate = useEditorStore((s) => s.changeSpreadTemplate)
+  const addToast = useUIStore((s) => s.addToast)
 
   // Group by slot count
   const grouped = new Map<number, LayoutOption[]>()

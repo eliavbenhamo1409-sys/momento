@@ -588,13 +588,29 @@ export async function generateSpreadBackgrounds(
 export async function generateCustomBackground(
   userPrompt: string,
   aspectRatio: '16:9' | '1:1' = '16:9',
+  pagePhotoDataUrls: string[] = [],
 ): Promise<string | null> {
   try {
     const ai = getGeminiClient()
 
+    const hasPhotos = pagePhotoDataUrls.length > 0
+    const photoContext = hasPhotos
+      ? `\n\nIMPORTANT — REFERENCE PHOTOS FROM THE PAGE:
+I've attached ${pagePhotoDataUrls.length} photo(s) that are already placed on this album page.
+You MUST analyze these photos and match your generated background to:
+- The dominant COLOR PALETTE of the photos (warm/cool tones, saturation levels)
+- The LIGHTING CONDITIONS visible in the photos (golden hour, daylight, indoor, overcast, etc.)
+- The overall MOOD and ATMOSPHERE of the photos
+- The SEASON and ENVIRONMENT if discernible (snowy, tropical, urban, etc.)
+
+The background should feel like it naturally belongs behind these specific photos — as if they were taken in the same world.
+Use complementary colors that enhance the photos without clashing.`
+      : ''
+
     const prompt = `Create a beautiful, artistic background image for a premium printed photo album page.
 
 The user requested: "${userPrompt}"
+${photoContext}
 
 Create EXACTLY what the user described, but as a rich, artistic, high-quality background suitable for a premium photo album.
 The image should be vivid, detailed, and atmospheric — suitable for placing photos on top of it.
@@ -606,9 +622,13 @@ The result should be high quality, visually stunning, and work well as a backgro
 
 Do NOT include any text, frames, photo placeholders, or UI elements.`
 
+    const contents = hasPhotos
+      ? buildGeminiContents(prompt, pagePhotoDataUrls)
+      : prompt
+
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-flash-image-preview',
-      contents: prompt,
+      contents,
       config: {
         responseModalities: ['IMAGE'],
         imageConfig: {
@@ -631,6 +651,22 @@ Do NOT include any text, frames, photo placeholders, or UI elements.`
     return null
   } catch (err) {
     console.error('Custom background generation failed:', err)
+    return null
+  }
+}
+
+export async function imageUrlToDataUrl(url: string): Promise<string | null> {
+  try {
+    if (url.startsWith('data:')) return url
+    const resp = await fetch(url)
+    const blob = await resp.blob()
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => resolve(reader.result as string)
+      reader.onerror = () => resolve(null)
+      reader.readAsDataURL(blob)
+    })
+  } catch {
     return null
   }
 }
