@@ -1,0 +1,27 @@
+---
+description: Momento design quality standard — applies to all UI components and screens
+alwaysApply: true
+---
+
+# Design Quality Standard
+
+Every UI element must meet a premium 2026 design standard: bright, calm, pleasant, and polished. Design is the single most important aspect of this application.
+
+## Core Principles
+
+1. **Premium feel** — Every component should feel hand-crafted and intentional. No generic or default-looking UI. Soft gradients, subtle shadows, generous whitespace.
+2. **Light & airy** — The palette is warm cream/beige with sage and deep-brown accents. Backgrounds should breathe. Avoid heavy borders or dark blocks that feel oppressive.
+3. **Micro-interactions** — Use Framer Motion for subtle entrance animations, hover states, and transitions. Nothing should feel static or abrupt.
+4. **Depth & layering** — Use soft `box-shadow`, `backdrop-blur`, and layered backgrounds (glass effects, subtle radial gradients) to create visual depth without heaviness.
+5. **Typography hierarchy** — Headlines in Heebo (bold, large), body in Plus Jakarta Sans (medium weight, generous line-height). Text should be easy to scan.
+6. **Generous spacing** — Padding and gaps should feel luxurious. Cramped layouts are not acceptable.
+7. **Refined color usage** — Primary actions use the sage/olive palette. States (hover, active, disabled) should transition smoothly with opacity and scale changes, not harsh color swaps.
+8. **Icons as accents** — Material Symbols at weight 300. Use filled variants sparingly for emphasis. Icons should complement, not dominate.
+
+## What to Avoid
+
+- Flat, unstyled buttons or inputs that look like browser defaults
+- Hard borders (prefer soft `border-opacity` or shadow-based separation)
+- Crowded layouts without breathing room
+- Abrupt state changes without animation
+- Generic placeholder styling

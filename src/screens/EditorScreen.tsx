@@ -1,0 +1,107 @@
+import { useEffect, useMemo, useState } from 'react'
+import { useParams } from 'react-router'
+import { AnimatePresence } from 'motion/react'
+import PageTransition from '../components/shared/PageTransition'
+import EditorTopBar from '../components/editor/EditorTopBar'
+import EditorCanvas from '../components/editor/EditorCanvas'
+import EditorSidebar from '../components/editor/EditorSidebar'
+import PageThumbnails from '../components/editor/PageThumbnails'
+import PreviewOverlay from '../components/editor/PreviewOverlay'
+import PhotoEditorModal from '../components/editor/PhotoEditorModal'
+import DotGrid from '../components/editor/DotGrid'
+import { useEditorStore } from '../store/editorStore'
+import { useAlbumStore } from '../store/albumStore'
+import { useAutoSave, useAlbumLoad } from '../hooks/useAlbumPersistence'
+import { calcAlbumPrice, ALBUM_SIZES } from '../lib/constants'
+
+export default function EditorScreen() {
+  useAutoSave(30000)
+  const { albumId } = useParams<{ albumId?: string }>()
+  const loadAlbum = useAlbumLoad()
+  const [loadingAlbum, setLoadingAlbum] = useState(false)
+
+  useEffect(() => {
+    if (!albumId) return
+    const currentAlbumId = useAlbumStore.getState().albumId
+    if (currentAlbumId === albumId) return
+
+    setLoadingAlbum(true)
+    loadAlbum(albumId).finally(() => setLoadingAlbum(false))
+  }, [albumId, loadAlbum])
+
+  const isPreviewOpen = useEditorStore((s) => s.isPreviewOpen)
+  const togglePreview = useEditorStore((s) => s.togglePreview)
+  const spreadCount = useEditorStore((s) => s.spreads.length)
+  const config = useAlbumStore((s) => s.config)
+  const sizeLabel = ALBUM_SIZES.find((s) => s.id === config.size)?.label ?? config.size
+  const actualPages = spreadCount * 2
+  const totalPrice = useMemo(() => calcAlbumPrice(config.size, actualPages), [config.size, actualPages])
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === ' ' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+        e.preventDefault()
+        togglePreview()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [togglePreview])
+
+  if (loadingAlbum) {
+    return (
+      <PageTransition>
+        <div className="h-screen w-screen flex items-center justify-center bg-[#EEECEA]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 border-2 border-sage/30 border-t-sage rounded-full animate-spin" />
+            <span className="text-sm text-warm-gray font-medium">טוען אלבום...</span>
+          </div>
+        </div>
+      </PageTransition>
+    )
+  }
+
+  return (
+    <PageTransition>
+      <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#EEECEA] relative">
+        <DotGrid />
+        <EditorTopBar />
+        <div className="flex-1 relative overflow-hidden z-10">
+          <EditorCanvas />
+          <PageThumbnails />
+          <EditorSidebar />
+        </div>
+
+        <footer className="w-full bg-white/70 backdrop-blur-lg border-t border-outline-variant/6 flex justify-between items-center px-10 py-2.5 shrink-0 relative z-20">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-secondary/45 font-medium">גודל</span>
+              <span className="text-xs font-bold text-on-surface/70" style={{ fontFamily: 'var(--font-family-headline)' }}>
+                {sizeLabel}
+              </span>
+            </div>
+            <div className="w-px h-3.5 bg-outline-variant/15" />
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] uppercase tracking-wider text-secondary/45 font-medium">עמודים</span>
+              <span className="text-xs font-bold text-on-surface/70" style={{ fontFamily: 'var(--font-family-headline)' }}>
+                {actualPages}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] uppercase tracking-wider text-secondary/45 font-medium">סה״כ</span>
+            <span className="text-base font-bold text-on-surface" style={{ fontFamily: 'var(--font-family-headline)' }}>
+              ₪{totalPrice}
+            </span>
+          </div>
+        </footer>
+
+        <AnimatePresence>
+          {isPreviewOpen && <PreviewOverlay />}
+        </AnimatePresence>
+
+        <PhotoEditorModal />
+      </div>
+    </PageTransition>
+  )
+}

@@ -1,0 +1,447 @@
+import React, { useMemo, useCallback } from 'react'
+import type {
+  EditorSpread,
+  SpreadDesign,
+  ResolvedSpreadStyle,
+  EnrichedSlotData,
+  TemplateVariant,
+} from '../../types'
+import {
+  AbsolutePhotoElement,
+  AbsoluteQuoteElement,
+  AbsoluteDecorativeElement,
+  EmptySlot,
+  LegacyPhotoSlot,
+  LegacyQuoteBlock,
+  LegacyCornerOrnaments,
+} from './EditorCanvas'
+import { DEFAULT_STYLE, getTexturePattern } from './editorDefaults'
+
+const NOOP_SELECT = (_id: string | null) => {}
+const NOOP_SLOT = (_id: string) => {}
+
+interface SpreadPageProps {
+  spread: EditorSpread
+  side: 'left' | 'right'
+  isCurrent: boolean
+  selectedPhotoId: string | null
+  selectedTextIndex: number | null
+  selectPhoto: (id: string | null) => void
+  selectText: (idx: number | null) => void
+  swapPhase: 'off' | 'pick-source' | 'pick-target'
+  swapSourceSlotId: string | null
+  onSwapClick: (slotId: string) => void
+}
+
+function PageBackground({
+  design,
+  style,
+  side,
+  heroPhotoSrc,
+}: {
+  design?: SpreadDesign
+  style: ResolvedSpreadStyle
+  side: 'left' | 'right'
+  heroPhotoSrc?: string | null
+}) {
+  const offsetLeft = side === 'left' ? '0' : '-100%'
+
+  if (design) {
+    const bg = design.background
+    return (
+      <>
+        {bg.generatedBgUrl && (
+          <div
+            className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+          >
+            <div
+              className="absolute inset-y-0"
+              style={{
+                width: '200%',
+                left: offsetLeft,
+                backgroundImage: `url(${bg.generatedBgUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: bg.generatedBgOpacity ?? 0.55,
+              }}
+            />
+          </div>
+        )}
+        {side === 'left' && bg.generatedBgLeftUrl && (
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              backgroundImage: `url(${bg.generatedBgLeftUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: bg.generatedBgLeftOpacity ?? 1,
+            }}
+          />
+        )}
+        {side === 'right' && bg.generatedBgRightUrl && (
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              backgroundImage: `url(${bg.generatedBgRightUrl})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              opacity: bg.generatedBgRightOpacity ?? 1,
+            }}
+          />
+        )}
+        {!bg.generatedBgUrl && bg.backgroundLayers && bg.backgroundLayers.length > 0 && bg.backgroundLayers.map((layer, i) => (
+          <div
+            key={`bg-layer-${i}`}
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              backgroundImage: layer.gradient,
+              opacity: layer.opacity,
+              mixBlendMode: (layer.blendMode ?? 'normal') as React.CSSProperties['mixBlendMode'],
+            }}
+          />
+        ))}
+        {bg.blurPhotoUrl && (bg.blurOpacity ?? 0) > 0 && (
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            <div
+              className="absolute inset-y-0"
+              style={{
+                width: '200%',
+                left: offsetLeft,
+                backgroundImage: `url(${bg.blurPhotoUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                filter: `blur(${bg.blurPx ?? 60}px)`,
+                opacity: bg.blurOpacity,
+                transform: 'scale(1.1)',
+              }}
+            />
+          </div>
+        )}
+        {bg.gradientWash && (bg.gradientWashOpacity ?? 0) > 0 && (
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              backgroundImage: bg.gradientWash,
+              opacity: bg.gradientWashOpacity,
+              mixBlendMode: (bg.gradientBlendMode ?? 'multiply') as React.CSSProperties['mixBlendMode'],
+            }}
+          />
+        )}
+        {bg.svgOverlay && (bg.svgOverlayOpacity ?? 0) > 0 && (
+          <div className="absolute inset-x-0 bottom-0 z-0 pointer-events-none overflow-hidden" style={{ height: '30%' }}>
+            <div
+              className="absolute inset-y-0"
+              style={{
+                width: '200%',
+                left: offsetLeft,
+                backgroundImage: bg.svgOverlay,
+                backgroundSize: 'cover',
+                backgroundPosition: 'bottom center',
+                backgroundRepeat: 'no-repeat',
+                opacity: bg.svgOverlayOpacity,
+              }}
+            />
+          </div>
+        )}
+        {bg.texture && bg.texture !== 'none' && (bg.textureOpacity ?? 0) > 0 && (
+          <div
+            className="absolute inset-0 z-0 pointer-events-none"
+            style={{
+              opacity: bg.textureOpacity,
+              backgroundImage: getTexturePattern(bg.texture),
+              backgroundRepeat: 'repeat',
+            }}
+          />
+        )}
+      </>
+    )
+  }
+
+  const { background } = style
+  return (
+    <>
+      {background.allowPhotoBlur && heroPhotoSrc && (
+        <div className="absolute inset-0 z-0 overflow-hidden">
+          <div
+            className="absolute inset-y-0"
+            style={{
+              width: '200%',
+              left: offsetLeft,
+              backgroundImage: `url(${heroPhotoSrc})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              filter: `blur(${background.photoBlurPx}px)`,
+              opacity: background.photoBlurOpacity,
+              transform: 'scale(1.1)',
+            }}
+          />
+        </div>
+      )}
+      {background.allowTexture && background.textureType !== 'none' && (
+        <div
+          className="absolute inset-0 z-0 pointer-events-none"
+          style={{
+            opacity: background.textureOpacity,
+            backgroundImage: getTexturePattern(background.textureType),
+            backgroundRepeat: 'repeat',
+          }}
+        />
+      )}
+    </>
+  )
+}
+
+function AbsolutePageElements({
+  spread,
+  design,
+  side,
+  selectedPhotoId,
+  selectedTextIndex,
+  selectPhoto,
+  selectText,
+  swapPhase,
+  swapSourceSlotId,
+  onSwapClick,
+}: {
+  spread: EditorSpread
+  design: SpreadDesign
+  side: 'left' | 'right'
+  selectedPhotoId: string | null
+  selectedTextIndex: number | null
+  selectPhoto: (id: string | null) => void
+  selectText: (idx: number | null) => void
+  swapPhase: 'off' | 'pick-source' | 'pick-target'
+  swapSourceSlotId: string | null
+  onSwapClick: (slotId: string) => void
+}) {
+  const isSwapping = swapPhase !== 'off'
+
+  const elementIndexMap = useMemo(() => {
+    const map = new Map<string, number>()
+    design.elements.forEach((el, globalIdx) => {
+      const key = `${el.page}-${el.type}-${el.x}-${el.y}`
+      map.set(key, globalIdx)
+    })
+    return map
+  }, [design.elements])
+
+  const getGlobalIndex = useCallback((el: { page: string; type: string; x: number; y: number }) => {
+    return elementIndexMap.get(`${el.page}-${el.type}-${el.x}-${el.y}`) ?? -1
+  }, [elementIndexMap])
+
+  const elements = design.elements.filter((e) => e.page === side)
+
+  const handlePhotoClick = useCallback((slotId: string, pid: string) => {
+    if (isSwapping && onSwapClick) {
+      onSwapClick(slotId)
+    } else {
+      selectPhoto(selectedPhotoId === pid ? null : pid)
+    }
+  }, [isSwapping, onSwapClick, selectPhoto, selectedPhotoId])
+
+  return (
+    <>
+      {elements.map((el, i) => {
+        if (el.type === 'photo') {
+          const pid = `${spread.id}-${el.slotId}`
+          return (
+            <AbsolutePhotoElement
+              key={pid}
+              element={el}
+              spreadId={spread.id}
+              elementIndex={getGlobalIndex(el)}
+              isSelected={!isSwapping && selectedPhotoId === pid}
+              isSwapSource={swapPhase === 'pick-target' && swapSourceSlotId === el.slotId}
+              isSwapTarget={swapPhase === 'pick-target' && swapSourceSlotId !== el.slotId}
+              isSwapping={isSwapping}
+              onSelect={() => handlePhotoClick(el.slotId, pid)}
+            />
+          )
+        }
+        if (el.type === 'quote') {
+          const gIdx = getGlobalIndex(el)
+          return (
+            <AbsoluteQuoteElement
+              key={`q-${side}-${gIdx}`}
+              element={el}
+              elementIndex={gIdx}
+              isSelected={selectedTextIndex === gIdx}
+              onSelect={() => selectText(selectedTextIndex === gIdx ? null : gIdx)}
+            />
+          )
+        }
+        return <AbsoluteDecorativeElement key={`d-${side}-${i}-${el.x}-${el.y}`} element={el} />
+      })}
+    </>
+  )
+}
+
+function LegacyPageElements({
+  spread,
+  style,
+  variant,
+  side,
+  selectedPhotoId,
+  selectPhoto,
+}: {
+  spread: EditorSpread
+  style: ResolvedSpreadStyle
+  variant: TemplateVariant | null
+  side: 'left' | 'right'
+  selectedPhotoId: string | null
+  selectPhoto: (id: string | null) => void
+}) {
+  const slotDataByUrl = useMemo(
+    () => new Map((spread.slots ?? []).map((s) => [s.photoUrl, s])),
+    [spread.slots],
+  )
+
+  const adj = variant?.adjustments
+  const gapPx = adj?.gapOverride ?? style.spacing.photoGapPx
+  const photos = side === 'left' ? spread.leftPhotos : spread.rightPhotos
+
+  if (side === 'left') {
+    return (
+      <div
+        className="w-full h-full flex flex-col relative z-[1]"
+        style={{ padding: `${style.spacing.pageMarginPercent}%`, gap: gapPx }}
+      >
+        {photos.map((src, i) => {
+          const photoId = `${spread.id}-left-${i}`
+          const isSelected = selectedPhotoId === photoId
+          if (!src) {
+            return <EmptySlot key={photoId} spreadId={spread.id} side="left" index={i} className="flex-1 min-h-0" />
+          }
+          const slotData = slotDataByUrl.get(src) as EnrichedSlotData | undefined
+          const frame = slotData?.frame ?? style.frame
+          return (
+            <LegacyPhotoSlot
+              key={photoId}
+              src={src}
+              isSelected={isSelected}
+              onSelect={() => selectPhoto(isSelected ? null : photoId)}
+              objectPosition={slotData?.objectPosition}
+              transform={slotData?.transform}
+              frame={frame}
+              variant={variant}
+              slotImportance={slotData?.importance}
+            />
+          )
+        })}
+      </div>
+    )
+  }
+
+  return (
+    <div
+      className="w-full h-full grid grid-cols-2 relative z-[1]"
+      style={{ padding: `${style.spacing.pageMarginPercent}%`, gap: gapPx }}
+    >
+      {photos.map((src, i) => {
+        const photoId = `${spread.id}-right-${i}`
+        const isSelected = selectedPhotoId === photoId
+        if (!src) {
+          return <EmptySlot key={photoId} spreadId={spread.id} side="right" index={i} />
+        }
+        const slotData = slotDataByUrl.get(src) as EnrichedSlotData | undefined
+        const frame = slotData?.frame ?? style.frame
+        return (
+          <LegacyPhotoSlot
+            key={photoId}
+            src={src}
+            isSelected={isSelected}
+            onSelect={() => selectPhoto(isSelected ? null : photoId)}
+            objectPosition={slotData?.objectPosition}
+            transform={slotData?.transform}
+            frame={frame}
+            variant={variant}
+            slotImportance={slotData?.importance}
+          />
+        )
+      })}
+      {spread.quote && (
+        <LegacyQuoteBlock
+          text={spread.quote}
+          typography={style.typography}
+          decorative={style.decorative}
+          palette={style.palette}
+        />
+      )}
+    </div>
+  )
+}
+
+const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
+  function SpreadPage(props, ref) {
+    const {
+      spread,
+      side,
+      isCurrent,
+      selectedPhotoId,
+      selectedTextIndex,
+      selectPhoto,
+      selectText,
+      swapPhase,
+      swapSourceSlotId,
+      onSwapClick,
+    } = props
+
+    const design = spread.design
+    const style = spread.resolvedStyle ?? DEFAULT_STYLE
+    const variant = spread.variant ?? null
+    const useAbs = !!design && design.elements.length > 0
+    const bgColor = useAbs ? design!.background.color : style.background.color
+    const heroPhotoSrc = spread.leftPhotos?.[0] ?? spread.rightPhotos?.[0] ?? null
+
+    return (
+      <div
+        ref={ref}
+        data-density="hard"
+        style={{
+          backgroundColor: bgColor,
+          width: '100%',
+          height: '100%',
+          position: 'relative',
+          overflow: 'hidden',
+        }}
+      >
+        <PageBackground
+          design={useAbs ? design : undefined}
+          style={style}
+          side={side}
+          heroPhotoSrc={heroPhotoSrc}
+        />
+
+        {!useAbs && style.decorative.cornerOrnaments && (
+          <LegacyCornerOrnaments color={style.palette.accent} />
+        )}
+
+        {useAbs ? (
+          <AbsolutePageElements
+            spread={spread}
+            design={design!}
+            side={side}
+            selectedPhotoId={isCurrent ? selectedPhotoId : null}
+            selectedTextIndex={isCurrent ? selectedTextIndex : null}
+            selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT}
+            selectText={isCurrent ? selectText : NOOP_SELECT}
+            swapPhase={isCurrent ? swapPhase : 'off'}
+            swapSourceSlotId={isCurrent ? swapSourceSlotId : null}
+            onSwapClick={isCurrent ? onSwapClick : NOOP_SLOT}
+          />
+        ) : (
+          <LegacyPageElements
+            spread={spread}
+            style={style}
+            variant={variant}
+            side={side}
+            selectedPhotoId={isCurrent ? selectedPhotoId : null}
+            selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT}
+          />
+        )}
+      </div>
+    )
+  },
+))
+
+export default SpreadPage
