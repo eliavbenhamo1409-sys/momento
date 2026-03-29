@@ -102,18 +102,24 @@ export function useAlbumLoad() {
   return load
 }
 
-export function useAutoSave(intervalMs = 30000) {
+export function useAutoSave(intervalMs = 25000) {
   const save = useAlbumSave()
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const didInitialSave = useRef(false)
 
   useEffect(() => {
     const unsub = useEditorStore.subscribe((state, prevState) => {
-      if (state.spreads === prevState.spreads) return
-
       const { userId } = useUIStore.getState()
-      const { albumId } = useAlbumStore.getState()
-      if (!userId || !albumId) return
+      if (!userId) return
       if (!state.isGenerated) return
+
+      if (!didInitialSave.current && prevState.isGenerated !== state.isGenerated) {
+        didInitialSave.current = true
+        save()
+        return
+      }
+
+      if (state.spreads === prevState.spreads) return
 
       clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {

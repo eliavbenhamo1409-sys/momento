@@ -15,7 +15,7 @@ import { useAutoSave, useAlbumLoad } from '../hooks/useAlbumPersistence'
 import { calcAlbumPrice, ALBUM_SIZES } from '../lib/constants'
 
 export default function EditorScreen() {
-  useAutoSave(30000)
+  useAutoSave(25000)
   const { albumId } = useParams<{ albumId?: string }>()
   const loadAlbum = useAlbumLoad()
   const [loadingAlbum, setLoadingAlbum] = useState(false)
