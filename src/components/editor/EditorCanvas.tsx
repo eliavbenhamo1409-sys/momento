@@ -1053,6 +1053,29 @@ export default function EditorCanvas() {
     bookRef.current?.pageFlip()?.flipPrev()
   }, [])
 
+  // Custom swipe handler — react-pageflip's built-in mouse drag is broken
+  // under scaleX(-1), so we detect swipe gestures ourselves.
+  const swipeStart = useRef<{ x: number; y: number; t: number } | null>(null)
+  const bookContainerRef = useRef<HTMLDivElement>(null)
+
+  const onBookPointerDown = useCallback((e: React.PointerEvent) => {
+    if ((e.target as HTMLElement).closest('[data-no-swipe]')) return
+    swipeStart.current = { x: e.clientX, y: e.clientY, t: Date.now() }
+  }, [])
+
+  const onBookPointerUp = useCallback((e: React.PointerEvent) => {
+    if (!swipeStart.current) return
+    const dx = e.clientX - swipeStart.current.x
+    const dy = e.clientY - swipeStart.current.y
+    const dt = Date.now() - swipeStart.current.t
+    swipeStart.current = null
+
+    if (dt > 800 || Math.abs(dy) > Math.abs(dx)) return
+    const THRESHOLD = 40
+    if (dx < -THRESHOLD && canNext) flipNext()
+    else if (dx > THRESHOLD && canPrev) flipPrev()
+  }, [canNext, canPrev, flipNext, flipPrev])
+
   const isSwapping = swapPhase !== 'off'
 
   const handleSlotClickInSwap = useCallback((slotId: string) => {
@@ -1123,9 +1146,12 @@ export default function EditorCanvas() {
         />
 
         <div
+          ref={bookContainerRef}
           className="relative flex-1 min-w-0 w-full max-w-[min(84vw,68rem)] aspect-[2/1] max-h-[min(68vh,600px)]"
-          style={{ transform: 'scaleX(-1)' }}
+          style={{ transform: 'scaleX(-1)', touchAction: 'pan-y' }}
           onClick={(e) => e.stopPropagation()}
+          onPointerDown={onBookPointerDown}
+          onPointerUp={onBookPointerUp}
         >
           <HTMLFlipBook
             ref={bookRef}
@@ -1141,14 +1167,14 @@ export default function EditorCanvas() {
             drawShadow={true}
             maxShadowOpacity={0.5}
             flippingTime={1200}
-            useMouseEvents={true}
-            showPageCorners={true}
+            useMouseEvents={false}
+            showPageCorners={false}
             disableFlipByClick={true}
             startPage={0}
             startZIndex={0}
             autoSize={true}
             clickEventForward={true}
-            mobileScrollSupport={true}
+            mobileScrollSupport={false}
             swipeDistance={30}
             onFlip={onFlip}
             className="album-flipbook"
