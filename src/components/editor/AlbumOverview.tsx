@@ -176,8 +176,8 @@ export default function AlbumOverview() {
       </motion.header>
 
       {/* Grid */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-6 md:px-12 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
+      <div className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-[90rem] mx-auto">
           {spreads.map((spread, i) => (
             <OverviewSpreadCard
               key={spread.id}
