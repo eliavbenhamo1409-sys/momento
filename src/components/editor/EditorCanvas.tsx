@@ -21,7 +21,8 @@ import type {
 // Re-export defaults & texture util for consumers that import from here
 export { DEFAULT_FRAME, DEFAULT_STYLE, getTexturePattern }
 
-const NOOP_SELECT = (_id: string | null) => {}
+const NOOP_SELECT_PHOTO: (id: string | null) => void = () => {}
+const NOOP_SELECT_TEXT: (idx: number | null) => void = () => {}
 const NOOP_SLOT = (_id: string) => {}
 
 // ─── Nav Arrow ───────────────────────────────────────────────────────
@@ -203,7 +204,7 @@ export function LegacyPhotoSlot({
 
 export function AbsolutePhotoElement({
   element,
-  spreadId,
+  spreadId: _spreadId,
   elementIndex,
   isSelected,
   isSwapSource = false,
@@ -578,7 +579,6 @@ export function AbsoluteQuoteElement({
     e.stopPropagation()
     const parent = containerRef.current?.parentElement
     if (!parent) return
-    const rect = parent.getBoundingClientRect()
     startRef.current = {
       x: e.clientX, y: e.clientY,
       elX: element.x, elY: element.y,
@@ -1116,6 +1116,7 @@ export default function EditorCanvas() {
             swipeDistance={30}
             onFlip={onFlip}
             className="album-flipbook"
+            style={{}}
           >
             {spreads.flatMap((s, spreadIdx) => {
               const isCurrent = spreadIdx === currentSpreadIndex
@@ -1127,8 +1128,8 @@ export default function EditorCanvas() {
                   isCurrent={isCurrent}
                   selectedPhotoId={isCurrent ? selectedPhotoId : null}
                   selectedTextIndex={isCurrent ? selectedTextIndex : null}
-                  selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT}
-                  selectText={isCurrent ? selectText : NOOP_SELECT}
+                  selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
+                  selectText={isCurrent ? selectText : NOOP_SELECT_TEXT}
                   swapPhase={isCurrent ? swapPhase : 'off'}
                   swapSourceSlotId={isCurrent ? swapSourceSlotId : null}
                   onSwapClick={isCurrent ? handleSlotClickInSwap : NOOP_SLOT}
@@ -1140,8 +1141,8 @@ export default function EditorCanvas() {
                   isCurrent={isCurrent}
                   selectedPhotoId={isCurrent ? selectedPhotoId : null}
                   selectedTextIndex={isCurrent ? selectedTextIndex : null}
-                  selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT}
-                  selectText={isCurrent ? selectText : NOOP_SELECT}
+                  selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
+                  selectText={isCurrent ? selectText : NOOP_SELECT_TEXT}
                   swapPhase={isCurrent ? swapPhase : 'off'}
                   swapSourceSlotId={isCurrent ? swapSourceSlotId : null}
                   onSwapClick={isCurrent ? handleSlotClickInSwap : NOOP_SLOT}

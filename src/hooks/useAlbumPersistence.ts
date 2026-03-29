@@ -79,7 +79,7 @@ export function useAlbumLoad() {
 
 export function useAutoSave(intervalMs = 30000) {
   const save = useAlbumSave()
-  const timerRef = useRef<ReturnType<typeof setTimeout>>()
+  const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const lastSpreadsRef = useRef<string>('')
 
   useEffect(() => {

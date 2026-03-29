@@ -74,10 +74,10 @@ async function replaceBlobUrls(
       }
 
       const bg = cloned.design.background
-      if (bg.blurPhotoUrl) bg.blurPhotoUrl = await processUrl(bg.blurPhotoUrl)
-      if (bg.generatedBgUrl) bg.generatedBgUrl = await processUrl(bg.generatedBgUrl)
-      if (bg.generatedBgLeftUrl) bg.generatedBgLeftUrl = await processUrl(bg.generatedBgLeftUrl)
-      if (bg.generatedBgRightUrl) bg.generatedBgRightUrl = await processUrl(bg.generatedBgRightUrl)
+      if (bg.blurPhotoUrl) bg.blurPhotoUrl = (await processUrl(bg.blurPhotoUrl)) ?? undefined
+      if (bg.generatedBgUrl) bg.generatedBgUrl = (await processUrl(bg.generatedBgUrl)) ?? undefined
+      if (bg.generatedBgLeftUrl) bg.generatedBgLeftUrl = (await processUrl(bg.generatedBgLeftUrl)) ?? undefined
+      if (bg.generatedBgRightUrl) bg.generatedBgRightUrl = (await processUrl(bg.generatedBgRightUrl)) ?? undefined
     }
 
     result.push(cloned)
@@ -90,7 +90,7 @@ export async function saveAlbum(
   albumId: string | null,
   userId: string,
   title: string,
-  config: Record<string, unknown>,
+  config: AlbumConfig,
   spreads: EditorSpread[],
 ): Promise<string> {
   const id = albumId || crypto.randomUUID()
@@ -104,7 +104,7 @@ export async function saveAlbum(
     user_id: userId,
     title,
     cover_url: coverUrl,
-    config,
+    config: config as unknown as Record<string, unknown>,
     spreads: cleanedSpreads as unknown as Record<string, unknown>[],
     status: 'draft',
   }

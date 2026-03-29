@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { EditorSpread, SidebarMode, SpreadDesign, PhotoElement, QuoteElement } from '../types'
 import { EDITOR_SPREADS } from '../lib/constants'
-import { getTemplate, LAYOUT_TEMPLATES } from '../lib/layoutGrammar'
+import { getTemplate } from '../lib/layoutGrammar'
 
 function buildEmptyPhotoElement(
   slotId: string,

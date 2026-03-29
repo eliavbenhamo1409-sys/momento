@@ -24,7 +24,7 @@ function albumToProject(album: AlbumRow) {
     }
   }
 
-  const config = album.config as Record<string, unknown> | null
+  const config = album.config as unknown as Record<string, unknown> | null
   return {
     id: album.id,
     title: album.title,

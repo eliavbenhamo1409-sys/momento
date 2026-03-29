@@ -643,7 +643,7 @@ export function findFaceSafeTemplate(
   currentTemplateId: string,
   position: number,
   previousTemplateIds: string[],
-  totalSpreads: number,
+  _totalSpreads: number,
 ): LayoutTemplate | null {
   const photoCount = allPhotoIds.length
 

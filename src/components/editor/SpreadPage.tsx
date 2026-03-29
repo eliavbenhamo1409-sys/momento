@@ -17,7 +17,8 @@ import {
 } from './EditorCanvas'
 import { DEFAULT_STYLE, getTexturePattern } from './editorDefaults'
 
-const NOOP_SELECT = (_id: string | null) => {}
+const NOOP_SELECT_PHOTO: (id: string | null) => void = () => {}
+const NOOP_SELECT_TEXT: (idx: number | null) => void = () => {}
 const NOOP_SLOT = (_id: string) => {}
 
 interface SpreadPageProps {
@@ -423,8 +424,8 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
             side={side}
             selectedPhotoId={isCurrent ? selectedPhotoId : null}
             selectedTextIndex={isCurrent ? selectedTextIndex : null}
-            selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT}
-            selectText={isCurrent ? selectText : NOOP_SELECT}
+            selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
+            selectText={isCurrent ? selectText : NOOP_SELECT_TEXT}
             swapPhase={isCurrent ? swapPhase : 'off'}
             swapSourceSlotId={isCurrent ? swapSourceSlotId : null}
             onSwapClick={isCurrent ? onSwapClick : NOOP_SLOT}
@@ -436,7 +437,7 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
             variant={variant}
             side={side}
             selectedPhotoId={isCurrent ? selectedPhotoId : null}
-            selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT}
+            selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
           />
         )}
       </div>
