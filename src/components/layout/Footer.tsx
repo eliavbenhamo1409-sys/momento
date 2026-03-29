@@ -1,3 +1,5 @@
+import { Link } from 'react-router'
+
 export default function Footer() {
   return (
     <footer className="w-full py-10 bg-deep-brown text-sage">
@@ -9,9 +11,10 @@ export default function Footer() {
           Momento
         </span>
         <div className="flex gap-8 text-sm">
-          <a href="#" className="hover:text-soft-cream transition-colors">תנאי שימוש</a>
-          <a href="#" className="hover:text-soft-cream transition-colors">מדיניות פרטיות</a>
-          <a href="#" className="hover:text-soft-cream transition-colors">צור קשר</a>
+          <Link to="/terms" className="hover:text-soft-cream transition-colors">תנאי שימוש</Link>
+          <Link to="/privacy" className="hover:text-soft-cream transition-colors">מדיניות פרטיות</Link>
+          <Link to="/cookies" className="hover:text-soft-cream transition-colors">מדיניות עוגיות</Link>
+          <a href="mailto:support@momentobook.com" className="hover:text-soft-cream transition-colors">צור קשר</a>
         </div>
         <p className="text-warm-gray text-xs">© {new Date().getFullYear()} Momento. כל הזכויות שמורות.</p>
       </div>
