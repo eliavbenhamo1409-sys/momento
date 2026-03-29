@@ -513,7 +513,7 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
       spread,
       side,
       isCurrent,
-      isNearby,
+      isNearby: _isNearby,
       selectedPhotoId,
       selectedTextIndex,
       selectPhoto,
@@ -528,25 +528,6 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
     const variant = spread.variant ?? null
     const useAbs = !!design && design.elements.length > 0
     const bgColor = useAbs ? design!.background.color : style.background.color
-
-    if (!isNearby) {
-      return (
-        <div
-          ref={ref}
-          data-density="hard"
-          style={{
-            backgroundColor: bgColor,
-            width: '100%',
-            height: '100%',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          <div style={{ width: '100%', height: '100%', transform: 'scaleX(-1)' }} />
-        </div>
-      )
-    }
-
     const heroPhotoSrc = spread.leftPhotos?.[0] ?? spread.rightPhotos?.[0] ?? null
 
     return (
@@ -559,44 +540,43 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
           height: '100%',
           position: 'relative',
           overflow: 'hidden',
+          transform: 'scaleX(-1)',
         }}
       >
-        <div style={{ width: '100%', height: '100%', position: 'relative', transform: 'scaleX(-1)' }}>
-          <PageBackground
-            design={useAbs ? design : undefined}
-            style={style}
+        <PageBackground
+          design={useAbs ? design : undefined}
+          style={style}
+          side={side}
+          heroPhotoSrc={heroPhotoSrc}
+        />
+
+        {!useAbs && style.decorative.cornerOrnaments && (
+          <LegacyCornerOrnaments color={style.palette.accent} />
+        )}
+
+        {useAbs ? (
+          <AbsolutePageElements
+            spread={spread}
+            design={design!}
             side={side}
-            heroPhotoSrc={heroPhotoSrc}
+            selectedPhotoId={isCurrent ? selectedPhotoId : null}
+            selectedTextIndex={isCurrent ? selectedTextIndex : null}
+            selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
+            selectText={isCurrent ? selectText : NOOP_SELECT_TEXT}
+            swapPhase={isCurrent ? swapPhase : 'off'}
+            swapSourceSlotId={isCurrent ? swapSourceSlotId : null}
+            onSwapClick={isCurrent ? onSwapClick : NOOP_SLOT}
           />
-
-          {!useAbs && style.decorative.cornerOrnaments && (
-            <LegacyCornerOrnaments color={style.palette.accent} />
-          )}
-
-          {useAbs ? (
-            <AbsolutePageElements
-              spread={spread}
-              design={design!}
-              side={side}
-              selectedPhotoId={isCurrent ? selectedPhotoId : null}
-              selectedTextIndex={isCurrent ? selectedTextIndex : null}
-              selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
-              selectText={isCurrent ? selectText : NOOP_SELECT_TEXT}
-              swapPhase={isCurrent ? swapPhase : 'off'}
-              swapSourceSlotId={isCurrent ? swapSourceSlotId : null}
-              onSwapClick={isCurrent ? onSwapClick : NOOP_SLOT}
-            />
-          ) : (
-            <LegacyPageElements
-              spread={spread}
-              style={style}
-              variant={variant}
-              side={side}
-              selectedPhotoId={isCurrent ? selectedPhotoId : null}
-              selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
-            />
-          )}
-        </div>
+        ) : (
+          <LegacyPageElements
+            spread={spread}
+            style={style}
+            variant={variant}
+            side={side}
+            selectedPhotoId={isCurrent ? selectedPhotoId : null}
+            selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
+          />
+        )}
       </div>
     )
   },
