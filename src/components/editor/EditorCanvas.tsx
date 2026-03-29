@@ -1167,14 +1167,14 @@ export default function EditorCanvas() {
             drawShadow={true}
             maxShadowOpacity={0.5}
             flippingTime={1200}
-            useMouseEvents={false}
-            showPageCorners={false}
+            useMouseEvents={true}
+            showPageCorners={true}
             disableFlipByClick={true}
             startPage={0}
             startZIndex={0}
             autoSize={true}
             clickEventForward={true}
-            mobileScrollSupport={false}
+            mobileScrollSupport={true}
             swipeDistance={30}
             onFlip={onFlip}
             className="album-flipbook"
