@@ -1032,7 +1032,7 @@ export default function EditorCanvas() {
 
   return (
     <div
-      className="flex-1 flex flex-col items-center justify-center overflow-hidden relative bg-transparent pr-20 pt-24"
+      className="flex-1 flex flex-col items-center justify-center overflow-hidden relative bg-transparent pr-20 pt-16 pb-4"
       onClick={() => {
         if (isSwapping) cancelSwapMode()
         else deselectAll()
@@ -1088,7 +1088,8 @@ export default function EditorCanvas() {
         />
 
         <div
-          className="relative flex-1 min-w-0 w-full max-w-[min(84vw,68rem)] aspect-[2/1] max-h-[min(58vh,520px)]"
+          className="relative flex-1 min-w-0 w-full max-w-[min(84vw,68rem)] aspect-[2/1] max-h-[min(68vh,600px)]"
+          style={{ transform: 'scaleX(-1)' }}
           onClick={(e) => e.stopPropagation()}
         >
           <HTMLFlipBook
@@ -1122,9 +1123,9 @@ export default function EditorCanvas() {
               const isCurrent = spreadIdx === currentSpreadIndex
               return [
                 <SpreadPage
-                  key={`${s.id}-L`}
+                  key={`${s.id}-R`}
                   spread={s}
-                  side="left"
+                  side="right"
                   isCurrent={isCurrent}
                   selectedPhotoId={isCurrent ? selectedPhotoId : null}
                   selectedTextIndex={isCurrent ? selectedTextIndex : null}
@@ -1135,9 +1136,9 @@ export default function EditorCanvas() {
                   onSwapClick={isCurrent ? handleSlotClickInSwap : NOOP_SLOT}
                 />,
                 <SpreadPage
-                  key={`${s.id}-R`}
+                  key={`${s.id}-L`}
                   spread={s}
-                  side="right"
+                  side="left"
                   isCurrent={isCurrent}
                   selectedPhotoId={isCurrent ? selectedPhotoId : null}
                   selectedTextIndex={isCurrent ? selectedTextIndex : null}

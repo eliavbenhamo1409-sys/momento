@@ -53,7 +53,8 @@ function PageBackground({
       <>
         {bg.generatedBgUrl && (
           <div
-            className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
+            className="absolute z-0 pointer-events-none overflow-hidden rounded-md"
+            style={{ inset: '3%' }}
           >
             <div
               className="absolute inset-y-0"
@@ -70,25 +71,41 @@ function PageBackground({
         )}
         {side === 'left' && bg.generatedBgLeftUrl && (
           <div
-            className="absolute inset-0 z-0 pointer-events-none"
+            className="absolute z-0 rounded-md overflow-hidden"
             style={{
-              backgroundImage: `url(${bg.generatedBgLeftUrl})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              opacity: bg.generatedBgLeftOpacity ?? 1,
+              inset: '3%',
             }}
-          />
+          >
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: `url(${bg.generatedBgLeftUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: bg.generatedBgLeftOpacity ?? 1,
+                borderRadius: 'inherit',
+              }}
+            />
+          </div>
         )}
         {side === 'right' && bg.generatedBgRightUrl && (
           <div
-            className="absolute inset-0 z-0 pointer-events-none"
+            className="absolute z-0 rounded-md overflow-hidden"
             style={{
-              backgroundImage: `url(${bg.generatedBgRightUrl})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              opacity: bg.generatedBgRightOpacity ?? 1,
+              inset: '3%',
             }}
-          />
+          >
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: `url(${bg.generatedBgRightUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                opacity: bg.generatedBgRightOpacity ?? 1,
+                borderRadius: 'inherit',
+              }}
+            />
+          </div>
         )}
         {!bg.generatedBgUrl && bg.backgroundLayers && bg.backgroundLayers.length > 0 && bg.backgroundLayers.map((layer, i) => (
           <div
@@ -404,6 +421,7 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
           height: '100%',
           position: 'relative',
           overflow: 'hidden',
+          transform: 'scaleX(-1)',
         }}
       >
         <PageBackground
