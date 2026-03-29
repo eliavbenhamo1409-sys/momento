@@ -9,6 +9,9 @@ import GenerationScreen from './screens/GenerationScreen'
 import EditorScreen from './screens/EditorScreen'
 import CheckoutScreen from './screens/CheckoutScreen'
 import ConfirmationScreen from './screens/ConfirmationScreen'
+import PrivacyPage from './screens/PrivacyPage'
+import TermsPage from './screens/TermsPage'
+import CookiesPage from './screens/CookiesPage'
 import AuthModal from './components/auth/AuthModal'
 import ToastContainer from './components/shared/ToastContainer'
 
@@ -29,6 +32,9 @@ export default function App() {
           <Route path="/editor/:albumId" element={<EditorScreen />} />
           <Route path="/checkout" element={<CheckoutScreen />} />
           <Route path="/confirmation" element={<ConfirmationScreen />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/cookies" element={<CookiesPage />} />
         </Routes>
       </AnimatePresence>
       <AuthModal />
