@@ -1141,8 +1141,8 @@ export default function EditorCanvas() {
             drawShadow={true}
             maxShadowOpacity={0.5}
             flippingTime={1200}
-            useMouseEvents={true}
-            showPageCorners={true}
+            useMouseEvents={false}
+            showPageCorners={false}
             disableFlipByClick={true}
             startPage={0}
             startZIndex={0}
