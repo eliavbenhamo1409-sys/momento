@@ -47,6 +47,7 @@ interface EditorState {
   selectedTextIndex: number | null
   sidebarMode: SidebarMode
   isPreviewOpen: boolean
+  isOverviewOpen: boolean
   isSaving: boolean
   lastSaved: Date | null
   isGenerated: boolean
@@ -60,6 +61,7 @@ interface EditorState {
   selectText: (elementIndex: number | null) => void
   setSidebarMode: (mode: SidebarMode) => void
   togglePreview: () => void
+  toggleOverview: () => void
   setSaving: (val: boolean) => void
   setLastSaved: (date: Date) => void
   deselectAll: () => void
@@ -88,6 +90,8 @@ interface EditorState {
   cancelSwapMode: () => void
   setSwapSource: (slotId: string) => void
   executeSwap: (targetSlotId: string) => void
+  swapPhotosAcrossSpreads: (srcSpreadId: string, srcSlotId: string, tgtSpreadId: string, tgtSlotId: string) => void
+  movePhotoToEmptySlot: (srcSpreadId: string, srcSlotId: string, tgtSpreadId: string, tgtSlotId: string) => void
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -97,6 +101,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   selectedTextIndex: null,
   sidebarMode: 'page',
   isPreviewOpen: false,
+  isOverviewOpen: false,
   isSaving: false,
   lastSaved: null,
   isGenerated: false,
@@ -122,7 +127,16 @@ export const useEditorStore = create<EditorState>((set) => ({
   selectPhoto: (id) => set({ selectedPhotoId: id, selectedTextIndex: null, sidebarMode: id ? 'photo' : 'page' }),
   selectText: (elementIndex) => set({ selectedTextIndex: elementIndex, selectedPhotoId: null, sidebarMode: 'page' }),
   setSidebarMode: (mode) => set({ sidebarMode: mode }),
-  togglePreview: () => set((s) => ({ isPreviewOpen: !s.isPreviewOpen })),
+  togglePreview: () => set((s) => ({ isPreviewOpen: !s.isPreviewOpen, isOverviewOpen: false })),
+  toggleOverview: () => set((s) => ({
+    isOverviewOpen: !s.isOverviewOpen,
+    isPreviewOpen: false,
+    selectedPhotoId: null,
+    selectedTextIndex: null,
+    sidebarMode: 'page' as const,
+    swapPhase: 'off' as SwapPhase,
+    swapSourceSlotId: null,
+  })),
   setSaving: (val) => set({ isSaving: val }),
   setLastSaved: (date) => set({ lastSaved: date, isSaving: false }),
   deselectAll: () => set({ selectedPhotoId: null, selectedTextIndex: null, sidebarMode: 'page' }),
@@ -556,6 +570,77 @@ export const useEditorStore = create<EditorState>((set) => ({
         swapSourceSlotId: null,
         selectedPhotoId: null,
       }
+    }),
+
+  swapPhotosAcrossSpreads: (srcSpreadId, srcSlotId, tgtSpreadId, tgtSlotId) =>
+    set((s) => {
+      const srcIdx = s.spreads.findIndex((sp) => sp.id === srcSpreadId)
+      const tgtIdx = s.spreads.findIndex((sp) => sp.id === tgtSpreadId)
+      if (srcIdx === -1 || tgtIdx === -1) return s
+
+      const srcSpread = s.spreads[srcIdx]
+      const tgtSpread = s.spreads[tgtIdx]
+      if (!srcSpread.design || !tgtSpread.design) return s
+
+      const srcEl = srcSpread.design.elements.find(
+        (el) => el.type === 'photo' && el.slotId === srcSlotId,
+      ) as PhotoElement | undefined
+      const tgtEl = tgtSpread.design.elements.find(
+        (el) => el.type === 'photo' && el.slotId === tgtSlotId,
+      ) as PhotoElement | undefined
+      if (!srcEl || !tgtEl) return s
+
+      const spreads = [...s.spreads]
+
+      const srcElements = srcSpread.design.elements.map((el) =>
+        el.type === 'photo' && el.slotId === srcSlotId
+          ? { ...el, photoUrl: tgtEl.photoUrl, photoId: tgtEl.photoId, objectPosition: tgtEl.objectPosition, scale: tgtEl.scale } as PhotoElement
+          : el,
+      )
+      spreads[srcIdx] = { ...srcSpread, design: { ...srcSpread.design, elements: srcElements } }
+
+      const tgtElements = tgtSpread.design.elements.map((el) =>
+        el.type === 'photo' && el.slotId === tgtSlotId
+          ? { ...el, photoUrl: srcEl.photoUrl, photoId: srcEl.photoId, objectPosition: srcEl.objectPosition, scale: srcEl.scale } as PhotoElement
+          : el,
+      )
+      spreads[tgtIdx] = { ...tgtSpread, design: { ...tgtSpread.design, elements: tgtElements } }
+
+      return { spreads }
+    }),
+
+  movePhotoToEmptySlot: (srcSpreadId, srcSlotId, tgtSpreadId, tgtSlotId) =>
+    set((s) => {
+      const srcIdx = s.spreads.findIndex((sp) => sp.id === srcSpreadId)
+      const tgtIdx = s.spreads.findIndex((sp) => sp.id === tgtSpreadId)
+      if (srcIdx === -1 || tgtIdx === -1) return s
+
+      const srcSpread = s.spreads[srcIdx]
+      const tgtSpread = s.spreads[tgtIdx]
+      if (!srcSpread.design || !tgtSpread.design) return s
+
+      const srcEl = srcSpread.design.elements.find(
+        (el) => el.type === 'photo' && el.slotId === srcSlotId,
+      ) as PhotoElement | undefined
+      if (!srcEl || !srcEl.photoUrl) return s
+
+      const spreads = [...s.spreads]
+
+      const srcElements = srcSpread.design.elements.map((el) =>
+        el.type === 'photo' && el.slotId === srcSlotId
+          ? { ...el, photoUrl: null, photoId: '' } as PhotoElement
+          : el,
+      )
+      spreads[srcIdx] = { ...srcSpread, design: { ...srcSpread.design, elements: srcElements } }
+
+      const tgtElements = tgtSpread.design.elements.map((el) =>
+        el.type === 'photo' && el.slotId === tgtSlotId
+          ? { ...el, photoUrl: srcEl.photoUrl, photoId: srcEl.photoId, objectPosition: srcEl.objectPosition, scale: srcEl.scale } as PhotoElement
+          : el,
+      )
+      spreads[tgtIdx] = { ...tgtSpread, design: { ...tgtSpread.design, elements: tgtElements } }
+
+      return { spreads }
     }),
 }))
 

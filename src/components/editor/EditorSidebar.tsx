@@ -105,6 +105,7 @@ export default function EditorSidebar() {
   })))
   const addSpread = useEditorStore((s) => s.addSpread)
   const deleteSpread = useEditorStore((s) => s.deleteSpread)
+  const toggleOverview = useEditorStore((s) => s.toggleOverview)
   const enterSwapMode = useEditorStore((s) => s.enterSwapMode)
   const cancelSwapMode = useEditorStore((s) => s.cancelSwapMode)
   const addToast = useUIStore((s) => s.addToast)
@@ -154,6 +155,12 @@ export default function EditorSidebar() {
               run('replace', () => enterSwapMode())
             }
           }}
+        />
+        <ToolBtn
+          icon="grid_view"
+          label="מבט על"
+          active={false}
+          onClick={() => { closeAll(); toggleOverview() }}
         />
 
         <Separator />

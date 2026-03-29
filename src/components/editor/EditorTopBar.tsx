@@ -17,6 +17,7 @@ export default function EditorTopBar() {
     spreadCount: s.spreads.length,
   })))
   const togglePreview = useEditorStore((s) => s.togglePreview)
+  const toggleOverview = useEditorStore((s) => s.toggleOverview)
   const saveAlbum = useAlbumSave()
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(albumTitle)
@@ -103,6 +104,16 @@ export default function EditorTopBar() {
       </div>
 
       <div className="flex items-center gap-3">
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={toggleOverview}
+          className="px-4 py-2 rounded-full text-secondary/80 font-medium hover:bg-surface-container-high/60 transition-colors flex items-center gap-1.5 text-sm"
+        >
+          <Icon name="grid_view" size={18} />
+          מבט על
+        </motion.button>
         <motion.button
           type="button"
           whileHover={{ scale: 1.02 }}

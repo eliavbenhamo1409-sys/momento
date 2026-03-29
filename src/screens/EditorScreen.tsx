@@ -7,6 +7,7 @@ import EditorCanvas from '../components/editor/EditorCanvas'
 import EditorSidebar from '../components/editor/EditorSidebar'
 import PageThumbnails from '../components/editor/PageThumbnails'
 import PreviewOverlay from '../components/editor/PreviewOverlay'
+import AlbumOverview from '../components/editor/AlbumOverview'
 import PhotoEditorModal from '../components/editor/PhotoEditorModal'
 import DotGrid from '../components/editor/DotGrid'
 import { useEditorStore } from '../store/editorStore'
@@ -30,7 +31,9 @@ export default function EditorScreen() {
   }, [albumId, loadAlbum])
 
   const isPreviewOpen = useEditorStore((s) => s.isPreviewOpen)
+  const isOverviewOpen = useEditorStore((s) => s.isOverviewOpen)
   const togglePreview = useEditorStore((s) => s.togglePreview)
+  const toggleOverview = useEditorStore((s) => s.toggleOverview)
   const spreadCount = useEditorStore((s) => s.spreads.length)
   const config = useAlbumStore((s) => s.config)
   const sizeLabel = ALBUM_SIZES.find((s) => s.id === config.size)?.label ?? config.size
@@ -39,14 +42,20 @@ export default function EditorScreen() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === ' ' && !['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement).tagName)) {
+      const tag = (e.target as HTMLElement).tagName
+      if (['INPUT', 'TEXTAREA'].includes(tag)) return
+      if (e.key === ' ') {
         e.preventDefault()
         togglePreview()
+      }
+      if (e.key === 'o' || e.key === 'O') {
+        e.preventDefault()
+        toggleOverview()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [togglePreview])
+  }, [togglePreview, toggleOverview])
 
   if (loadingAlbum) {
     return (
@@ -98,6 +107,7 @@ export default function EditorScreen() {
 
         <AnimatePresence>
           {isPreviewOpen && <PreviewOverlay />}
+          {isOverviewOpen && <AlbumOverview />}
         </AnimatePresence>
 
         <PhotoEditorModal />
