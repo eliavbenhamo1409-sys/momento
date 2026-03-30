@@ -428,7 +428,7 @@ function PhotoToolbarPortal({
               <button
                 onClick={handleAiSubmit}
                 disabled={!aiPrompt.trim() || aiLoading}
-                className="w-8 h-8 rounded-lg flex items-center justify-center text-amber-300 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30 shrink-0 relative"
+                className={`w-8 h-8 rounded-lg flex items-center justify-center text-amber-300 hover:bg-white/15 active:scale-90 transition-all shrink-0 relative ${aiLoading ? '' : 'disabled:opacity-30'}`}
               >
                 {aiLoading ? (
                   <div className="relative w-7 h-7 flex items-center justify-center">
