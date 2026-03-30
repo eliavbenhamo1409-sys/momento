@@ -1062,7 +1062,6 @@ export default function EditorCanvas() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bookRef = useRef<any>(null)
-  const [isFlipping, setIsFlipping] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const prevTemplateRef = useRef(spread?.templateId)
 
@@ -1077,9 +1076,7 @@ export default function EditorCanvas() {
   }, [spread?.templateId])
 
   const onFlip = useCallback((e: { data: number }) => {
-    setIsFlipping(true)
     setCurrentSpread(Math.floor(e.data / 2))
-    setTimeout(() => setIsFlipping(false), 400)
   }, [setCurrentSpread])
 
   const flipNext = useCallback(() => {
@@ -1170,7 +1167,7 @@ export default function EditorCanvas() {
           className="relative flex-1 min-w-0 w-full max-w-[min(84vw,68rem)] aspect-[2/1] max-h-[min(75vh,600px)] md:max-h-[min(68vh,600px)]"
           style={{
             transform: 'scaleX(-1)',
-            opacity: isTransitioning ? 0.5 : isFlipping ? 0.85 : 1,
+            opacity: isTransitioning ? 0.5 : 1,
             transition: 'opacity 0.2s ease-out',
           }}
           onClick={(e) => e.stopPropagation()}
