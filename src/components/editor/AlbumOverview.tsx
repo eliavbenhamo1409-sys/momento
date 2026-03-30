@@ -150,7 +150,7 @@ export default function AlbumOverview() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ ...OVERLAY_SPRING, delay: 0.05 }}
-        className="relative z-10 flex items-center justify-between px-8 py-4 border-b border-black/[0.04]"
+        className="relative z-10 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 border-b border-black/[0.04]"
       >
         <div className="flex items-center gap-4">
           <h2

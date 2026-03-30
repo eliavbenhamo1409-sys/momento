@@ -393,7 +393,7 @@ export default function PhotoEditorModal() {
           </div>
 
           {/* Bottom action bar */}
-          <div className="border-t border-black/[0.04] px-5 py-4 flex gap-2">
+          <div className="border-t border-black/[0.04] px-5 py-4 flex flex-wrap gap-2">
             <input
               ref={fileRef}
               type="file"

@@ -33,7 +33,7 @@ function ToolBtn({ icon, label, active, danger, onClick }: ToolBtnProps) {
       whileHover={{ scale: 1.04 }}
       whileTap={{ scale: 0.94 }}
       onClick={onClick}
-      className={`relative rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/25 w-full py-2 px-1 ${
+      className={`relative rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/25 md:w-full py-2 px-2 md:px-1 ${
         danger
           ? active
             ? 'bg-error text-on-error shadow-sm'
@@ -44,7 +44,7 @@ function ToolBtn({ icon, label, active, danger, onClick }: ToolBtnProps) {
       }`}
     >
       <Icon name={icon} size={20} filled={active && !danger} className={active && !danger ? 'text-white' : ''} />
-      <span className={`text-[9px] font-semibold leading-none mt-0.5 ${
+      <span className={`text-[9px] font-semibold leading-none mt-0.5 hidden md:block ${
         active && !danger ? 'text-white/90' : danger && active ? 'text-on-error/80' : ''
       }`}>
         {label}
@@ -56,7 +56,7 @@ function ToolBtn({ icon, label, active, danger, onClick }: ToolBtnProps) {
 function Separator() {
   return (
     <div
-      className="w-10 h-px my-0.5 shrink-0 rounded-full mx-auto"
+      className="md:w-10 md:h-px h-8 w-px my-0.5 shrink-0 rounded-full mx-auto"
       style={{
         background: 'linear-gradient(90deg, transparent, rgba(0,0,0,0.10), transparent)',
       }}
@@ -86,7 +86,7 @@ function PhotoEditPanel() {
       initial={{ opacity: 0, x: -16 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -12 }}
-      className="absolute right-full top-0 me-3 w-44 rounded-2xl bg-white/95 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_rgba(45,40,35,0.12)] p-3.5 flex flex-col items-center gap-2 pointer-events-auto text-center"
+      className="absolute md:right-full md:top-0 md:me-3 max-md:bottom-full max-md:mb-3 max-md:right-0 w-44 rounded-2xl bg-white/95 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_rgba(45,40,35,0.12)] p-3.5 flex flex-col items-center gap-2 pointer-events-auto text-center"
     >
       <Icon name="touch_app" size={20} className="text-primary/60" />
       <span className="text-[11px] text-secondary/70 font-medium leading-snug">
@@ -127,14 +127,14 @@ export default function EditorSidebar() {
 
   return (
     <aside
-      className="fixed right-6 top-[43%] -translate-y-1/2 z-[45] pointer-events-none max-md:right-3"
+      className="fixed z-[45] pointer-events-none md:right-6 md:top-[43%] md:-translate-y-1/2 max-md:bottom-20 max-md:left-1/2 max-md:-translate-x-1/2"
       aria-label="כלי עריכה"
     >
       <motion.nav
         initial={{ opacity: 0, x: 24 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="editor-glass-toolbar pointer-events-auto flex flex-col items-center gap-0.5 py-3 px-1.5 rounded-[28px] w-[68px] relative"
+        className="editor-glass-toolbar pointer-events-auto flex items-center gap-0.5 py-1.5 px-2 rounded-[28px] relative md:flex-col md:py-3 md:px-1.5 md:w-[68px]"
       >
         <ToolBtn
           icon="near_me"

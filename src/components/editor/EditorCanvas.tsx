@@ -1063,11 +1063,18 @@ export default function EditorCanvas() {
     }
   }, [swapPhase, setSwapSource, executeSwap])
 
-  if (!spread) return null
+  if (!spread) return (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="flex flex-col items-center gap-3">
+        <div className="w-9 h-9 border-2 border-primary/20 border-t-primary rounded-full animate-spin" />
+        <span className="text-xs text-secondary/50 font-medium">טוען עמוד...</span>
+      </div>
+    </div>
+  )
 
   return (
     <div
-      className="flex-1 flex flex-col items-center justify-center overflow-hidden relative bg-transparent pr-20 pt-16 pb-4"
+      className="flex-1 flex flex-col items-center justify-center overflow-hidden relative bg-transparent pr-4 md:pr-20 pt-4 md:pt-16 pb-4"
       onClick={() => {
         if (isSwapping) cancelSwapMode()
         else deselectAll()
@@ -1123,7 +1130,7 @@ export default function EditorCanvas() {
         />
 
         <div
-          className="relative flex-1 min-w-0 w-full max-w-[min(84vw,68rem)] aspect-[2/1] max-h-[min(68vh,600px)]"
+          className="relative flex-1 min-w-0 w-full max-w-[min(84vw,68rem)] aspect-[2/1] max-h-[min(75vh,600px)] md:max-h-[min(68vh,600px)]"
           style={{ transform: 'scaleX(-1)' }}
           onClick={(e) => e.stopPropagation()}
         >

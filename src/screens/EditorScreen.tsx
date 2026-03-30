@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'react-router'
-import { AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import PageTransition from '../components/shared/PageTransition'
 import EditorTopBar from '../components/editor/EditorTopBar'
 import EditorCanvas from '../components/editor/EditorCanvas'
@@ -61,10 +61,15 @@ export default function EditorScreen() {
     return (
       <PageTransition>
         <div className="h-screen w-screen flex items-center justify-center bg-[#EEECEA]">
-          <div className="flex flex-col items-center gap-4">
-            <div className="w-10 h-10 border-2 border-sage/30 border-t-sage rounded-full animate-spin" />
-            <span className="text-sm text-warm-gray font-medium">טוען אלבום...</span>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="flex flex-col items-center gap-4"
+          >
+            <div className="w-10 h-10 border-2 border-primary/25 border-t-primary rounded-full animate-spin" />
+            <span className="text-sm text-secondary/60 font-medium">טוען אלבום...</span>
+          </motion.div>
         </div>
       </PageTransition>
     )
@@ -81,15 +86,15 @@ export default function EditorScreen() {
           <EditorSidebar />
         </div>
 
-        <footer className="w-full bg-white/70 backdrop-blur-lg border-t border-outline-variant/6 flex justify-between items-center px-10 py-2.5 shrink-0 relative z-20">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-1.5">
+        <footer className="w-full bg-white/70 backdrop-blur-lg border-t border-outline-variant/6 flex justify-between items-center px-4 md:px-10 py-2 md:py-2.5 shrink-0 relative z-20">
+          <div className="flex items-center gap-4 md:gap-6">
+            <div className="hidden sm:flex items-center gap-1.5">
               <span className="text-[10px] uppercase tracking-wider text-secondary/45 font-medium">גודל</span>
               <span className="text-xs font-bold text-on-surface/70" style={{ fontFamily: 'var(--font-family-headline)' }}>
                 {sizeLabel}
               </span>
             </div>
-            <div className="w-px h-3.5 bg-outline-variant/15" />
+            <div className="w-px h-3.5 bg-outline-variant/15 hidden sm:block" />
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] uppercase tracking-wider text-secondary/45 font-medium">עמודים</span>
               <span className="text-xs font-bold text-on-surface/70" style={{ fontFamily: 'var(--font-family-headline)' }}>

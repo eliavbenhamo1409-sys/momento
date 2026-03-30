@@ -180,7 +180,7 @@ export default function PreviewOverlay() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15, duration: 0.3 }}
-        className="flex items-center justify-between px-8 py-4"
+        className="flex items-center justify-between px-4 md:px-8 py-3 md:py-4"
       >
         <div className="flex items-center gap-3">
           <button
@@ -205,11 +205,11 @@ export default function PreviewOverlay() {
         </button>
       </motion.div>
 
-      <div className="flex-1 overflow-hidden flex items-center justify-center px-6 relative" dir="ltr">
+      <div className="flex-1 overflow-hidden flex items-center justify-center px-3 md:px-6 relative" dir="ltr">
         <button
           onClick={() => setActiveIdx((p) => Math.max(p - 1, 0))}
           disabled={activeIdx === 0}
-          className="absolute left-6 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-all"
+          className="absolute left-2 md:left-6 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-all"
         >
           <Icon name="chevron_left" size={28} />
         </button>
@@ -230,7 +230,7 @@ export default function PreviewOverlay() {
         <button
           onClick={() => setActiveIdx((p) => Math.min(p + 1, spreads.length - 1))}
           disabled={activeIdx === spreads.length - 1}
-          className="absolute right-6 z-10 w-12 h-12 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-all"
+          className="absolute right-2 md:right-6 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-all"
         >
           <Icon name="chevron_right" size={28} />
         </button>
@@ -240,7 +240,7 @@ export default function PreviewOverlay() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2, duration: 0.35 }}
-        className="flex items-center justify-center gap-6 pb-6 pt-4"
+        className="flex flex-wrap items-center justify-center gap-4 md:gap-6 pb-4 md:pb-6 pt-3 md:pt-4 px-4"
       >
         <div className="flex items-center gap-2">
           {spreads.map((_, i) => (
