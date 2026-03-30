@@ -9,7 +9,6 @@ import EditorSidebar from '../components/editor/EditorSidebar'
 import PageThumbnails from '../components/editor/PageThumbnails'
 import PreviewOverlay from '../components/editor/PreviewOverlay'
 import AlbumOverview from '../components/editor/AlbumOverview'
-import PhotoEditorModal from '../components/editor/PhotoEditorModal'
 import DotGrid from '../components/editor/DotGrid'
 import { contentReveal } from '../lib/animations'
 import { useEditorStore } from '../store/editorStore'
@@ -165,7 +164,6 @@ export default function EditorScreen() {
           {isOverviewOpen && <AlbumOverview />}
         </AnimatePresence>
 
-        <PhotoEditorModal />
       </div>
     </PageTransition>
   )
