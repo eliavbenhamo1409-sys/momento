@@ -432,11 +432,8 @@ function PhotoToolbarPortal({
               >
                 {aiLoading ? (
                   <div className="relative w-7 h-7 flex items-center justify-center">
-                    <svg className="w-7 h-7 animate-spin" viewBox="0 0 28 28">
-                      <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(251,191,36,0.2)" strokeWidth="2.5" />
-                      <circle cx="14" cy="14" r="12" fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="75.4" strokeDashoffset={75.4 - (75.4 * Math.min(aiProgress, 100)) / 100} className="transition-[stroke-dashoffset] duration-300 ease-out" />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-amber-300 tabular-nums">{aiProgress}</span>
+                    <div className="w-5 h-5 border-2 border-white/25 border-t-white rounded-full animate-spin" />
+                    <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-white tabular-nums">{aiProgress}</span>
                   </div>
                 ) : (
                   <Icon name="send" size={16} />
