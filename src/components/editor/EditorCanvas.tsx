@@ -329,6 +329,123 @@ function PhotoToolbarPortal({
   )
 }
 
+// ─── Resize Handle (pointer-captured) ───────────────────────────────
+
+function ResizeHandle({
+  corner,
+  containerRef,
+  slotId,
+  resizeSlot,
+  moveSlot,
+}: {
+  corner: 'nw' | 'ne' | 'sw' | 'se'
+  containerRef: React.RefObject<HTMLDivElement | null>
+  slotId: string
+  resizeSlot: (slotId: string, delta: { width?: number; height?: number }) => void
+  moveSlot: (slotId: string, delta: { x?: number; y?: number }) => void
+}) {
+  const stateRef = useRef<{ lastX: number; lastY: number; parentW: number; parentH: number } | null>(null)
+
+  const cls =
+    corner === 'nw' ? 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize' :
+    corner === 'ne' ? 'top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-ne-resize' :
+    corner === 'sw' ? 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-sw-resize' :
+    'bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-se-resize'
+
+  return (
+    <div
+      className={`absolute w-3 h-3 rounded-full bg-white border-2 border-primary shadow-sm z-40 pointer-events-auto ${cls}`}
+      onPointerDown={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        e.currentTarget.setPointerCapture(e.pointerId)
+        const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
+        stateRef.current = {
+          lastX: e.clientX, lastY: e.clientY,
+          parentW: parentRect?.width ?? 1, parentH: parentRect?.height ?? 1,
+        }
+      }}
+      onPointerMove={(e) => {
+        const s = stateRef.current
+        if (!s) return
+        if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
+        const dx = ((e.clientX - s.lastX) / s.parentW) * 100
+        const dy = ((e.clientY - s.lastY) / s.parentH) * 100
+        s.lastX = e.clientX
+        s.lastY = e.clientY
+        const wDelta = corner.includes('e') ? dx : corner.includes('w') ? -dx : 0
+        const hDelta = corner.includes('s') ? dy : corner.includes('n') ? -dy : 0
+        resizeSlot(slotId, { width: wDelta, height: hDelta })
+        if (corner.includes('w')) moveSlot(slotId, { x: dx })
+        if (corner.includes('n')) moveSlot(slotId, { y: dy })
+      }}
+      onPointerUp={(e) => {
+        e.stopPropagation()
+        e.currentTarget.releasePointerCapture(e.pointerId)
+        stateRef.current = null
+      }}
+    />
+  )
+}
+
+// ─── Move Overlay (pointer-captured) ────────────────────────────────
+
+function MoveOverlay({
+  containerRef,
+  slotId,
+  moveSlot,
+  onSelect,
+}: {
+  containerRef: React.RefObject<HTMLDivElement | null>
+  slotId: string
+  moveSlot: (slotId: string, delta: { x?: number; y?: number }) => void
+  onSelect: () => void
+}) {
+  const stateRef = useRef<{
+    lastX: number; lastY: number
+    startX: number; startY: number
+    parentW: number; parentH: number
+    didMove: boolean
+    active: boolean
+  } | null>(null)
+
+  return (
+    <div
+      className="absolute inset-0 z-[35] cursor-move"
+      onPointerDown={(e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        e.currentTarget.setPointerCapture(e.pointerId)
+        const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
+        stateRef.current = {
+          lastX: e.clientX, lastY: e.clientY,
+          startX: e.clientX, startY: e.clientY,
+          parentW: parentRect?.width ?? 1, parentH: parentRect?.height ?? 1,
+          didMove: false, active: true,
+        }
+      }}
+      onPointerMove={(e) => {
+        const s = stateRef.current
+        if (!s?.active) return
+        if (!s.didMove && Math.abs(e.clientX - s.startX) < 4 && Math.abs(e.clientY - s.startY) < 4) return
+        s.didMove = true
+        const dx = ((e.clientX - s.lastX) / s.parentW) * 100
+        const dy = ((e.clientY - s.lastY) / s.parentH) * 100
+        s.lastX = e.clientX
+        s.lastY = e.clientY
+        moveSlot(slotId, { x: dx, y: dy })
+      }}
+      onPointerUp={(e) => {
+        e.stopPropagation()
+        e.currentTarget.releasePointerCapture(e.pointerId)
+        const s = stateRef.current
+        stateRef.current = null
+        if (s && !s.didMove) onSelect()
+      }}
+    />
+  )
+}
+
 // ─── Absolute-Positioned Photo Element ───────────────────────────────
 
 export function AbsolutePhotoElement({
@@ -643,74 +760,24 @@ export function AbsolutePhotoElement({
             }}
           />
 
-          {/* Resize handles */}
+          {/* Resize handles — pointer capture ensures release fires anywhere */}
           {(['nw', 'ne', 'sw', 'se'] as const).map((corner) => (
-            <div
+            <ResizeHandle
               key={corner}
-              className={`absolute w-3 h-3 rounded-full bg-white border-2 border-primary shadow-sm z-40 pointer-events-auto ${
-                corner === 'nw' ? 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize' :
-                corner === 'ne' ? 'top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-ne-resize' :
-                corner === 'sw' ? 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-sw-resize' :
-                'bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-se-resize'
-              }`}
-              onPointerDown={(e) => {
-                e.stopPropagation()
-                e.preventDefault()
-                let lastX = e.clientX
-                let lastY = e.clientY
-                const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
-                if (!parentRect) return
-
-                const onMove = (ev: PointerEvent) => {
-                  const dx = ((ev.clientX - lastX) / parentRect.width) * 100
-                  const dy = ((ev.clientY - lastY) / parentRect.height) * 100
-                  lastX = ev.clientX
-                  lastY = ev.clientY
-                  const wDelta = corner.includes('e') ? dx : corner.includes('w') ? -dx : 0
-                  const hDelta = corner.includes('s') ? dy : corner.includes('n') ? -dy : 0
-                  resizeSlot(element.slotId, { width: wDelta, height: hDelta })
-                  if (corner.includes('w')) moveSlot(element.slotId, { x: dx })
-                  if (corner.includes('n')) moveSlot(element.slotId, { y: dy })
-                }
-                const onUp = () => {
-                  window.removeEventListener('pointermove', onMove)
-                  window.removeEventListener('pointerup', onUp)
-                }
-                window.addEventListener('pointermove', onMove)
-                window.addEventListener('pointerup', onUp)
-              }}
+              corner={corner}
+              containerRef={containerRef}
+              slotId={element.slotId}
+              resizeSlot={resizeSlot}
+              moveSlot={moveSlot}
             />
           ))}
 
-          {/* Move overlay — drag entire slot; click-without-drag deselects */}
-          <div
-            className="absolute inset-0 z-[35] cursor-move"
-            onPointerDown={(e) => {
-              e.stopPropagation()
-              e.preventDefault()
-              let lastX = e.clientX
-              let lastY = e.clientY
-              let didMove = false
-              const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
-              if (!parentRect) return
-
-              const onMove = (ev: PointerEvent) => {
-                const dx = ((ev.clientX - lastX) / parentRect.width) * 100
-                const dy = ((ev.clientY - lastY) / parentRect.height) * 100
-                if (!didMove && Math.abs(ev.clientX - e.clientX) < 4 && Math.abs(ev.clientY - e.clientY) < 4) return
-                didMove = true
-                lastX = ev.clientX
-                lastY = ev.clientY
-                moveSlot(element.slotId, { x: dx, y: dy })
-              }
-              const onUp = () => {
-                window.removeEventListener('pointermove', onMove)
-                window.removeEventListener('pointerup', onUp)
-                if (!didMove) onSelect()
-              }
-              window.addEventListener('pointermove', onMove)
-              window.addEventListener('pointerup', onUp)
-            }}
+          {/* Move overlay — hold to drag, click to deselect */}
+          <MoveOverlay
+            containerRef={containerRef}
+            slotId={element.slotId}
+            moveSlot={moveSlot}
+            onSelect={onSelect}
           />
         </>
       )}
