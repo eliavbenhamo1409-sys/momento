@@ -535,8 +535,6 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
             position: 'relative',
             overflow: 'hidden',
             transform: 'scaleX(-1)',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
           }}
         >
           <PageBackground

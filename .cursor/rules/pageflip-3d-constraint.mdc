@@ -1,0 +1,38 @@
+---
+description: Critical constraint for react-pageflip SpreadPage structure — prevents page flash during flip animations
+globs: src/components/editor/SpreadPage.tsx, src/index.css
+alwaysApply: false
+---
+
+# Page-Flip 3D Transform Constraint
+
+## DO NOT change these two things — they prevent a page flash bug during flip animations:
+
+### 1. CSS: `transform-style: flat` on `.stf__item`
+In `src/index.css`, the rule `.album-flipbook .stf__item` MUST include:
+```css
+transform-style: flat !important;
+```
+The page-flip library sets `transform-style: preserve-3d` on `.stf__item`. If children have 3D-capable transforms (like `scaleX(-1)`), they become separate 3D entities that bypass the parent's `backface-visibility: hidden` during `rotateY` flip animations — causing the destination page to flash through the flipping page.
+
+### 2. SpreadPage inner wrapper structure
+In `SpreadPage.tsx`, the outer ref div (`ref={ref}`) MUST remain bare (no inline styles). All visual styles (`backgroundColor`, `overflow: hidden`, `transform: scaleX(-1)`) MUST live on the inner wrapper div — NOT on the ref div.
+
+Why: `react-pageflip` overwrites the ref element's `style.cssText` every animation frame via `simpleDraw()` / `drawHard()`. Any React inline styles on the ref are wiped immediately.
+
+```tsx
+// ✅ CORRECT
+<div ref={ref} data-density="hard">
+  <div style={{ backgroundColor, overflow: 'hidden', transform: 'scaleX(-1)' }}>
+    {/* content */}
+  </div>
+</div>
+
+// ❌ WRONG — styles on ref will be wiped by page-flip
+<div ref={ref} data-density="hard" style={{ backgroundColor, transform: 'scaleX(-1)' }}>
+  {/* content */}
+</div>
+```
+
+### 3. DO NOT add `backfaceVisibility: hidden` to the inner wrapper
+The `scaleX(-1)` on the inner wrapper can cause GPU rendering artifacts when combined with `backface-visibility: hidden` during the parent's 3D rotation — making the page momentarily transparent and exposing destination content. The `transform-style: flat` override on `.stf__item` is the sole correct fix.
