@@ -72,6 +72,7 @@ interface EditorState {
   movePhotoSlot: (slotId: string, delta: { x?: number; y?: number }) => void
   updatePhotoSlotRadius: (slotId: string, radius: number) => void
   replacePhotoInSlot: (slotId: string, file: File) => void
+  setPhotoSlotUrl: (slotId: string, url: string) => void
   updatePhotoObjectPosition: (slotId: string, objectPosition: string) => void
   updatePhotoScale: (slotId: string, scale: number) => void
   removePhotoFromSlot: (slotId: string) => void
@@ -285,6 +286,24 @@ export const useEditorStore = create<EditorState>((set) => ({
         const photo = el as PhotoElement
         if (photo.photoUrl?.startsWith('blob:')) URL.revokeObjectURL(photo.photoUrl)
         return { ...photo, photoUrl: url, photoId: `user-${Date.now()}` }
+      })
+
+      const spreads = [...s.spreads]
+      spreads[idx] = { ...spread, design: { ...spread.design, elements } }
+      return { spreads }
+    }),
+
+  setPhotoSlotUrl: (slotId, url) =>
+    set((s) => {
+      const idx = s.currentSpreadIndex
+      const spread = s.spreads[idx]
+      if (!spread?.design) return s
+
+      const elements = spread.design.elements.map((el) => {
+        if (el.type !== 'photo' || el.slotId !== slotId) return el
+        const photo = el as PhotoElement
+        if (photo.photoUrl?.startsWith('blob:')) URL.revokeObjectURL(photo.photoUrl)
+        return { ...photo, photoUrl: url, photoId: `ai-${Date.now()}` }
       })
 
       const spreads = [...s.spreads]

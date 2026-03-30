@@ -234,23 +234,31 @@ function PhotoToolbarPortal({
   zoomPct,
   currentScale,
   slotId,
+  photoUrl,
   onZoomIn,
   onZoomOut,
   onReset,
   onReplace,
   onDelete,
+  onAiResult,
 }: {
   containerRef: React.RefObject<HTMLDivElement | null>
   zoomPct: number
   currentScale: number
   slotId: string
+  photoUrl: string
   onZoomIn: () => void
   onZoomOut: () => void
   onReset: () => void
   onReplace: () => void
   onDelete: () => void
+  onAiResult: (slotId: string, dataUrl: string) => void
 }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  const [aiOpen, setAiOpen] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     let rafId: number
@@ -268,6 +276,30 @@ function PhotoToolbarPortal({
     return () => cancelAnimationFrame(rafId)
   }, [containerRef, slotId])
 
+  useEffect(() => {
+    if (aiOpen) setTimeout(() => inputRef.current?.focus(), 100)
+  }, [aiOpen])
+
+  const handleAiSubmit = useCallback(async () => {
+    if (!aiPrompt.trim() || aiLoading) return
+    setAiLoading(true)
+    try {
+      const { imageUrlToDataUrl, editPhotoWithAI } = await import('../../lib/openai')
+      const dataUrl = await imageUrlToDataUrl(photoUrl)
+      if (!dataUrl) { setAiLoading(false); return }
+      const result = await editPhotoWithAI(aiPrompt, dataUrl)
+      if (result) {
+        onAiResult(slotId, result)
+        setAiPrompt('')
+        setAiOpen(false)
+      }
+    } catch (err) {
+      console.error('AI edit failed:', err)
+    } finally {
+      setAiLoading(false)
+    }
+  }, [aiPrompt, aiLoading, photoUrl, slotId, onAiResult])
+
   if (!pos) return null
 
   return createPortal(
@@ -277,6 +309,34 @@ function PhotoToolbarPortal({
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
+      {/* AI prompt panel */}
+      {aiOpen && (
+        <div className="mb-2 flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-deep-brown/90 backdrop-blur-md shadow-xl shadow-black/15 min-w-[280px]">
+          <Icon name="auto_fix_high" size={16} className="text-amber-300 shrink-0" />
+          <input
+            ref={inputRef}
+            dir="rtl"
+            type="text"
+            value={aiPrompt}
+            onChange={(e) => setAiPrompt(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); if (e.key === 'Escape') setAiOpen(false) }}
+            placeholder="תאר מה לשנות בתמונה..."
+            disabled={aiLoading}
+            className="flex-1 bg-white/10 text-white text-xs rounded-lg px-2.5 py-1.5 placeholder:text-white/40 outline-none focus:ring-1 focus:ring-white/30 disabled:opacity-50"
+          />
+          <button
+            onClick={handleAiSubmit}
+            disabled={!aiPrompt.trim() || aiLoading}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-300 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30 shrink-0"
+          >
+            {aiLoading
+              ? <div className="w-4 h-4 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
+              : <Icon name="send" size={16} />}
+          </button>
+        </div>
+      )}
+
+      {/* Main toolbar */}
       <div className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-deep-brown/90 backdrop-blur-md shadow-xl shadow-black/15">
         <button
           onClick={onZoomOut}
@@ -304,6 +364,16 @@ function PhotoToolbarPortal({
           title="אפס מיקום"
         >
           <Icon name="center_focus_strong" size={16} />
+        </button>
+
+        <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+        <button
+          onClick={() => setAiOpen(!aiOpen)}
+          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${aiOpen ? 'bg-amber-500/30 text-amber-300' : 'text-white/80 hover:bg-white/15'}`}
+          title="עריכת AI"
+        >
+          <Icon name="auto_fix_high" size={16} />
         </button>
 
         <div className="w-px h-4 bg-white/20 mx-0.5" />
@@ -503,6 +573,7 @@ export function AbsolutePhotoElement({
   const clearPhoto = useEditorStore((s) => s.removePhotoFromSlot)
   const moveSlot = useEditorStore((s) => s.movePhotoSlot)
   const setRect = useEditorStore((s) => s.setPhotoSlotRect)
+  const setPhotoUrl = useEditorStore((s) => s.setPhotoSlotUrl)
   const [showZoom, setShowZoom] = useState(false)
   const [imgLoaded, setImgLoaded] = useState(false)
   const [trackedUrl, setTrackedUrl] = useState(element.photoUrl)
@@ -773,11 +844,13 @@ export function AbsolutePhotoElement({
             zoomPct={zoomPct}
             currentScale={currentScale}
             slotId={element.slotId}
+            photoUrl={element.photoUrl!}
             onZoomIn={() => updateScale(element.slotId, Math.min(3, currentScale + 0.15))}
             onZoomOut={() => updateScale(element.slotId, Math.max(1, currentScale - 0.15))}
             onReset={() => { updatePos(element.slotId, '50% 50%'); updateScale(element.slotId, 1) }}
             onReplace={() => replaceFileRef.current?.click()}
             onDelete={() => clearPhoto(element.slotId)}
+            onAiResult={(sid, dataUrl) => setPhotoUrl(sid, dataUrl)}
           />
 
           {/* Hidden file input for replace */}

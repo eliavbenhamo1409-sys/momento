@@ -655,6 +655,53 @@ Do NOT include any text, frames, photo placeholders, or UI elements.`
   }
 }
 
+export async function editPhotoWithAI(
+  userPrompt: string,
+  photoDataUrl: string,
+): Promise<string | null> {
+  try {
+    const ai = getGeminiClient()
+
+    const prompt = `You are a professional photo editor. The user wants you to edit/transform the attached photo.
+
+User request: "${userPrompt}"
+
+CRITICAL RULES:
+- Apply EXACTLY what the user requested to the attached photo.
+- Keep the photo realistic and high quality unless the user asks for a stylized effect.
+- Maintain the same aspect ratio and resolution feel as the original.
+- Output ONLY the edited image — no text, no borders, no watermarks.`
+
+    const contents = buildGeminiContents(prompt, [photoDataUrl])
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-image-preview',
+      contents,
+      config: {
+        responseModalities: ['IMAGE'],
+        imageConfig: {
+          imageSize: '1K',
+        },
+      },
+    })
+
+    const parts = response.candidates?.[0]?.content?.parts
+    if (parts) {
+      for (const part of parts) {
+        if (part.inlineData?.data) {
+          const mimeType = part.inlineData.mimeType ?? 'image/png'
+          return `data:${mimeType};base64,${part.inlineData.data}`
+        }
+      }
+    }
+
+    return null
+  } catch (err) {
+    console.error('AI photo edit failed:', err)
+    return null
+  }
+}
+
 export async function imageUrlToDataUrl(url: string): Promise<string | null> {
   try {
     if (url.startsWith('data:')) return url
