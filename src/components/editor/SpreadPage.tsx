@@ -18,6 +18,7 @@ import {
   LegacyQuoteBlock,
   LegacyCornerOrnaments,
 } from './EditorCanvas'
+import { useEditorStore } from '../../store/editorStore'
 import { DEFAULT_STYLE, getTexturePattern } from './editorDefaults'
 
 const NOOP_SELECT_PHOTO: (id: string | null) => void = () => {}
@@ -27,15 +28,7 @@ const NOOP_SLOT = (_id: string) => {}
 interface SpreadPageProps {
   spread: EditorSpread
   side: 'left' | 'right'
-  isCurrent: boolean
-  isNearby: boolean
-  selectedPhotoId: string | null
-  selectedTextIndex: number | null
-  selectPhoto: (id: string | null) => void
-  selectText: (idx: number | null) => void
-  swapPhase: 'off' | 'pick-source' | 'pick-target'
-  swapSourceSlotId: string | null
-  onSwapClick: (slotId: string) => void
+  spreadIndex: number
 }
 
 function PageBackground({
@@ -500,20 +493,28 @@ function LegacyPageElements({
 }
 
 const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
-  function SpreadPage(props, ref) {
-    const {
-      spread,
-      side,
-      isCurrent,
-      isNearby: _isNearby,
-      selectedPhotoId,
-      selectedTextIndex,
-      selectPhoto,
-      selectText,
-      swapPhase,
-      swapSourceSlotId,
-      onSwapClick,
-    } = props
+  function SpreadPage({ spread, side, spreadIndex }, ref) {
+    const isCurrent = useEditorStore((s) => s.currentSpreadIndex === spreadIndex)
+    const selectedPhotoId = useEditorStore((s) =>
+      s.currentSpreadIndex === spreadIndex ? s.selectedPhotoId : null,
+    )
+    const selectedTextIndex = useEditorStore((s) =>
+      s.currentSpreadIndex === spreadIndex ? s.selectedTextIndex : null,
+    )
+    const selectPhoto = useEditorStore((s) => s.selectPhoto)
+    const selectText = useEditorStore((s) => s.selectText)
+    const swapPhase = useEditorStore((s) =>
+      s.currentSpreadIndex === spreadIndex ? s.swapPhase : ('off' as const),
+    )
+    const swapSourceSlotId = useEditorStore((s) =>
+      s.currentSpreadIndex === spreadIndex ? s.swapSourceSlotId : null,
+    )
+
+    const onSwapClick = useCallback((slotId: string) => {
+      const { swapPhase: phase, setSwapSource, executeSwap } = useEditorStore.getState()
+      if (phase === 'pick-source') setSwapSource(slotId)
+      else if (phase === 'pick-target') executeSwap(slotId)
+    }, [])
 
     const design = spread.design
     const style = spread.resolvedStyle ?? DEFAULT_STYLE

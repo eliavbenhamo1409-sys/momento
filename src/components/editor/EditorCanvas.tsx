@@ -22,9 +22,6 @@ import type {
 // Re-export defaults & texture util for consumers that import from here
 export { DEFAULT_FRAME, DEFAULT_STYLE, getTexturePattern }
 
-const NOOP_SELECT_PHOTO: (id: string | null) => void = () => {}
-const NOOP_SELECT_TEXT: (idx: number | null) => void = () => {}
-const NOOP_SLOT = (_id: string) => {}
 
 // ─── Nav Arrow ───────────────────────────────────────────────────────
 
@@ -1334,32 +1331,18 @@ export default function EditorCanvas() {
   const {
     spreads,
     currentSpreadIndex,
-    selectedPhotoId,
-    selectedTextIndex,
-    selectPhoto,
-    selectText,
     deselectAll,
     setCurrentSpread,
     swapPhase,
-    swapSourceSlotId,
-    setSwapSource,
-    executeSwap,
     cancelSwapMode,
     swapPhotosAcrossSpreads,
     movePhotoToEmptySlot,
   } = useEditorStore(useShallow((s) => ({
     spreads: s.spreads,
     currentSpreadIndex: s.currentSpreadIndex,
-    selectedPhotoId: s.selectedPhotoId,
-    selectedTextIndex: s.selectedTextIndex,
-    selectPhoto: s.selectPhoto,
-    selectText: s.selectText,
     deselectAll: s.deselectAll,
     setCurrentSpread: s.setCurrentSpread,
     swapPhase: s.swapPhase,
-    swapSourceSlotId: s.swapSourceSlotId,
-    setSwapSource: s.setSwapSource,
-    executeSwap: s.executeSwap,
     cancelSwapMode: s.cancelSwapMode,
     swapPhotosAcrossSpreads: s.swapPhotosAcrossSpreads,
     movePhotoToEmptySlot: s.movePhotoToEmptySlot,
@@ -1457,13 +1440,10 @@ export default function EditorCanvas() {
 
   const isSwapping = swapPhase !== 'off'
 
-  const handleSlotClickInSwap = useCallback((slotId: string) => {
-    if (swapPhase === 'pick-source') {
-      setSwapSource(slotId)
-    } else if (swapPhase === 'pick-target') {
-      executeSwap(slotId)
-    }
-  }, [swapPhase, setSwapSource, executeSwap])
+  const flipPages = useMemo(() => spreads.flatMap((s, spreadIdx) => [
+    <SpreadPage key={`${s.id}-R`} spread={s} side="right" spreadIndex={spreadIdx} />,
+    <SpreadPage key={`${s.id}-L`} spread={s} side="left" spreadIndex={spreadIdx} />,
+  ]), [spreads])
 
   if (!spread) return (
     <div className="flex-1 flex items-center justify-center">
@@ -1588,40 +1568,7 @@ export default function EditorCanvas() {
             className="album-flipbook"
             style={{}}
           >
-            {spreads.flatMap((s, spreadIdx) => {
-              const isCurrent = spreadIdx === currentSpreadIndex
-              const isNearby = Math.abs(spreadIdx - currentSpreadIndex) <= 2
-              return [
-                <SpreadPage
-                  key={`${s.id}-R`}
-                  spread={s}
-                  side="right"
-                  isCurrent={isCurrent}
-                  isNearby={isNearby}
-                  selectedPhotoId={isCurrent ? selectedPhotoId : null}
-                  selectedTextIndex={isCurrent ? selectedTextIndex : null}
-                  selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
-                  selectText={isCurrent ? selectText : NOOP_SELECT_TEXT}
-                  swapPhase={isCurrent ? swapPhase : 'off'}
-                  swapSourceSlotId={isCurrent ? swapSourceSlotId : null}
-                  onSwapClick={isCurrent ? handleSlotClickInSwap : NOOP_SLOT}
-                />,
-                <SpreadPage
-                  key={`${s.id}-L`}
-                  spread={s}
-                  side="left"
-                  isCurrent={isCurrent}
-                  isNearby={isNearby}
-                  selectedPhotoId={isCurrent ? selectedPhotoId : null}
-                  selectedTextIndex={isCurrent ? selectedTextIndex : null}
-                  selectPhoto={isCurrent ? selectPhoto : NOOP_SELECT_PHOTO}
-                  selectText={isCurrent ? selectText : NOOP_SELECT_TEXT}
-                  swapPhase={isCurrent ? swapPhase : 'off'}
-                  swapSourceSlotId={isCurrent ? swapSourceSlotId : null}
-                  onSwapClick={isCurrent ? handleSlotClickInSwap : NOOP_SLOT}
-                />,
-              ]
-            })}
+            {flipPages}
           </HTMLFlipBook>
 
           {/* Spine divider */}
