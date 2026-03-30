@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import { useUIStore } from '../../store/uiStore'
+import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 
 export default function LandingHeader() {
@@ -9,7 +10,12 @@ export default function LandingHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
-  const { isLoggedIn, userName, openAuthModal, logout } = useUIStore()
+  const { isLoggedIn, userName, openAuthModal, logout } = useUIStore(useShallow((s) => ({
+    isLoggedIn: s.isLoggedIn,
+    userName: s.userName,
+    openAuthModal: s.openAuthModal,
+    logout: s.logout,
+  })))
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80)

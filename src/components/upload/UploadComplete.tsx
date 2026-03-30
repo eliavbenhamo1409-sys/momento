@@ -8,7 +8,7 @@ import Icon from '../shared/Icon'
 const MIN_PHOTOS = 20
 
 export default function UploadComplete() {
-  const { photos } = useAlbumStore()
+  const photos = useAlbumStore((s) => s.photos)
   const { processFiles, simulateUpload } = useFileUpload()
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)

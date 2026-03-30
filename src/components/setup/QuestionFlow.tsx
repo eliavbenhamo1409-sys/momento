@@ -2,6 +2,7 @@ import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 import { useAlbumStore } from '../../store/albumStore'
+import { useShallow } from 'zustand/react/shallow'
 import { getFamiliesForConfig } from '../../lib/designFamilies'
 import type { DesignFamily } from '../../types'
 import LoadingButton from '../shared/LoadingButton'
@@ -29,7 +30,13 @@ function fileToDataUrl(file: File): Promise<string> {
 
 export default function QuestionFlow() {
   const navigate = useNavigate()
-  const { config, setConfigField, vibeReferences, addVibeReference, removeVibeReference } = useAlbumStore()
+  const { config, setConfigField, vibeReferences, addVibeReference, removeVibeReference } = useAlbumStore(useShallow((s) => ({
+    config: s.config,
+    setConfigField: s.setConfigField,
+    vibeReferences: s.vibeReferences,
+    addVibeReference: s.addVibeReference,
+    removeVibeReference: s.removeVibeReference,
+  })))
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [placeholderIdx, setPlaceholderIdx] = useState(0)

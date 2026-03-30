@@ -17,7 +17,7 @@ const styleLabels: Record<string, string> = {
 }
 
 export default function LivePreview() {
-  const { config } = useAlbumStore()
+  const config = useAlbumStore((s) => s.config)
   const imgSrc = config.type ? previewImages[config.type] : null
 
   return (

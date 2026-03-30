@@ -14,7 +14,8 @@ import {
 
 export default function ConfigureScreen() {
   const navigate = useNavigate()
-  const { config, setConfigField } = useAlbumStore()
+  const config = useAlbumStore((s) => s.config)
+  const setConfigField = useAlbumStore((s) => s.setConfigField)
   const [selectedSize, setSelectedSize] = useState(config.size || '30x30')
   const [selectedPages, setSelectedPages] = useState(config.pages || 20)
   const [extraSpreads, setExtraSpreads] = useState(0)

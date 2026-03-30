@@ -10,7 +10,8 @@ import { calcAlbumPrice, ALBUM_SIZES } from '../lib/constants'
 
 export default function CheckoutScreen() {
   const navigate = useNavigate()
-  const { config, albumTitle } = useAlbumStore()
+  const config = useAlbumStore((s) => s.config)
+  const albumTitle = useAlbumStore((s) => s.albumTitle)
   const sizeObj = ALBUM_SIZES.find((s) => s.id === config.size)
   const totalPrice = useMemo(() => calcAlbumPrice(config.size, config.pages), [config.size, config.pages])
   const [isProcessing, setIsProcessing] = useState(false)

@@ -44,7 +44,10 @@ export default function DashboardScreen() {
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
   const navigate = useNavigate()
-  const { userName, userId, isLoggedIn, openAuthModal } = useUIStore()
+  const userName = useUIStore((s) => s.userName)
+  const userId = useUIStore((s) => s.userId)
+  const isLoggedIn = useUIStore((s) => s.isLoggedIn)
+  const openAuthModal = useUIStore((s) => s.openAuthModal)
 
   const fetchAlbums = useCallback(async () => {
     if (!userId) return

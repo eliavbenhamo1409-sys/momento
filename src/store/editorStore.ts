@@ -174,6 +174,15 @@ export const useEditorStore = create<EditorState>((set) => ({
   deleteSpread: (spreadId) =>
     set((s) => {
       if (s.spreads.length <= 1) return s
+      const removed = s.spreads.find((sp) => sp.id === spreadId)
+      if (removed?.design) {
+        for (const el of removed.design.elements) {
+          if (el.type === 'photo' && 'photoUrl' in el) {
+            const url = (el as PhotoElement).photoUrl
+            if (url?.startsWith('blob:')) URL.revokeObjectURL(url)
+          }
+        }
+      }
       const spreads = s.spreads.filter((sp) => sp.id !== spreadId)
       return {
         spreads,
@@ -463,6 +472,10 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const el = spread.design.elements[elementIndex]
       if (!el || el.type !== 'photo') return s
+
+      if (el.type === 'photo' && 'photoUrl' in el && (el as PhotoElement).photoUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL((el as PhotoElement).photoUrl!)
+      }
 
       const elements = spread.design.elements.filter((_, i) => i !== elementIndex)
       const spreads = [...s.spreads]

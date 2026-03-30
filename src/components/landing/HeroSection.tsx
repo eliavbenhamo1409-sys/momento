@@ -5,7 +5,8 @@ import Icon from '../shared/Icon'
 
 export default function HeroSection() {
   const navigate = useNavigate()
-  const { isLoggedIn, openAuthModal } = useUIStore()
+  const isLoggedIn = useUIStore((s) => s.isLoggedIn)
+  const openAuthModal = useUIStore((s) => s.openAuthModal)
 
   const handleCreate = () => {
     if (isLoggedIn) navigate('/upload')

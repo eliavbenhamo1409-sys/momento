@@ -2,7 +2,8 @@ import { motion } from 'motion/react'
 import { useAlbumStore } from '../../store/albumStore'
 
 export default function UploadProgress() {
-  const { uploadProgress, photos } = useAlbumStore()
+  const uploadProgress = useAlbumStore((s) => s.uploadProgress)
+  const photos = useAlbumStore((s) => s.photos)
 
   const circumference = 2 * Math.PI * 28
   const offset = circumference - (uploadProgress / 100) * circumference

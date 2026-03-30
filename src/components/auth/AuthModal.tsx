@@ -2,13 +2,21 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import { useUIStore } from '../../store/uiStore'
+import { useShallow } from 'zustand/react/shallow'
 import { supabase } from '../../lib/supabase'
 import LoadingButton from '../shared/LoadingButton'
 import Icon from '../shared/Icon'
 
 export default function AuthModal() {
   const { isAuthModalOpen, authMode, authRedirectTo, closeAuthModal, setAuthMode, addToast } =
-    useUIStore()
+    useUIStore(useShallow((s) => ({
+      isAuthModalOpen: s.isAuthModalOpen,
+      authMode: s.authMode,
+      authRedirectTo: s.authRedirectTo,
+      closeAuthModal: s.closeAuthModal,
+      setAuthMode: s.setAuthMode,
+      addToast: s.addToast,
+    })))
   const navigate = useNavigate()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')

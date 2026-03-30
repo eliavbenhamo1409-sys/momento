@@ -9,7 +9,8 @@ export default function DashboardHeader() {
   const [scrolled, setScrolled] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
-  const { userName, logout } = useUIStore()
+  const userName = useUIStore((s) => s.userName)
+  const logout = useUIStore((s) => s.logout)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)

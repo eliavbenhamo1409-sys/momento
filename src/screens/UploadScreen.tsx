@@ -8,7 +8,8 @@ import UploadComplete from '../components/upload/UploadComplete'
 import { useAlbumStore } from '../store/albumStore'
 
 export default function UploadScreen() {
-  const { isUploading, isUploadComplete } = useAlbumStore()
+  const isUploading = useAlbumStore((s) => s.isUploading)
+  const isUploadComplete = useAlbumStore((s) => s.isUploadComplete)
 
   return (
     <PageTransition>

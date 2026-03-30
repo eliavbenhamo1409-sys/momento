@@ -91,6 +91,47 @@ export async function extractPhotoDate(file: File): Promise<Date> {
   return new Date(file.lastModified)
 }
 
+const THUMB_MAX_DIM = 300
+
+/**
+ * Create a small thumbnail blob URL from a File.
+ * Returns { thumbnailUrl, width, height } where width/height are the real image dimensions.
+ */
+export function createThumbnailUrl(file: File): Promise<{ thumbnailUrl: string; width: number; height: number }> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const { naturalWidth: w, naturalHeight: h } = img
+      let tw = w, th = h
+      if (w > THUMB_MAX_DIM || h > THUMB_MAX_DIM) {
+        const scale = THUMB_MAX_DIM / Math.max(w, h)
+        tw = Math.round(w * scale)
+        th = Math.round(h * scale)
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = tw
+      canvas.height = th
+      const ctx = canvas.getContext('2d')!
+      ctx.drawImage(img, 0, 0, tw, th)
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) { reject(new Error('Thumbnail canvas failed')); return }
+          resolve({ thumbnailUrl: URL.createObjectURL(blob), width: w, height: h })
+        },
+        'image/jpeg',
+        0.7,
+      )
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Failed to load image for thumbnail'))
+    }
+    img.src = url
+  })
+}
+
 /** Split an array into batches of a given size */
 export function batchArray<T>(arr: T[], batchSize: number): T[][] {
   const result: T[][] = []

@@ -1,5 +1,7 @@
 import { useCallback, useRef } from 'react'
 import { useAlbumStore } from '../store/albumStore'
+import { useShallow } from 'zustand/react/shallow'
+import { createThumbnailUrl } from '../lib/photoUtils'
 import type { Photo } from '../types'
 
 let photoCounter = 0
@@ -11,8 +13,13 @@ export function useFileUpload() {
     setUploadProgress,
     setIsUploading,
     setIsUploadComplete,
-    photos: existingPhotos,
-  } = useAlbumStore()
+  } = useAlbumStore(useShallow((s) => ({
+    setPhotos: s.setPhotos,
+    addPhotos: s.addPhotos,
+    setUploadProgress: s.setUploadProgress,
+    setIsUploading: s.setIsUploading,
+    setIsUploadComplete: s.setIsUploadComplete,
+  })))
   const abortRef = useRef(false)
 
   const processFiles = useCallback(
@@ -34,15 +41,27 @@ export function useFileUpload() {
 
         const file = imageFiles[i]
         const id = `photo-${++photoCounter}`
-        const url = URL.createObjectURL(file)
+        const fullUrl = URL.createObjectURL(file)
+
+        let thumbnailUrl = fullUrl
+        let width = 1200
+        let height = 800
+        try {
+          const thumb = await createThumbnailUrl(file)
+          thumbnailUrl = thumb.thumbnailUrl
+          width = thumb.width
+          height = thumb.height
+        } catch {
+          // fallback to full-res blob
+        }
 
         photos.push({
           id,
           file,
-          thumbnailUrl: url,
-          fullUrl: url,
-          width: 1200,
-          height: 800,
+          thumbnailUrl,
+          fullUrl,
+          width,
+          height,
           selected: true,
         })
 
@@ -53,6 +72,11 @@ export function useFileUpload() {
       if (append) {
         addPhotos(photos)
       } else {
+        const prev = useAlbumStore.getState().photos
+        for (const p of prev) {
+          if (p.fullUrl?.startsWith('blob:')) URL.revokeObjectURL(p.fullUrl)
+          if (p.thumbnailUrl?.startsWith('blob:') && p.thumbnailUrl !== p.fullUrl) URL.revokeObjectURL(p.thumbnailUrl)
+        }
         setPhotos(photos)
       }
       setIsUploading(false)
@@ -84,6 +108,11 @@ export function useFileUpload() {
       if (append) {
         addPhotos(photos)
       } else {
+        const prev = useAlbumStore.getState().photos
+        for (const p of prev) {
+          if (p.fullUrl?.startsWith('blob:')) URL.revokeObjectURL(p.fullUrl)
+          if (p.thumbnailUrl?.startsWith('blob:') && p.thumbnailUrl !== p.fullUrl) URL.revokeObjectURL(p.thumbnailUrl)
+        }
         setPhotos(photos)
       }
       setIsUploading(false)
@@ -92,5 +121,5 @@ export function useFileUpload() {
     [setPhotos, addPhotos, setUploadProgress, setIsUploading, setIsUploadComplete],
   )
 
-  return { processFiles, simulateUpload, existingPhotos }
+  return { processFiles, simulateUpload }
 }

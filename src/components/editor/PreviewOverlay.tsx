@@ -147,8 +147,9 @@ function PreviewSpread({ spread }: { spread: EditorSpread }) {
   )
 }
 
-function usePreloadSpreadImages(spreads: EditorSpread[], activeIdx: number) {
+function usePreloadSpreadImages(activeIdx: number) {
   useEffect(() => {
+    const spreads = useEditorStore.getState().spreads
     const indices = [activeIdx - 1, activeIdx + 1].filter(
       (i) => i >= 0 && i < spreads.length,
     )
@@ -162,7 +163,7 @@ function usePreloadSpreadImages(spreads: EditorSpread[], activeIdx: number) {
         }
       }
     }
-  }, [activeIdx, spreads])
+  }, [activeIdx])
 }
 
 export default function PreviewOverlay() {
@@ -193,7 +194,7 @@ export default function PreviewOverlay() {
     })
   }, [])
 
-  usePreloadSpreadImages(spreads, activeIdx)
+  usePreloadSpreadImages(activeIdx)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

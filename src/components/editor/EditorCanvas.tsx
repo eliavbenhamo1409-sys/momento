@@ -228,12 +228,11 @@ export function AbsolutePhotoElement({
   const [isDragging, setIsDragging] = useState(false)
   const [showZoom, setShowZoom] = useState(false)
   const [imgLoaded, setImgLoaded] = useState(false)
-  const prevUrlRef = useRef(element.photoUrl)
 
-  if (prevUrlRef.current !== element.photoUrl) {
-    prevUrlRef.current = element.photoUrl
+  useEffect(() => {
     setImgLoaded(false)
-  }
+  }, [element.photoUrl])
+
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const zoomHideTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const startPosRef = useRef<{ x: number; y: number; objX: number; objY: number } | null>(null)

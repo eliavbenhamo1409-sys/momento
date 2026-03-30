@@ -12,7 +12,9 @@ interface Props {
 
 export default function ProductHeader({ showBack, backTo, backLabel }: Props) {
   const navigate = useNavigate()
-  const { isLoggedIn, userName, logout } = useUIStore()
+  const isLoggedIn = useUIStore((s) => s.isLoggedIn)
+  const userName = useUIStore((s) => s.userName)
+  const logout = useUIStore((s) => s.logout)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
