@@ -6,51 +6,53 @@ alwaysApply: false
 
 # Page-Flip Flash Prevention
 
-## Root cause
-`react-pageflip` calls `updateFromHtml()` — which **destroys and recreates ALL pages** — every time its `children` prop reference changes. When `onFlip → setCurrentSpread()` triggers a React re-render, the `spreads.flatMap(...)` produces a new children array, which triggers `updateFromHtml()` and causes a visible flash.
+## Root causes (both must be addressed)
+1. `react-pageflip` calls `updateFromHtml()` (full page reinitialization) whenever its `children` prop changes — memoize children with only `spreads` as dep.
+2. React DOM changes (selection ring removal, overflow toggles, CSS shadow transitions) on the old page during the same rAF as the flip completion cause GPU compositor artifacts — defer `setCurrentSpread` to the next animation frame.
 
-## THREE constraints that prevent the flash:
+## FOUR constraints that prevent the flash:
 
-### 1. Memoize flipbook children — depends ONLY on `spreads`
-In `EditorCanvas.tsx`, the children passed to `<HTMLFlipBook>` MUST be memoized with only the `spreads` array as a dependency. **Do NOT include interaction state** (`currentSpreadIndex`, `selectedPhotoId`, `swapPhase`, etc.) in the dependency array or as props to `SpreadPage`.
+### 1. Defer `setCurrentSpread` to next animation frame
+In the `onFlip` callback, wrap `setCurrentSpread` in `requestAnimationFrame()`. This ensures React DOM changes happen AFTER page-flip's `drawFrame()` has hidden the old pages.
 
 ```tsx
-// ✅ CORRECT — stable reference, prevents updateFromHtml cascade
+// ✅ CORRECT — React changes happen after old pages are display:none
+const onFlip = useCallback((e: { data: number }) => {
+  requestAnimationFrame(() => {
+    setCurrentSpread(Math.floor(e.data / 2))
+  })
+}, [setCurrentSpread])
+
+// ❌ WRONG — React changes happen on still-visible rotating page
+const onFlip = useCallback((e: { data: number }) => {
+  setCurrentSpread(Math.floor(e.data / 2))
+}, [setCurrentSpread])
+```
+
+### 2. Memoize flipbook children — depends ONLY on `spreads`
+Children passed to `<HTMLFlipBook>` MUST be memoized with only `spreads` as dependency. Do NOT include interaction state as props to `SpreadPage`.
+
+```tsx
 const flipPages = useMemo(() => spreads.flatMap((s, i) => [
   <SpreadPage key={`${s.id}-R`} spread={s} side="right" spreadIndex={i} />,
   <SpreadPage key={`${s.id}-L`} spread={s} side="left" spreadIndex={i} />,
 ]), [spreads])
-
-// ❌ WRONG — new array on every render, triggers page reinitialization
-{spreads.flatMap((s, i) => [
-  <SpreadPage key={...} isCurrent={i === currentSpreadIndex} selectedPhotoId={...} />,
-])}
 ```
 
-### 2. SpreadPage reads interaction state from the store
-`SpreadPage` receives only `spread`, `side`, and `spreadIndex` as props. All interaction state (`isCurrent`, `selectedPhotoId`, `selectPhoto`, `swapPhase`, etc.) is read via `useEditorStore()` subscriptions inside the component.
+### 3. SpreadPage reads interaction state from the store
+`SpreadPage` receives only `spread`, `side`, and `spreadIndex` as props. All interaction state is read via `useEditorStore()` inside the component.
 
-### 3. SpreadPage inner wrapper structure
-The outer ref div (`ref={ref}`) MUST remain bare (no inline styles). All visual styles MUST live on the inner wrapper div. `react-pageflip` overwrites the ref's `style.cssText` every frame.
+### 4. Memoize HTMLFlipBook's `style` prop
+Use `const flipBookStyle = useMemo(() => ({}), [])` instead of `style={{}}`. A new object literal breaks `React.memo`, causing unnecessary re-renders.
 
-```tsx
-// ✅ CORRECT
-<div ref={ref} data-density="hard">
-  <div style={{ backgroundColor, overflow: 'hidden', transform: 'scaleX(-1)' }}>
-    {/* content */}
-  </div>
-</div>
-```
+### SpreadPage inner wrapper structure
+The outer ref div (`ref={ref}`) MUST remain bare. All visual styles live on the inner wrapper. `react-pageflip` overwrites the ref's `style.cssText` every frame.
 
 ### Defense-in-depth CSS
-In `src/index.css`, keep `transform-style: flat !important` on `.stf__item` to prevent 3D bleed-through:
-```css
-.album-flipbook .stf__item {
-  transform-style: flat !important;
-}
-```
+Keep `transform-style: flat !important` on `.stf__item` in `src/index.css`.
 
 ### DO NOT
-- Add `backfaceVisibility: hidden` to the inner wrapper (causes GPU artifacts with `scaleX(-1)`)
+- Call `setCurrentSpread` synchronously inside `onFlip` (causes GPU artifacts)
+- Add `backfaceVisibility: hidden` to the inner wrapper (GPU artifacts with `scaleX(-1)`)
 - Pass interaction state as props to SpreadPage (breaks children memoization)
-- Include `currentSpreadIndex` in the flipPages useMemo deps
+- Use `style={{}}` on HTMLFlipBook (breaks React.memo)

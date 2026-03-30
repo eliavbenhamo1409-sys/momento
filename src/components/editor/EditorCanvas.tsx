@@ -1427,7 +1427,13 @@ export default function EditorCanvas() {
   }, [spread?.id, spread?.templateId])
 
   const onFlip = useCallback((e: { data: number }) => {
-    setCurrentSpread(Math.floor(e.data / 2))
+    // Defer state update to next frame so React DOM changes (selection ring
+    // removal, overflow toggles) happen AFTER page-flip's drawFrame has hidden
+    // the old pages. Changing React state during the same rAF as the flip
+    // completion causes GPU compositor artifacts on the rotating page.
+    requestAnimationFrame(() => {
+      setCurrentSpread(Math.floor(e.data / 2))
+    })
   }, [setCurrentSpread])
 
   const flipNext = useCallback(() => {
@@ -1440,6 +1446,7 @@ export default function EditorCanvas() {
 
   const isSwapping = swapPhase !== 'off'
 
+  const flipBookStyle = useMemo(() => ({}), [])
   const flipPages = useMemo(() => spreads.flatMap((s, spreadIdx) => [
     <SpreadPage key={`${s.id}-R`} spread={s} side="right" spreadIndex={spreadIdx} />,
     <SpreadPage key={`${s.id}-L`} spread={s} side="left" spreadIndex={spreadIdx} />,
@@ -1566,7 +1573,7 @@ export default function EditorCanvas() {
             swipeDistance={30}
             onFlip={onFlip}
             className="album-flipbook"
-            style={{}}
+            style={flipBookStyle}
           >
             {flipPages}
           </HTMLFlipBook>
