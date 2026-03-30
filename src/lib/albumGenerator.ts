@@ -64,7 +64,7 @@ export async function generateAlbum(
   const family = getDesignFamily(config.designFamily)
   const spreadCount = Math.max(3, Math.floor(config.pages / 2))
 
-  // ── Stage 1 (0-25%): Photo Scoring via Vision API ─────────────
+  // ── Stage 1 (0-55%): Photo Scoring via Vision API ─────────────
 
   onProgress(0, 0, 'מתחיל לנתח את התמונות שלך...')
 
@@ -122,7 +122,7 @@ export async function generateAlbum(
     for (let attempt = 0; attempt < 2 && !batchScored; attempt++) {
       try {
         if (attempt > 0) {
-          onProgress(0, Math.round((batchesDone / batches.length) * 25), `ניסיון חוזר (Gemini)... ${allScores.length}/${photos.length}`)
+          onProgress(0, Math.round((batchesDone / batches.length) * 55), `ניסיון חוזר (Gemini)... ${allScores.length}/${photos.length}`)
           await sleep(1000 * attempt)
         }
         const scores = await analyzePhotoBatchGemini(batch, orientations)
@@ -138,7 +138,7 @@ export async function generateAlbum(
     // Fallback: try OpenAI if Gemini failed
     if (!batchScored) {
       try {
-        onProgress(0, Math.round((batchesDone / batches.length) * 25), `מנסה ערוץ חלופי (OpenAI)...`)
+        onProgress(0, Math.round((batchesDone / batches.length) * 55), `מנסה ערוץ חלופי (OpenAI)...`)
         const scores = await analyzePhotoBatch(batch, orientations)
         allScores.push(...scores)
         aiSuccessCount += batch.length
@@ -163,36 +163,40 @@ export async function generateAlbum(
     }
 
     batchesDone++
-    const pct = Math.round((batchesDone / batches.length) * 25)
+    const pct = Math.round((batchesDone / batches.length) * 55)
     onProgress(0, pct, `מנתח תמונות... ${allScores.length}/${photos.length}`)
   }
 
   if (fallbackCount > 0) {
     console.warn(`[AI Scoring] ${fallbackCount}/${photos.length} photos used default scores (AI unavailable)`)
-    onProgress(0, 25, `ניתוח הושלם — ${aiSuccessCount} נותחו עם AI, ${fallbackCount} עם ברירות מחדל`)
+    onProgress(0, 55, `ניתוח הושלם — ${aiSuccessCount} נותחו עם AI, ${fallbackCount} עם ברירות מחדל`)
   } else {
     console.log(`[AI Scoring] All ${aiSuccessCount} photos scored by AI successfully`)
-    onProgress(0, 25, `ניתוח AI הושלם — ${allScores.length} תמונות נסרקו בהצלחה`)
+    onProgress(0, 55, `ניתוח AI הושלם — ${allScores.length} תמונות נסרקו בהצלחה`)
   }
 
-  // ── Stage 2 (25-35%): Curation & Ranking ──────────────────────
+  // ── Stage 2 (55-64%): Curation & Ranking ──────────────────────
 
-  onProgress(1, 26, 'מדרג תמונות לפי איכות, חדות ורגש...')
+  await sleep(600)
+  onProgress(1, 56, 'מדרג תמונות לפי איכות, חדות ורגש...')
 
   const curated = curatePhotos(allScores, config)
 
-  onProgress(1, 30, `נבחרו ${curated.totalSelected} התמונות הטובות מתוך ${curated.totalOriginal}`)
+  await sleep(800)
+  onProgress(1, 59, `נבחרו ${curated.totalSelected} התמונות הטובות מתוך ${curated.totalOriginal}`)
 
   if (curated.removed.length > 0) {
-    onProgress(1, 33, `סוננו ${curated.removed.length} תמונות כפולות או חלשות`)
+    await sleep(600)
+    onProgress(1, 61, `סוננו ${curated.removed.length} תמונות כפולות או חלשות`)
   }
 
-  await sleep(400)
-  onProgress(1, 35, 'דירוג התמונות הושלם')
+  await sleep(700)
+  onProgress(1, 64, 'דירוג התמונות הושלם')
 
-  // ── Stage 3 (35-55%): Smart Grouping & Template Picking ──────
+  // ── Stage 3 (64-74%): Smart Grouping & Template Picking ──────
 
-  onProgress(2, 36, 'ממיין תמונות לפי תאריך וסצנה...')
+  await sleep(500)
+  onProgress(2, 65, 'ממיין תמונות לפי תאריך וסצנה...')
 
   const selectedScores = curated.selected.map((r) => r.score)
 
@@ -212,7 +216,8 @@ export async function generateAlbum(
   const scoreMap = new Map(allScores.map((s) => [s.photoId, s]))
   const photoMap = new Map(photos.map((p) => [p.id, p]))
 
-  onProgress(2, 45, 'בוחר תבנית מתאימה לכל עמוד...')
+  await sleep(700)
+  onProgress(2, 68, 'בוחר תבנית מתאימה לכל עמוד...')
 
   const spreadPlans = buildSmartSpreadPlans(pageGroups, scoreMap, spreadCount)
 
@@ -222,16 +227,18 @@ export async function generateAlbum(
     console.log(`  עמוד ${plan.spreadIndex}: תבנית="${plan.templateId}" | ${plan.assignedPhotoIds.length} תמונות | כיוונים — אורכי:${group?.orientationMix.portrait} רוחבי:${group?.orientationMix.landscape} ריבועי:${group?.orientationMix.square}`)
   }
 
-  onProgress(2, 52, `תוכנן אלבום חכם — ${spreadPlans.length} עמודים כפולים`)
+  await sleep(800)
+  onProgress(2, 71, `תוכנן אלבום חכם — ${spreadPlans.length} עמודים כפולים`)
 
   const sequencePlan: SpreadSequenceSlot[] = planAlbumSequence(family, spreadCount, curated)
 
-  await sleep(300)
-  onProgress(2, 55, 'תכנון פריסה הושלם')
+  await sleep(600)
+  onProgress(2, 74, 'תכנון פריסה הושלם')
 
-  // ── Stage 4 (55-75%): Photo-to-Slot Assignment ────────────────
+  // ── Stage 4 (74-82%): Photo-to-Slot Assignment ────────────────
 
-  onProgress(3, 56, 'משבץ כל תמונה בעמוד המתאים לה...')
+  await sleep(500)
+  onProgress(3, 75, 'משבץ כל תמונה בעמוד המתאים לה...')
 
   const spreads = placePhotosInSpreads(spreadPlans, scoreMap, photoMap, spreadCount)
 
@@ -241,14 +248,16 @@ export async function generateAlbum(
     console.log(`  עמוד ${spread.id}: תבנית="${spread.templateId}" | חריצים=[${slotInfo}]`)
   }
 
-  onProgress(3, 72, `שובצו ${curated.totalSelected} תמונות ב-${spreads.length} עמודים`)
+  await sleep(700)
+  onProgress(3, 79, `שובצו ${curated.totalSelected} תמונות ב-${spreads.length} עמודים`)
 
-  await sleep(300)
-  onProgress(3, 75, 'שיבוץ תמונות הושלם')
+  await sleep(600)
+  onProgress(3, 82, 'שיבוץ תמונות הושלם')
 
-  // ── Stage 4.5 (75-78%): Mood Concept Assignment ────────────────
+  // ── Stage 4.5 (82-84%): Mood Concept Assignment ────────────────
 
-  onProgress(3, 76, 'בוחר קונספט עיצובי לכל עמוד...')
+  await sleep(400)
+  onProgress(3, 83, 'בוחר קונספט עיצובי לכל עמוד...')
 
   const moodAssignments = assignMoodConcepts(
     spreads,
@@ -264,43 +273,46 @@ export async function generateAlbum(
     }
   }
 
-  onProgress(3, 78, `נבחרו ${moodAssignments.length} קונספטים עיצוביים`)
+  await sleep(500)
+  onProgress(3, 84, `נבחרו ${moodAssignments.length} קונספטים עיצוביים`)
 
-  // ── Stage 4.7 (78-88%): AI Background Generation ──────────────
+  // ── Stage 4.7 (84-90%): AI Background Generation ──────────────
 
   let generatedBackgrounds: (string | null)[] = []
   const moodPacksForBg = moodAssignments.map((a) => a.pack)
 
   if (config.backgroundMode === 'ai-generated') {
-    onProgress(4, 79, 'מעצב רקעים ייחודיים לכל עמוד...')
+    onProgress(4, 85, 'מעצב רקעים ייחודיים לכל עמוד...')
     const vibeText = config.vibeText || ''
-    onProgress(4, 80, `מייצר ${spreads.length} רקעים מקוריים עם AI — כל עמוד ייחודי...`)
+    onProgress(4, 86, `מייצר ${spreads.length} רקעים מקוריים עם AI — כל עמוד ייחודי...`)
 
     try {
       generatedBackgrounds = await generateSpreadBackgrounds(
         moodPacksForBg,
         vibeText,
         (done, total) => {
-          const pct = 80 + Math.round((done / total) * 7)
+          const pct = 86 + Math.round((done / total) * 4)
           onProgress(4, pct, `נוצר רקע ${done}/${total}...`)
         },
         referenceDataUrls,
       )
       const generatedCount = generatedBackgrounds.filter(Boolean).length
-      onProgress(4, 87, `נוצרו ${generatedCount} רקעים ייחודיים לכל העמודים`)
+      onProgress(4, 90, `נוצרו ${generatedCount} רקעים ייחודיים לכל העמודים`)
     } catch (err) {
       console.error('Background generation failed, using built-in:', err)
       generatedBackgrounds = new Array(spreads.length).fill(null)
-      onProgress(4, 87, 'משתמש ברקעים מובנים')
+      onProgress(4, 90, 'משתמש ברקעים מובנים')
     }
   } else {
-    onProgress(4, 87, 'רקע לבן נקי')
+    await sleep(600)
+    onProgress(4, 90, 'רקע לבן נקי')
     generatedBackgrounds = new Array(spreads.length).fill(null)
   }
 
-  // ── Stage 5 (88-92%): Visual Resolution ────────────────────────
+  // ── Stage 5 (90-93%): Visual Resolution ────────────────────────
 
-  onProgress(4, 88, `מקמפל עיצוב — סגנון ${family.nameHe}...`)
+  await sleep(500)
+  onProgress(4, 91, `מקמפל עיצוב — סגנון ${family.nameHe}...`)
 
   const resolvedSpreads = resolveAlbumVisuals(spreads, sequencePlan, family)
 
@@ -311,14 +323,16 @@ export async function generateAlbum(
     }
   }
 
+  await sleep(500)
+  onProgress(4, 92, croppedCount > 0 ? `חותך ${croppedCount} תמונות בצורה חכמה` : 'כל התמונות מותאמות')
+
   await sleep(400)
-  onProgress(4, 83, croppedCount > 0 ? `חותך ${croppedCount} תמונות בצורה חכמה` : 'כל התמונות מותאמות')
+  onProgress(4, 93, 'עיצוב ויזואלי הושלם')
 
-  onProgress(4, 85, 'עיצוב ויזואלי הושלם')
+  // ── Stage 5.5 (93-95%): Composition Building ──────────────────
 
-  // ── Stage 5.5 (85-95%): Composition Building ──────────────────
-
-  onProgress(4, 86, 'בונה קומפוזיציות לכל עמוד...')
+  await sleep(400)
+  onProgress(4, 93, 'בונה קומפוזיציות לכל עמוד...')
 
   console.log(`[אלבום חכם] ── שלב 5.5: בניית קומפוזיציה (רקע=${config.backgroundMode === 'white' ? 'לבן' : 'AI'}) ──`)
 
@@ -338,13 +352,14 @@ export async function generateAlbum(
     console.log(`  עמוד ${spread.id}: ${photoEls.length} אלמנטי תמונה, תבנית="${spread.templateId}"`)
   }
 
-  await sleep(300)
-  onProgress(4, 91, `הורכבו ${composedSpreads.length} קומפוזיציות ייחודיות`)
+  await sleep(500)
+  onProgress(4, 95, `הורכבו ${composedSpreads.length} קומפוזיציות ייחודיות`)
 
-  // ── Stage 6 (91-98%): Face Verification Scan (Multi-Pass) ──────
+  // ── Stage 6 (95-100%): Face Verification Scan (Multi-Pass) ──────
 
-  onProgress(5, 92, 'סורק פרצופים בכל העמודים...')
   await sleep(400)
+  onProgress(5, 95, 'סורק פרצופים בכל העמודים...')
+  await sleep(500)
 
   const faceScoreMap = new Map(allScores.map((s) => [s.photoId, s]))
   const SEVERITY_POSITION_THRESHOLD = 0.5
@@ -423,13 +438,13 @@ export async function generateAlbum(
   console.log(`[אלבום חכם] סה״כ: ${totalFacePhotos} תמונות עם פנים, ${allFaceIssues.length} בעיות חיתוך`)
 
   if (allFaceIssues.length === 0) {
-    onProgress(5, 96, 'כל הפרצופים במקום — לא נדרשו תיקונים')
-    await sleep(500)
+    onProgress(5, 98, 'כל הפרצופים במקום — לא נדרשו תיקונים')
+    await sleep(400)
     console.log('[אלבום חכם] ══════════ סריקת פנים — הכל תקין! ══════════')
   } else {
     // ── Pass 2: Fix via objectPosition for moderate issues ────────
 
-    onProgress(5, 93, `נמצאו ${allFaceIssues.length} בעיות חיתוך — מתחיל תיקון...`)
+    onProgress(5, 96, `נמצאו ${allFaceIssues.length} בעיות חיתוך — מתחיל תיקון...`)
     await sleep(400)
 
     console.log('[אלבום חכם] ══════════ סריקת פנים — פאס 2: תיקון מיקום ══════════')
@@ -472,7 +487,7 @@ export async function generateAlbum(
       }
     }
 
-    onProgress(5, 94, `תוקנו ${positionFixes} תמונות במיקום`)
+    onProgress(5, 97, `תוקנו ${positionFixes} תמונות במיקום`)
     await sleep(300)
 
     console.log(`[אלבום חכם] פאס 2 סיכום: ${positionFixes} תוקנו, ${stillBroken.length} עדיין בעייתיים`)
@@ -480,7 +495,7 @@ export async function generateAlbum(
     // ── Pass 3: Template swap for severe issues ──────────────────
 
     if (stillBroken.length > 0) {
-      onProgress(5, 94, `${stillBroken.length} תמונות עדיין בעייתיות — מחליף מבנה עמודים...`)
+      onProgress(5, 97, `${stillBroken.length} תמונות עדיין בעייתיות — מחליף מבנה עמודים...`)
       await sleep(400)
 
       console.log('[אלבום חכם] ══════════ סריקת פנים — פאס 3: החלפת מבנה עמודים ══════════')
@@ -591,7 +606,7 @@ export async function generateAlbum(
         }
       }
 
-      onProgress(5, 95, templateSwaps > 0
+      onProgress(5, 98, templateSwaps > 0
         ? `הוחלפו ${templateSwaps} מבנים + ${positionFixes} מיקומים תוקנו`
         : `${positionFixes + positionFallbackFixes} תמונות תוקנו`)
       await sleep(400)
@@ -633,9 +648,9 @@ export async function generateAlbum(
     console.log(`[אלבום חכם] אימות סופי: ${finalOk} תקינים, ${finalWarnings} עם אזהרות`)
 
     if (finalWarnings === 0) {
-      onProgress(5, 96, `כל ${finalOk} הפרצופים במקומם`)
+      onProgress(5, 98, `כל ${finalOk} הפרצופים במקומם`)
     } else {
-      onProgress(5, 96, `${finalOk} פרצופים תקינים, ${finalWarnings} עם אזהרה קלה`)
+      onProgress(5, 98, `${finalOk} פרצופים תקינים, ${finalWarnings} עם אזהרה קלה`)
     }
     await sleep(400)
 

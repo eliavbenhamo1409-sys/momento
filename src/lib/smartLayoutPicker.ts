@@ -50,6 +50,13 @@ const MIXED_TEMPLATES = [
   'cross-diagonal',
 ]
 
+const EXTREME_ORIENTATION_TEMPLATES = new Set([
+  'portrait-duo', 'portrait-trio', 'portrait-grid-4',
+  'portrait-5', 'portrait-6',
+  'three-rows', 'single-portrait',
+])
+const MAX_EXTREME_PAGES = 3
+
 function scoreTemplateForGroup(
   template: LayoutTemplate,
   group: PageGroup,
@@ -159,16 +166,19 @@ export function pickBestTemplate(
   if (position === 0) return getTemplate('cover-hero')!
   if (position === totalSpreads - 1) return getTemplate('closing')!
 
+  const extremeUsedCount = previousTemplateIds.filter((id) => EXTREME_ORIENTATION_TEMPLATES.has(id)).length
+  const extremeBudgetExhausted = extremeUsedCount >= MAX_EXTREME_PAGES
+
   const photoCount = group.photoIds.length
   const portraitRatio = group.orientationMix.portrait / photoCount
   const effectiveMax = portraitRatio >= 0.6
     ? Math.min(photoCount, 4)
     : photoCount
 
-  // Allow templates that need up to 1 extra photo (scored with penalty instead of rejected)
   const candidates = LAYOUT_TEMPLATES
     .filter((t) => t.category !== 'cover' && t.category !== 'closing')
     .filter((t) => {
+      if (extremeBudgetExhausted && EXTREME_ORIENTATION_TEMPLATES.has(t.id)) return false
       const slotCount = t.slots.filter((s) => !s.id.endsWith('-mirror')).length
       const shortage = slotCount - effectiveMax
       return effectiveMax >= t.minPhotos && shortage <= 1
@@ -183,7 +193,8 @@ export function pickBestTemplate(
   let bestScore = -Infinity
 
   for (const template of candidates) {
-    const score = scoreTemplateForGroup(template, group, scores, previousTemplateIds)
+    let score = scoreTemplateForGroup(template, group, scores, previousTemplateIds)
+    if (EXTREME_ORIENTATION_TEMPLATES.has(template.id)) score -= 0.6
     if (score > bestScore) {
       bestScore = score
       bestTemplate = template
