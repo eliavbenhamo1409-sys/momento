@@ -1,37 +1,62 @@
 ---
-description: Critical constraint for react-pageflip SpreadPage structure — prevents page flash during flip animations
+description: "LOCKED — Page flip system is fragile. Any change to flip logic, SpreadPage structure, stf__item CSS, or flipNext/flipPrev can reintroduce a catastrophic page flash bug. Read this rule IN FULL before touching any related code."
 globs: src/components/editor/SpreadPage.tsx, src/components/editor/EditorCanvas.tsx, src/index.css
 alwaysApply: false
 ---
 
-# Page-Flip Flash Prevention
+# Page-Flip System — LOCKED
 
-## Root causes (all must be addressed)
-1. `react-pageflip` calls `updateFromHtml()` (full page reinitialization) whenever its `children` prop changes — memoize children with only `spreads` as dep.
-2. React DOM changes (selection ring removal, overflow toggles, CSS shadow transitions) on the old page during the same rAF as the flip completion cause GPU compositor artifacts — defer `setCurrentSpread` to the next animation frame.
-3. A selected photo has `overflow: visible` which lets its content (ring, shadow, scale) extend beyond the page boundary. Combined with `scaleX(-1)` and 3D transforms, the GPU compositor may render the overflowed content on the wrong page layer. Deselect before flipping and clip at `.stf__item`.
+> **This system is FROZEN.** The page flip animation, SpreadPage structure, and `.stf__item` CSS overrides have been debugged extensively. Every line exists to prevent a GPU compositor bug where a photo from the destination page appears overlaid on the flipping page during the flip animation. DO NOT modify any of these pieces without reading and understanding every constraint below.
 
-## FIVE constraints that prevent the flash:
+---
 
-### 1. Defer `setCurrentSpread` to next animation frame
-In the `onFlip` callback, wrap `setCurrentSpread` in `requestAnimationFrame()`. This ensures React DOM changes happen AFTER page-flip's `drawFrame()` has hidden the old pages.
+## The Bug (for context)
+
+When flipping a page, ONE photo from the destination page would appear "dressed on" the flipping page and move with the animation. Root causes:
+
+1. **`overflow: visible` on selected photos** — The photo editing toolbar sets `overflow: visible` on the selected photo's container (for resize handles / selection ring). During the 3D flip, this overflowed content leaks across page layers via the GPU compositor, especially with the `scaleX(-1)` mirror transforms.
+2. **React DOM mutations during flip** — Changing `currentSpreadIndex` while the flip is animating causes React to toggle CSS classes, overflow, and shadows on still-visible rotating pages, creating compositor artifacts.
+3. **Unstable `children` prop** — `react-pageflip` calls `updateFromHtml()` (full page reinitialization) whenever its `children` prop reference changes, tearing down and rebuilding all pages mid-animation.
+
+---
+
+## FIVE mandatory constraints
+
+### 1. Deselect before flipping
+
+`flipNext` and `flipPrev` MUST call `deselectAll()` first, then defer the actual flip to the next animation frame. This guarantees React commits the DOM change (`overflow: visible` → `hidden`) before page-flip renders its first frame.
 
 ```tsx
-// ✅ CORRECT — React changes happen after old pages are display:none
+// ✅ CORRECT — DOM is clean before flip starts
+const flipNext = useCallback(() => {
+  deselectAll()
+  requestAnimationFrame(() => {
+    bookRef.current?.pageFlip()?.flipNext()
+  })
+}, [deselectAll])
+
+// ❌ WRONG — photo may still have overflow:visible during first drawFrame
+const flipNext = useCallback(() => {
+  bookRef.current?.pageFlip()?.flipNext()
+}, [])
+```
+
+### 2. Defer `setCurrentSpread` to next animation frame
+
+In `onFlip`, wrap `setCurrentSpread` in `requestAnimationFrame()`. React DOM changes (selection ring removal, overflow toggles, shadow transitions) must happen AFTER page-flip's `drawFrame()` has hidden the old pages.
+
+```tsx
+// ✅ CORRECT
 const onFlip = useCallback((e: { data: number }) => {
   requestAnimationFrame(() => {
     setCurrentSpread(Math.floor(e.data / 2))
   })
 }, [setCurrentSpread])
-
-// ❌ WRONG — React changes happen on still-visible rotating page
-const onFlip = useCallback((e: { data: number }) => {
-  setCurrentSpread(Math.floor(e.data / 2))
-}, [setCurrentSpread])
 ```
 
-### 2. Memoize flipbook children — depends ONLY on `spreads`
-Children passed to `<HTMLFlipBook>` MUST be memoized with only `spreads` as dependency. Do NOT include interaction state as props to `SpreadPage`.
+### 3. Memoize flipbook children — depends ONLY on `spreads`
+
+The array passed as children to `<HTMLFlipBook>` MUST be wrapped in `useMemo` with `[spreads]` as the sole dependency. SpreadPage props must NOT include any interaction state.
 
 ```tsx
 const flipPages = useMemo(() => spreads.flatMap((s, i) => [
@@ -40,35 +65,65 @@ const flipPages = useMemo(() => spreads.flatMap((s, i) => [
 ]), [spreads])
 ```
 
-### 3. SpreadPage reads interaction state from the store
-`SpreadPage` receives only `spread`, `side`, and `spreadIndex` as props. All interaction state is read via `useEditorStore()` inside the component.
+### 4. SpreadPage reads interaction state from the store
 
-### 4. Memoize HTMLFlipBook's `style` prop
-Use `const flipBookStyle = useMemo(() => ({}), [])` instead of `style={{}}`. A new object literal breaks `React.memo`, causing unnecessary re-renders.
+`SpreadPage` accepts ONLY `spread`, `side`, and `spreadIndex` as props. All interaction state (`selectedPhotoId`, `isCurrent`, `swapPhase`, etc.) is read via `useEditorStore()` hooks inside the component. This keeps the `flipPages` memo stable.
 
-### 5. Deselect before flipping
-Call `deselectAll()` before `flipNext()`/`flipPrev()`. Defer the flip to the next animation frame so React commits the DOM change (overflow: visible → hidden) before page-flip's first `drawFrame()`.
+### 5. Memoize HTMLFlipBook's `style` prop
 
-```tsx
-const flipNext = useCallback(() => {
-  deselectAll()
-  requestAnimationFrame(() => {
-    bookRef.current?.pageFlip()?.flipNext()
-  })
-}, [deselectAll])
+Use a stable reference: `const flipBookStyle = useMemo(() => ({}), [])`. A literal `style={{}}` creates a new object every render, which bypasses `React.memo` and triggers unnecessary `updateFromHtml()`.
+
+---
+
+## Required CSS on `.stf__item` (src/index.css)
+
+```css
+.album-flipbook .stf__item {
+  background-color: #fff;
+  transform-style: flat !important;
+  overflow: hidden;
+}
 ```
 
-### SpreadPage inner wrapper structure
-The outer ref div (`ref={ref}`) MUST remain bare. All visual styles live on the inner wrapper. `react-pageflip` overwrites the ref's `style.cssText` every frame.
+- `transform-style: flat !important` — Prevents children (inner wrapper with `scaleX(-1)`) from participating in the parent's 3D context. Without this, the mirror transform creates compositor layer conflicts during the rotateY flip.
+- `overflow: hidden` — Hard clip boundary. Even if a photo somehow has `overflow: visible`, content cannot escape the page rectangle.
+- `background-color: #fff` — Ensures opaque pages; prevents destination page content from showing through transparent areas.
 
-### Defense-in-depth CSS
-Keep on `.album-flipbook .stf__item` in `src/index.css`:
-- `transform-style: flat !important` — prevents children from participating in 3D context
-- `overflow: hidden` — hard clip boundary preventing any content from leaking between pages
+**Do NOT remove or weaken any of these three properties.**
 
-### DO NOT
-- Call `setCurrentSpread` synchronously inside `onFlip` (causes GPU artifacts)
-- Add `backfaceVisibility: hidden` to the inner wrapper (GPU artifacts with `scaleX(-1)`)
-- Pass interaction state as props to SpreadPage (breaks children memoization)
-- Use `style={{}}` on HTMLFlipBook (breaks React.memo)
-- Start a flip while a photo is selected (overflow: visible leaks content between pages)
+---
+
+## SpreadPage inner wrapper structure
+
+```tsx
+<div ref={ref} data-density="hard">        {/* ← .stf__item — bare, no styles */}
+  <div style={{                              {/* ← inner wrapper — all visual styles */}
+    backgroundColor: bgColor,
+    width: '100%', height: '100%',
+    position: 'relative',
+    overflow: 'hidden',
+    transform: 'scaleX(-1)',                 {/* ← RTL mirror (counters EditorCanvas mirror) */}
+  }}>
+    <PageBackground ... />
+    <AbsolutePageElements ... />
+  </div>
+</div>
+```
+
+The outer ref div MUST remain bare — `react-pageflip` overwrites its `style.cssText` every frame via `drawHard()` / `simpleDraw()`.
+
+---
+
+## DO NOT (hard rules)
+
+| Action | Why it breaks |
+|--------|--------------|
+| Call `setCurrentSpread` synchronously in `onFlip` | GPU compositor artifacts on rotating page |
+| Add `backfaceVisibility: hidden` to inner wrapper | GPU glitch with `scaleX(-1)` mirror |
+| Pass interaction state as props to SpreadPage | Breaks `flipPages` memoization → `updateFromHtml()` |
+| Use `style={{}}` on HTMLFlipBook | New object every render → breaks `React.memo` |
+| Call `flipNext()`/`flipPrev()` without `deselectAll()` first | `overflow: visible` on selected photo leaks across pages |
+| Remove `overflow: hidden` from `.stf__item` CSS | Last line of defense against content leaking between pages |
+| Remove `transform-style: flat !important` from `.stf__item` | Children participate in 3D context → compositor conflicts |
+| Add any transform to the outer ref div of SpreadPage | Conflicts with page-flip's inline `cssText` |
+| Add `AnimatePresence` or exit animations to page content | Ghost elements persist during flip, causing visual artifacts |
