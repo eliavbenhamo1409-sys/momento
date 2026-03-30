@@ -269,6 +269,7 @@ body {
 .album-flipbook .stf__item {
   background-color: #fff;
   transform-style: flat !important;
+  overflow: hidden;
 }
 .album-flipbook .stf__outerShadow,
 .album-flipbook .stf__innerShadow,

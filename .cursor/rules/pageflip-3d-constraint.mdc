@@ -6,11 +6,12 @@ alwaysApply: false
 
 # Page-Flip Flash Prevention
 
-## Root causes (both must be addressed)
+## Root causes (all must be addressed)
 1. `react-pageflip` calls `updateFromHtml()` (full page reinitialization) whenever its `children` prop changes — memoize children with only `spreads` as dep.
 2. React DOM changes (selection ring removal, overflow toggles, CSS shadow transitions) on the old page during the same rAF as the flip completion cause GPU compositor artifacts — defer `setCurrentSpread` to the next animation frame.
+3. A selected photo has `overflow: visible` which lets its content (ring, shadow, scale) extend beyond the page boundary. Combined with `scaleX(-1)` and 3D transforms, the GPU compositor may render the overflowed content on the wrong page layer. Deselect before flipping and clip at `.stf__item`.
 
-## FOUR constraints that prevent the flash:
+## FIVE constraints that prevent the flash:
 
 ### 1. Defer `setCurrentSpread` to next animation frame
 In the `onFlip` callback, wrap `setCurrentSpread` in `requestAnimationFrame()`. This ensures React DOM changes happen AFTER page-flip's `drawFrame()` has hidden the old pages.
@@ -45,14 +46,29 @@ const flipPages = useMemo(() => spreads.flatMap((s, i) => [
 ### 4. Memoize HTMLFlipBook's `style` prop
 Use `const flipBookStyle = useMemo(() => ({}), [])` instead of `style={{}}`. A new object literal breaks `React.memo`, causing unnecessary re-renders.
 
+### 5. Deselect before flipping
+Call `deselectAll()` before `flipNext()`/`flipPrev()`. Defer the flip to the next animation frame so React commits the DOM change (overflow: visible → hidden) before page-flip's first `drawFrame()`.
+
+```tsx
+const flipNext = useCallback(() => {
+  deselectAll()
+  requestAnimationFrame(() => {
+    bookRef.current?.pageFlip()?.flipNext()
+  })
+}, [deselectAll])
+```
+
 ### SpreadPage inner wrapper structure
 The outer ref div (`ref={ref}`) MUST remain bare. All visual styles live on the inner wrapper. `react-pageflip` overwrites the ref's `style.cssText` every frame.
 
 ### Defense-in-depth CSS
-Keep `transform-style: flat !important` on `.stf__item` in `src/index.css`.
+Keep on `.album-flipbook .stf__item` in `src/index.css`:
+- `transform-style: flat !important` — prevents children from participating in 3D context
+- `overflow: hidden` — hard clip boundary preventing any content from leaking between pages
 
 ### DO NOT
 - Call `setCurrentSpread` synchronously inside `onFlip` (causes GPU artifacts)
 - Add `backfaceVisibility: hidden` to the inner wrapper (GPU artifacts with `scaleX(-1)`)
 - Pass interaction state as props to SpreadPage (breaks children memoization)
 - Use `style={{}}` on HTMLFlipBook (breaks React.memo)
+- Start a flip while a photo is selected (overflow: visible leaks content between pages)

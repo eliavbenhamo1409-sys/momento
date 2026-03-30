@@ -1437,12 +1437,18 @@ export default function EditorCanvas() {
   }, [setCurrentSpread])
 
   const flipNext = useCallback(() => {
-    bookRef.current?.pageFlip()?.flipNext()
-  }, [])
+    deselectAll()
+    requestAnimationFrame(() => {
+      bookRef.current?.pageFlip()?.flipNext()
+    })
+  }, [deselectAll])
 
   const flipPrev = useCallback(() => {
-    bookRef.current?.pageFlip()?.flipPrev()
-  }, [])
+    deselectAll()
+    requestAnimationFrame(() => {
+      bookRef.current?.pageFlip()?.flipPrev()
+    })
+  }, [deselectAll])
 
   const isSwapping = swapPhase !== 'off'
 
