@@ -43,6 +43,11 @@ export default function EditorScreen() {
 
   useEffect(() => {
     if (!albumId) {
+      const hasSpreads = useEditorStore.getState().spreads.length > 0
+      if (hasSpreads) {
+        setContentReady(true)
+        return
+      }
       navigate('/dashboard', { replace: true })
       return
     }
