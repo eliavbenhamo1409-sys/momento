@@ -232,29 +232,34 @@ function PhotoToolbarPortal({
   currentScale,
   slotId,
   photoUrl,
+  isMoveMode,
   onZoomIn,
   onZoomOut,
   onReset,
   onReplace,
   onDelete,
   onAiResult,
+  onToggleMove,
 }: {
   containerRef: React.RefObject<HTMLDivElement | null>
   zoomPct: number
   currentScale: number
   slotId: string
   photoUrl: string
+  isMoveMode: boolean
   onZoomIn: () => void
   onZoomOut: () => void
   onReset: () => void
   onReplace: () => void
   onDelete: () => void
   onAiResult: (slotId: string, dataUrl: string) => void
+  onToggleMove: () => void
 }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
+  const [aiError, setAiError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -280,22 +285,58 @@ function PhotoToolbarPortal({
   const handleAiSubmit = useCallback(async () => {
     if (!aiPrompt.trim() || aiLoading) return
     setAiLoading(true)
+    setAiError('')
     try {
-      const { imageUrlToDataUrl, editPhotoWithAI } = await import('../../lib/openai')
-      const dataUrl = await imageUrlToDataUrl(photoUrl)
-      if (!dataUrl) { setAiLoading(false); return }
+      const { editPhotoWithAI } = await import('../../lib/openai')
+
+      let dataUrl: string | null = null
+      if (photoUrl.startsWith('data:')) {
+        dataUrl = photoUrl
+      } else {
+        try {
+          const resp = await fetch(photoUrl)
+          const blob = await resp.blob()
+          dataUrl = await new Promise<string | null>((resolve) => {
+            const reader = new FileReader()
+            reader.onloadend = () => resolve(reader.result as string)
+            reader.onerror = () => resolve(null)
+            reader.readAsDataURL(blob)
+          })
+        } catch {
+          const img = containerRef.current?.querySelector('img')
+          if (img) {
+            try {
+              const canvas = document.createElement('canvas')
+              canvas.width = img.naturalWidth || 800
+              canvas.height = img.naturalHeight || 800
+              const ctx = canvas.getContext('2d')
+              if (ctx) { ctx.drawImage(img, 0, 0); dataUrl = canvas.toDataURL('image/jpeg', 0.9) }
+            } catch { /* tainted canvas */ }
+          }
+        }
+      }
+
+      if (!dataUrl) {
+        setAiError('לא ניתן לטעון את התמונה')
+        setAiLoading(false)
+        return
+      }
+
       const result = await editPhotoWithAI(aiPrompt, dataUrl)
       if (result) {
         onAiResult(slotId, result)
         setAiPrompt('')
         setAiOpen(false)
+      } else {
+        setAiError('העריכה נכשלה, נסה שוב')
       }
     } catch (err) {
       console.error('AI edit failed:', err)
+      setAiError('שגיאה בעריכת AI')
     } finally {
       setAiLoading(false)
     }
-  }, [aiPrompt, aiLoading, photoUrl, slotId, onAiResult])
+  }, [aiPrompt, aiLoading, photoUrl, slotId, onAiResult, containerRef])
 
   if (!pos) return null
 
@@ -308,28 +349,35 @@ function PhotoToolbarPortal({
     >
       {/* AI prompt panel */}
       {aiOpen && (
-        <div className="mb-2 flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-deep-brown/90 backdrop-blur-md shadow-xl shadow-black/15 min-w-[280px]">
-          <Icon name="auto_fix_high" size={16} className="text-amber-300 shrink-0" />
-          <input
-            ref={inputRef}
-            dir="rtl"
-            type="text"
-            value={aiPrompt}
-            onChange={(e) => setAiPrompt(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); if (e.key === 'Escape') setAiOpen(false) }}
-            placeholder="תאר מה לשנות בתמונה..."
-            disabled={aiLoading}
-            className="flex-1 bg-white/10 text-white text-xs rounded-lg px-2.5 py-1.5 placeholder:text-white/40 outline-none focus:ring-1 focus:ring-white/30 disabled:opacity-50"
-          />
-          <button
-            onClick={handleAiSubmit}
-            disabled={!aiPrompt.trim() || aiLoading}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-300 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30 shrink-0"
-          >
-            {aiLoading
-              ? <div className="w-4 h-4 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
-              : <Icon name="send" size={16} />}
-          </button>
+        <div className="mb-2 flex flex-col gap-1.5">
+          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-deep-brown/90 backdrop-blur-md shadow-xl shadow-black/15 min-w-[280px]">
+            <Icon name="auto_fix_high" size={16} className="text-amber-300 shrink-0" />
+            <input
+              ref={inputRef}
+              dir="rtl"
+              type="text"
+              value={aiPrompt}
+              onChange={(e) => { setAiPrompt(e.target.value); setAiError('') }}
+              onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); if (e.key === 'Escape') setAiOpen(false) }}
+              placeholder="תאר מה לשנות בתמונה..."
+              disabled={aiLoading}
+              className="flex-1 bg-white/10 text-white text-xs rounded-lg px-2.5 py-1.5 placeholder:text-white/40 outline-none focus:ring-1 focus:ring-white/30 disabled:opacity-50"
+            />
+            <button
+              onClick={handleAiSubmit}
+              disabled={!aiPrompt.trim() || aiLoading}
+              className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-300 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30 shrink-0"
+            >
+              {aiLoading
+                ? <div className="w-4 h-4 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
+                : <Icon name="send" size={16} />}
+            </button>
+          </div>
+          {aiError && (
+            <div dir="rtl" className="px-3 py-1.5 rounded-lg bg-red-500/80 text-white text-[11px] font-medium text-center backdrop-blur-sm">
+              {aiError}
+            </div>
+          )}
         </div>
       )}
 
@@ -356,6 +404,14 @@ function PhotoToolbarPortal({
         <div className="w-px h-4 bg-white/20 mx-0.5" />
 
         <button
+          onClick={onToggleMove}
+          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${isMoveMode ? 'bg-sky-500/30 text-sky-300' : 'text-white/80 hover:bg-white/15'}`}
+          title="הזז במרחב"
+        >
+          <Icon name="open_with" size={16} />
+        </button>
+
+        <button
           onClick={onReset}
           className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all"
           title="אפס מיקום"
@@ -366,7 +422,7 @@ function PhotoToolbarPortal({
         <div className="w-px h-4 bg-white/20 mx-0.5" />
 
         <button
-          onClick={() => setAiOpen(!aiOpen)}
+          onClick={() => { setAiOpen(!aiOpen); setAiError('') }}
           className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${aiOpen ? 'bg-amber-500/30 text-amber-300' : 'text-white/80 hover:bg-white/15'}`}
           title="עריכת AI"
         >
@@ -627,14 +683,18 @@ export function AbsolutePhotoElement({
   const replaceFileRef = useRef<HTMLInputElement>(null)
 
   const currentScale = element.scale ?? 1
+  const [isMoveMode, setIsMoveMode] = useState(false)
+
+  useEffect(() => { if (!isSelected) setIsMoveMode(false) }, [isSelected])
 
   const onSelectRef = useRef(onSelect)
   onSelectRef.current = onSelect
-  const moveSlotRef = useRef(moveSlot)
-  moveSlotRef.current = moveSlot
+  const updatePosRef = useRef(updatePos)
+  updatePosRef.current = updatePos
 
-  // Pointer-down → select on click, move on drag (native listeners for
-  // uninterrupted tracking even after React re-renders add MoveOverlay).
+  // Pointer-down → select on click, pan image on drag.
+  // Uses native listeners + setPointerCapture so the drag keeps
+  // working even after React re-renders inject the selection UI.
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!element.photoUrl || isSwapping) return
     e.stopPropagation()
@@ -650,36 +710,36 @@ export function AbsolutePhotoElement({
     let lastY = startY
     let didMove = false
 
-    const parentEl = container.parentElement
-    if (!parentEl) return
-    const parentRect = parentEl.getBoundingClientRect()
-    const parentW = parentRect.width || 1
-    const parentH = parentRect.height || 1
+    const containerRect = container.getBoundingClientRect()
+    const cW = containerRect.width || 1
+    const cH = containerRect.height || 1
 
-    const initLeft = element.x
-    const initTop = element.y
-    let accumDx = 0
-    let accumDy = 0
+    const [posXStr, posYStr] = (element.objectPosition || '50% 50%').split(' ')
+    let posX = parseFloat(posXStr) || 50
+    let posY = parseFloat(posYStr) || 50
+    const scale = element.scale ?? 1
     let rafId = 0
 
     const flush = () => {
       rafId = 0
-      container.style.left = `${initLeft + accumDx}%`
-      container.style.top = `${initTop + accumDy}%`
+      const img = container.querySelector('img')
+      if (img) img.style.objectPosition = `${posX.toFixed(1)}% ${posY.toFixed(1)}%`
     }
 
     const onMove = (ev: PointerEvent) => {
       if (!didMove) {
         if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return
         didMove = true
-        onSelectRef.current()
+        if (!isSelected) onSelectRef.current()
       }
-      const dx = ((ev.clientX - lastX) / parentW) * 100
-      const dy = ((ev.clientY - lastY) / parentH) * 100
+      const dx = ev.clientX - lastX
+      const dy = ev.clientY - lastY
       lastX = ev.clientX
       lastY = ev.clientY
-      accumDx += dx
-      accumDy += dy
+
+      const sens = Math.max(1, scale) * 0.8
+      posX = Math.max(0, Math.min(100, posX - (dx / cW) * 100 * sens))
+      posY = Math.max(0, Math.min(100, posY - (dy / cH) * 100 * sens))
       if (!rafId) rafId = requestAnimationFrame(flush)
     }
 
@@ -695,7 +755,7 @@ export function AbsolutePhotoElement({
       ev.stopPropagation()
       cleanup()
       if (didMove) {
-        moveSlotRef.current(element.slotId, { x: accumDx, y: accumDy })
+        updatePosRef.current(element.slotId, `${posX.toFixed(1)}% ${posY.toFixed(1)}%`)
       } else {
         onSelectRef.current()
       }
@@ -704,7 +764,7 @@ export function AbsolutePhotoElement({
     container.addEventListener('pointermove', onMove)
     container.addEventListener('pointerup', onUp)
     container.addEventListener('pointercancel', cleanup)
-  }, [element.photoUrl, element.slotId, element.x, element.y, isSwapping])
+  }, [element.photoUrl, element.slotId, element.objectPosition, element.scale, isSelected, isSwapping])
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!element.photoUrl) return
@@ -753,7 +813,7 @@ export function AbsolutePhotoElement({
     overflow: isSelected ? 'visible' : 'hidden',
     clipPath: isSelected ? undefined : (element.clipPath || undefined),
     WebkitClipPath: isSelected ? undefined : (element.clipPath || undefined),
-    cursor: isDragSource ? 'grabbing' : 'pointer',
+    cursor: isDragSource ? 'grabbing' : (isSelected && !isMoveMode ? 'grab' : 'pointer'),
     touchAction: 'none',
   }
 
@@ -895,12 +955,14 @@ export function AbsolutePhotoElement({
             currentScale={currentScale}
             slotId={element.slotId}
             photoUrl={element.photoUrl!}
+            isMoveMode={isMoveMode}
             onZoomIn={() => updateScale(element.slotId, Math.min(3, currentScale + 0.15))}
             onZoomOut={() => updateScale(element.slotId, Math.max(1, currentScale - 0.15))}
             onReset={() => { updatePos(element.slotId, '50% 50%'); updateScale(element.slotId, 1) }}
             onReplace={() => replaceFileRef.current?.click()}
             onDelete={() => clearPhoto(element.slotId)}
             onAiResult={(sid, dataUrl) => setPhotoUrl(sid, dataUrl)}
+            onToggleMove={() => setIsMoveMode((v) => !v)}
           />
 
           {/* Hidden file input for replace */}
@@ -916,7 +978,7 @@ export function AbsolutePhotoElement({
             }}
           />
 
-          {/* Resize handles — proportional Canva-style resize */}
+          {/* Resize handles */}
           {(['nw', 'ne', 'sw', 'se'] as const).map((corner) => (
             <ResizeHandle
               key={corner}
@@ -928,13 +990,15 @@ export function AbsolutePhotoElement({
             />
           ))}
 
-          {/* Move overlay — hold to drag, click to deselect */}
-          <MoveOverlay
-            containerRef={containerRef}
-            slotId={element.slotId}
-            moveSlot={moveSlot}
-            onSelect={onSelect}
-          />
+          {/* Move overlay — only active when move-mode button is toggled */}
+          {isMoveMode && (
+            <MoveOverlay
+              containerRef={containerRef}
+              slotId={element.slotId}
+              moveSlot={moveSlot}
+              onSelect={onSelect}
+            />
+          )}
         </>
       )}
     </motion.div>
