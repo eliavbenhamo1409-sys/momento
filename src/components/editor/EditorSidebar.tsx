@@ -157,8 +157,8 @@ export default function EditorSidebar() {
         <Separator />
 
         <ToolBtn
-          icon="auto_awesome"
-          label="רקע AI"
+          icon="palette"
+          label="רקעים"
           active={activeTool === 'ai' || showAIBg}
           onClick={() => {
             setShowLayoutPicker(false)

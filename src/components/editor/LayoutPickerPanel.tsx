@@ -23,7 +23,12 @@ function buildPreview(template: typeof LAYOUT_TEMPLATES[0]): LayoutOption['previ
     }))
 }
 
-const LAYOUT_OPTIONS: LayoutOption[] = LAYOUT_TEMPLATES
+const SPECIAL_IDS = new Set([
+  'landscape-top-2sq', '2sq-top-landscape', 'cross-diagonal',
+  'single-portrait', 'two-landscapes-stacked',
+])
+
+const ALL_OPTIONS: LayoutOption[] = LAYOUT_TEMPLATES
   .filter((t) => t.category !== 'cover' && t.category !== 'closing')
   .map((t) => ({
     id: t.id,
@@ -31,6 +36,9 @@ const LAYOUT_OPTIONS: LayoutOption[] = LAYOUT_TEMPLATES
     slots: t.slots.filter((s) => !s.id.endsWith('-mirror')).length,
     preview: buildPreview(t),
   }))
+
+const LAYOUT_OPTIONS = ALL_OPTIONS.filter((o) => !SPECIAL_IDS.has(o.id))
+const SPECIAL_OPTIONS = ALL_OPTIONS.filter((o) => SPECIAL_IDS.has(o.id))
 
 function MiniPreview({ layout, isActive }: { layout: LayoutOption; isActive: boolean }) {
   return (
@@ -151,6 +159,34 @@ export default function LayoutPickerPanel({ onClose }: { onClose: () => void }) 
             </div>
           </div>
         ))}
+
+        {SPECIAL_OPTIONS.length > 0 && (
+          <div>
+            <div className="flex items-center gap-2 mb-2 mt-1">
+              <Icon name="auto_awesome" size={14} className="text-primary/70" />
+              <span className="text-[11px] font-bold text-primary/80 tracking-wide">
+                עיצובים מיוחדים
+              </span>
+              <div className="flex-1 h-px bg-primary/10" />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {SPECIAL_OPTIONS.map((opt) => (
+                <motion.button
+                  key={opt.id}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => handleSelect(opt.id, opt.slots)}
+                  className="flex flex-col gap-1.5 p-1.5 rounded-xl hover:bg-primary/5 transition-colors ring-1 ring-primary/[0.08]"
+                >
+                  <MiniPreview layout={opt} isActive={currentTemplate === opt.id} />
+                  <span className="text-[10px] text-primary/70 font-medium truncate w-full text-center">
+                    {opt.name}
+                  </span>
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </motion.div>
   )

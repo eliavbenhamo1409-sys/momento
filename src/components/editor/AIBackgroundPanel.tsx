@@ -6,6 +6,7 @@ import { generateCustomBackground, imageUrlToDataUrl } from '../../lib/openai'
 import Icon from '../shared/Icon'
 
 type Target = 'spread' | 'left' | 'right'
+type Tab = 'gallery' | 'ai'
 
 const TARGETS: { id: Target; label: string; icon: string; ratio: '16:9' | '1:1' }[] = [
   { id: 'spread', label: 'כל הדף', icon: 'panorama', ratio: '16:9' },
@@ -22,9 +23,25 @@ const QUICK_PROMPTS = [
   { label: 'כוכבים', prompt: 'שמיים זרועי כוכבים בלילה ברור עם שביל החלב' },
 ]
 
+const PREDEFINED_COLORS: { label: string; value: string; gradient: string }[] = [
+  { label: 'לבן', value: '#ffffff', gradient: 'linear-gradient(135deg, #ffffff 0%, #f5f0eb 100%)' },
+  { label: 'קרם', value: '#f5f0eb', gradient: 'linear-gradient(135deg, #faf7f2 0%, #ede5d8 100%)' },
+  { label: 'בז׳', value: '#e8dfd3', gradient: 'linear-gradient(135deg, #efe8de 0%, #d9cfc0 100%)' },
+  { label: 'מרווה', value: '#c5cfc0', gradient: 'linear-gradient(135deg, #d4dccf 0%, #b0bfa8 100%)' },
+  { label: 'אפרסק', value: '#f0d9c8', gradient: 'linear-gradient(135deg, #f7e5d7 0%, #e4c4a8 100%)' },
+  { label: 'תכלת רך', value: '#d4dfe8', gradient: 'linear-gradient(135deg, #e0e9f0 0%, #c0d0de 100%)' },
+  { label: 'לבנדר', value: '#ddd4e8', gradient: 'linear-gradient(135deg, #e8e0f0 0%, #ccc0de 100%)' },
+  { label: 'ורוד רך', value: '#edd6d8', gradient: 'linear-gradient(135deg, #f5e0e2 0%, #e0c4c8 100%)' },
+  { label: 'חול', value: '#d4c8b0', gradient: 'linear-gradient(135deg, #e0d4bc 0%, #c0b498 100%)' },
+  { label: 'אפור רך', value: '#e0ddd8', gradient: 'linear-gradient(135deg, #eae8e4 0%, #d0cdc8 100%)' },
+  { label: 'שמפניה', value: '#f0e8d0', gradient: 'linear-gradient(135deg, #f8f0db 0%, #e5d8b8 100%)' },
+  { label: 'שחור', value: '#2d2824', gradient: 'linear-gradient(135deg, #3a3530 0%, #1e1a16 100%)' },
+]
+
 export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) {
   const setSpreadGeneratedBg = useEditorStore((s) => s.setSpreadGeneratedBg)
   const addToast = useUIStore((s) => s.addToast)
+  const [activeTab, setActiveTab] = useState<Tab>('gallery')
   const [prompt, setPrompt] = useState('')
   const [target, setTarget] = useState<Target>('spread')
   const [isGenerating, setIsGenerating] = useState(false)
@@ -80,8 +97,27 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
   const handleApply = () => {
     if (!previewUrl) return
     setSpreadGeneratedBg(previewUrl, target, 1)
-    addToast('הרקע הוחל בהצלחה ✨', 'success')
+    addToast('הרקע הוחל בהצלחה', 'success')
     onClose()
+  }
+
+  const handleApplyColor = (color: string) => {
+    const { spreads, currentSpreadIndex } = useEditorStore.getState()
+    const spread = spreads[currentSpreadIndex]
+    if (!spread?.design) return
+
+    useEditorStore.setState((state) => {
+      const newSpreads = [...state.spreads]
+      const s = { ...newSpreads[state.currentSpreadIndex] }
+      const d = { ...s.design! }
+      const bg = { ...d.background, color }
+      d.background = bg
+      s.design = d
+      newSpreads[state.currentSpreadIndex] = s
+      return { spreads: newSpreads }
+    })
+
+    addToast('צבע הרקע שונה', 'success')
   }
 
   return (
@@ -98,13 +134,13 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 flex items-center justify-center">
-            <Icon name="auto_awesome" size={16} className="text-primary" />
+            <Icon name="palette" size={16} className="text-primary" />
           </div>
           <h3
             className="text-sm font-bold text-on-surface"
             style={{ fontFamily: 'var(--font-family-headline)' }}
           >
-            רקע בעזרת AI
+            רקעים
           </h3>
         </div>
         <button
@@ -115,120 +151,200 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
         </button>
       </div>
 
-      {/* Target selector */}
-      <div className="flex gap-1.5 mb-4">
-        {TARGETS.map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setTarget(t.id)}
-            className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-[10px] font-semibold transition-all duration-200 ${
-              target === t.id
-                ? 'bg-primary/10 text-primary shadow-sm'
-                : 'text-secondary/50 hover:text-on-surface hover:bg-surface-container-low'
-            }`}
-          >
-            <Icon name={t.icon} size={16} filled={target === t.id} />
-            {t.label}
-          </button>
-        ))}
+      {/* Tab switcher */}
+      <div className="flex gap-1 mb-4 p-1 bg-surface-container-low rounded-xl">
+        <button
+          onClick={() => setActiveTab('gallery')}
+          className={`flex-1 py-2 rounded-lg text-[11px] font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
+            activeTab === 'gallery'
+              ? 'bg-white text-on-surface shadow-sm'
+              : 'text-secondary/50 hover:text-on-surface'
+          }`}
+        >
+          <Icon name="palette" size={14} filled={activeTab === 'gallery'} />
+          רקעים מוכנים
+        </button>
+        <button
+          onClick={() => setActiveTab('ai')}
+          className={`flex-1 py-2 rounded-lg text-[11px] font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
+            activeTab === 'ai'
+              ? 'bg-white text-on-surface shadow-sm'
+              : 'text-secondary/50 hover:text-on-surface'
+          }`}
+        >
+          <Icon name="auto_awesome" size={14} filled={activeTab === 'ai'} />
+          יצירה עם AI
+        </button>
       </div>
 
-      {/* Quick prompts */}
-      <div className="mb-3">
-        <span className="text-[10px] text-secondary/50 font-semibold tracking-wide mb-1.5 block">השראה מהירה</span>
-        <div className="flex flex-wrap gap-1.5">
-          {QUICK_PROMPTS.map((qp) => (
-            <button
-              key={qp.label}
-              onClick={() => setPrompt(qp.prompt)}
-              className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-                prompt === qp.prompt
-                  ? 'bg-primary/12 text-primary'
-                  : 'bg-surface-container-low text-secondary/60 hover:bg-surface-container-high hover:text-on-surface'
-              }`}
-            >
-              {qp.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Prompt input */}
-      <div className="mb-4">
-        <textarea
-          value={prompt}
-          onChange={(e) => setPrompt(e.target.value)}
-          placeholder="תארו את הרקע שתרצו... למשל: חוף ים עם קונכיות ומים שקטים"
-          rows={3}
-          disabled={isGenerating}
-          className="w-full bg-surface-container-low border-none rounded-xl text-sm px-3 py-2.5 placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none disabled:opacity-50"
-        />
-      </div>
-
-      {/* Generate button */}
-      <motion.button
-        whileHover={{ scale: isGenerating ? 1 : 1.02 }}
-        whileTap={{ scale: isGenerating ? 1 : 0.98 }}
-        onClick={handleGenerate}
-        disabled={isGenerating || !prompt.trim()}
-        className="w-full py-2.5 bg-gradient-to-r from-primary to-primary/80 text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-all mb-4 shadow-sm"
-      >
-        {isGenerating ? (
-          <>
-            <span className="inline-block animate-spin">
-              <Icon name="progress_activity" size={18} />
-            </span>
-            יוצר רקע...
-          </>
-        ) : (
-          <>
-            <Icon name="auto_awesome" size={18} />
-            צור רקע
-          </>
-        )}
-      </motion.button>
-
-      {/* Preview */}
-      <AnimatePresence>
-        {previewUrl && (
+      <AnimatePresence mode="wait">
+        {activeTab === 'gallery' ? (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            key="gallery"
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="flex flex-col gap-3"
+            transition={{ duration: 0.2 }}
           >
-            <span className="text-[10px] text-secondary/50 font-semibold tracking-wide">תצוגה מקדימה</span>
-            <div
-              className="w-full rounded-xl overflow-hidden shadow-md border border-black/[0.04]"
-              style={{ aspectRatio: selectedTarget.ratio === '16:9' ? '16/9' : '1/1' }}
-            >
-              <img
-                src={previewUrl}
-                alt="רקע שנוצר"
-                className="w-full h-full object-cover"
+            {/* Colors section */}
+            <div className="mb-4">
+              <span className="text-[10px] text-secondary/50 font-semibold tracking-wide mb-2 block">
+                צבעים וגרדיאנטים
+              </span>
+              <div className="grid grid-cols-4 gap-2">
+                {PREDEFINED_COLORS.map((bg) => (
+                  <motion.button
+                    key={bg.value}
+                    whileHover={{ scale: 1.06 }}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => handleApplyColor(bg.value)}
+                    className="flex flex-col items-center gap-1 group"
+                  >
+                    <div
+                      className="w-full aspect-square rounded-xl border border-black/[0.06] shadow-sm group-hover:shadow-md transition-shadow"
+                      style={{ background: bg.gradient }}
+                    />
+                    <span className="text-[9px] text-secondary/50 font-medium group-hover:text-on-surface transition-colors">
+                      {bg.label}
+                    </span>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+
+            {/* Placeholder for uploaded backgrounds */}
+            <div className="rounded-xl border-2 border-dashed border-black/[0.06] p-4 flex flex-col items-center gap-2 text-center">
+              <Icon name="add_photo_alternate" size={24} className="text-secondary/30" />
+              <span className="text-[11px] text-secondary/40 font-medium leading-snug">
+                בקרוב — תוכלו להעלות רקעים משלכם
+              </span>
+            </div>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="ai"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.2 }}
+          >
+            {/* Target selector */}
+            <div className="flex gap-1.5 mb-4">
+              {TARGETS.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => setTarget(t.id)}
+                  className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-[10px] font-semibold transition-all duration-200 ${
+                    target === t.id
+                      ? 'bg-primary/10 text-primary shadow-sm'
+                      : 'text-secondary/50 hover:text-on-surface hover:bg-surface-container-low'
+                  }`}
+                >
+                  <Icon name={t.icon} size={16} filled={target === t.id} />
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Quick prompts */}
+            <div className="mb-3">
+              <span className="text-[10px] text-secondary/50 font-semibold tracking-wide mb-1.5 block">השראה מהירה</span>
+              <div className="flex flex-wrap gap-1.5">
+                {QUICK_PROMPTS.map((qp) => (
+                  <button
+                    key={qp.label}
+                    onClick={() => setPrompt(qp.prompt)}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                      prompt === qp.prompt
+                        ? 'bg-primary/12 text-primary'
+                        : 'bg-surface-container-low text-secondary/60 hover:bg-surface-container-high hover:text-on-surface'
+                    }`}
+                  >
+                    {qp.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Prompt input */}
+            <div className="mb-4">
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="תארו את הרקע שתרצו... למשל: חוף ים עם קונכיות ומים שקטים"
+                rows={3}
+                disabled={isGenerating}
+                className="w-full bg-surface-container-low border-none rounded-xl text-sm px-3 py-2.5 placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none disabled:opacity-50"
               />
             </div>
-            <div className="flex gap-2">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleApply}
-                className="flex-1 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm"
-              >
-                <Icon name="check" size={16} />
-                החל רקע
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="px-4 py-2.5 bg-surface-container-low rounded-xl text-sm font-semibold text-secondary/70 flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors"
-              >
-                <Icon name="refresh" size={16} />
-                חדש
-              </motion.button>
-            </div>
+
+            {/* Generate button */}
+            <motion.button
+              whileHover={{ scale: isGenerating ? 1 : 1.02 }}
+              whileTap={{ scale: isGenerating ? 1 : 0.98 }}
+              onClick={handleGenerate}
+              disabled={isGenerating || !prompt.trim()}
+              className="w-full py-2.5 bg-gradient-to-r from-primary to-primary/80 text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-all mb-4 shadow-sm"
+            >
+              {isGenerating ? (
+                <>
+                  <span className="inline-block animate-spin">
+                    <Icon name="progress_activity" size={18} />
+                  </span>
+                  יוצר רקע...
+                </>
+              ) : (
+                <>
+                  <Icon name="auto_awesome" size={18} />
+                  צור רקע
+                </>
+              )}
+            </motion.button>
+
+            {/* Preview */}
+            <AnimatePresence>
+              {previewUrl && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="flex flex-col gap-3"
+                >
+                  <span className="text-[10px] text-secondary/50 font-semibold tracking-wide">תצוגה מקדימה</span>
+                  <div
+                    className="w-full rounded-xl overflow-hidden shadow-md border border-black/[0.04]"
+                    style={{ aspectRatio: selectedTarget.ratio === '16:9' ? '16/9' : '1/1' }}
+                  >
+                    <img
+                      src={previewUrl}
+                      alt="רקע שנוצר"
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleApply}
+                      className="flex-1 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm"
+                    >
+                      <Icon name="check" size={16} />
+                      החל רקע
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleGenerate}
+                      disabled={isGenerating}
+                      className="px-4 py-2.5 bg-surface-container-low rounded-xl text-sm font-semibold text-secondary/70 flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors"
+                    >
+                      <Icon name="refresh" size={16} />
+                      חדש
+                    </motion.button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>

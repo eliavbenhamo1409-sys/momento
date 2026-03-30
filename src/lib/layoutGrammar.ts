@@ -724,6 +724,126 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       slot('r-br', 'right', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
     ],
   },
+
+  // ── 28. Landscape Top + 2 Squares Below ────────────────────────────
+  {
+    id: 'landscape-top-2sq',
+    name: 'רוחבית + 2 ריבועיות',
+    category: 'balanced',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: false,
+    cannotRepeatWithin: 2,
+    bestForMood: ['joyful', 'romantic', 'nostalgic', 'serene'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'group', 'portrait'],
+    spanning: true,
+    spanningSlotIds: ['top-wide'],
+    slots: [
+      slot('top-wide', 'left', 0, 0, 100, 55, {
+        importance: 'hero', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-left', 'left', 0, 55, 50, 45, {
+        importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-right', 'right', 50, 55, 50, 45, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 29. 2 Squares Top + Landscape Below ────────────────────────────
+  {
+    id: '2sq-top-landscape',
+    name: '2 ריבועיות + רוחבית',
+    category: 'balanced',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: false,
+    cannotRepeatWithin: 2,
+    bestForMood: ['joyful', 'romantic', 'nostalgic', 'serene'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'group', 'portrait'],
+    spanning: true,
+    spanningSlotIds: ['bottom-wide'],
+    slots: [
+      slot('top-left', 'left', 0, 0, 50, 45, {
+        importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('top-right', 'right', 50, 0, 50, 45, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-wide', 'left', 0, 45, 100, 55, {
+        importance: 'hero', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 30. Cross Diagonal (small landscapes + tall rectangles) ────────
+  {
+    id: 'cross-diagonal',
+    name: 'קרוס אלכסוני',
+    category: 'balanced',
+    minPhotos: 4,
+    maxPhotos: 4,
+    acceptsQuote: false,
+    cannotRepeatWithin: 3,
+    bestForMood: ['romantic', 'dramatic', 'energetic', 'nostalgic'],
+    bestForScene: ['outdoor', 'portrait', 'group', 'landscape_scenic'],
+    slots: [
+      slot('tl-landscape', 'left', 0, 0, 55, 42, {
+        importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('tr-tall', 'left', 55, 0, 45, 100, {
+        importance: 'hero', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bl-tall', 'right', 0, 0, 45, 100, {
+        importance: 'hero', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('br-landscape', 'right', 45, 58, 55, 42, {
+        importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 31. Single Portrait Full Page ──────────────────────────────────
+  {
+    id: 'single-portrait',
+    name: 'תמונה אורכית מלאה',
+    category: 'hero',
+    minPhotos: 1,
+    maxPhotos: 1,
+    acceptsQuote: false,
+    cannotRepeatWithin: 3,
+    bestForMood: ['dramatic', 'romantic', 'tender', 'serene'],
+    bestForScene: ['portrait', 'outdoor', 'indoor'],
+    slots: [
+      slot('portrait-full', 'left', 10, 0, 80, 100, {
+        importance: 'hero', minQuality: 6, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 32. Two Landscapes Stacked ─────────────────────────────────────
+  {
+    id: 'two-landscapes-stacked',
+    name: 'שתי רוחביות אחת על השנייה',
+    category: 'balanced',
+    minPhotos: 2,
+    maxPhotos: 2,
+    acceptsQuote: false,
+    cannotRepeatWithin: 2,
+    bestForMood: ['serene', 'nostalgic', 'romantic', 'dramatic'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'group'],
+    spanning: true,
+    spanningSlotIds: ['top-landscape', 'bottom-landscape'],
+    slots: [
+      slot('top-landscape', 'left', 0, 0, 100, 48, {
+        importance: 'hero', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-landscape', 'left', 0, 52, 100, 48, {
+        importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
 ]
 
 // ─── Template Lookup ────────────────────────────────────────────────

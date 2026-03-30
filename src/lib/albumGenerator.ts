@@ -21,6 +21,7 @@ import {
   rebuildSpreadWithTemplate,
 } from './photoPlacer'
 import { buildSmartSpreadPlans } from './smartLayoutPicker'
+import { buildOrientationSpreadPlans } from './orientationLayoutBuilder'
 import { getDesignFamily } from './designFamilies'
 import { planAlbumSequence } from './rhythmOrchestrator'
 import { resolveAlbumVisuals } from './resolveSpreadVisuals'
@@ -150,49 +151,42 @@ export async function generateAlbum(
   await sleep(400)
   onProgress(1, 35, '✅ דירוג התמונות הושלם')
 
-  // ── Stage 3 (35-55%): Smart Grouping & Template Picking ──────
+  // ── Stage 3 (35-55%): Date Sort + Orientation-Based Layout ──────
 
-  onProgress(2, 36, '🧩 מקבץ תמונות דומות לפי מיקום, זמן וסיטואציה...')
+  onProgress(2, 36, '📅 ממיין תמונות לפי תאריך וכיוון...')
 
   const selectedScores = curated.selected.map((r) => r.score)
 
-  console.log('[אלבום חכם] ── שלב 3: קיבוץ תמונות ──')
+  console.log('[אלבום חכם] ── שלב 3: מיון לפי תאריך + כיוון ──')
   console.log(`[אלבום חכם] ${selectedScores.length} תמונות אחרי סינון, יעד ${spreadCount} עמודים כפולים`)
   const orientCounts = { landscape: 0, portrait: 0, square: 0 }
   for (const s of selectedScores) { orientCounts[s.orientation]++ }
   console.log(`[אלבום חכם] חלוקת כיוונים: ${orientCounts.portrait} אורכי, ${orientCounts.landscape} רוחבי, ${orientCounts.square} ריבועי`)
 
-  const pageGroups = buildPageGroups(selectedScores, spreadCount, dateLookup)
-
-  console.log(`[אלבום חכם] נוצרו ${pageGroups.length} קבוצות:`)
-  for (const g of pageGroups) {
-    console.log(`  ${g.groupId}: ${g.photoIds.length} תמונות | אורכי:${g.orientationMix.portrait} רוחבי:${g.orientationMix.landscape} ריבועי:${g.orientationMix.square} | איכות=${g.bestPhotoQuality} | נושא=${g.theme}`)
-  }
-
-  // Build a human-readable summary of group themes
-  const themeNames = pageGroups
-    .map((g) => g.theme)
-    .filter((t) => t && t !== 'hero')
-    .slice(0, 4)
-  const themeSummary = themeNames.length > 0
-    ? ` — ${themeNames.join(', ')}`
-    : ''
-  onProgress(2, 42, `📂 נוצרו ${pageGroups.length} קבוצות תמונות${themeSummary}`)
-
   const scoreMap = new Map(allScores.map((s) => [s.photoId, s]))
   const photoMap = new Map(photos.map((p) => [p.id, p]))
 
-  onProgress(2, 45, '📐 מתאים פריסה חכמה לפי פרופורציות התמונות...')
+  onProgress(2, 42, '📐 בוחר פריסה לפי כיוון וגודל התמונות...')
 
-  const spreadPlans = buildSmartSpreadPlans(pageGroups, scoreMap, spreadCount)
+  const selectedPhotos = curated.selected.map(r => {
+    const photo = photos.find(p => p.id === r.score.photoId)
+    return photo!
+  }).filter(Boolean)
 
-  console.log('[אלבום חכם] ── שלב 3.5: בחירת תבניות ──')
+  const { plans: spreadPlans, groups: pageGroups } = await buildOrientationSpreadPlans(
+    selectedPhotos,
+    selectedScores,
+    spreadCount,
+    dateLookup,
+  )
+
+  console.log('[אלבום חכם] ── שלב 3.5: פריסה לפי כיוון ──')
   for (const plan of spreadPlans) {
     const group = pageGroups[plan.spreadIndex]
     console.log(`  עמוד ${plan.spreadIndex}: תבנית="${plan.templateId}" | ${plan.assignedPhotoIds.length} תמונות | כיוונים — אורכי:${group?.orientationMix.portrait} רוחבי:${group?.orientationMix.landscape} ריבועי:${group?.orientationMix.square}`)
   }
 
-  onProgress(2, 52, `📖 תוכנן אלבום חכם — ${spreadPlans.length} עמודים כפולים`)
+  onProgress(2, 52, `📖 תוכנן אלבום — ${spreadPlans.length} עמודים כפולים`)
 
   const sequencePlan: SpreadSequenceSlot[] = planAlbumSequence(family, spreadCount, curated)
 
