@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router'
 import { useAlbumStore } from '../../store/albumStore'
 import { getFamiliesForConfig } from '../../lib/designFamilies'
 import type { DesignFamily } from '../../types'
+import LoadingButton from '../shared/LoadingButton'
 import Icon from '../shared/Icon'
 
 const VIBE_EXAMPLES = [
@@ -48,6 +49,7 @@ export default function QuestionFlow() {
     [config.type, config.mood, config.style],
   )
 
+  const [isGenerating, setIsGenerating] = useState(false)
   const bgMode = config.backgroundMode || 'white'
   const canProceed = bgMode === 'white' || vibeText.trim().length >= 3 || vibeReferences.length > 0
 
@@ -290,8 +292,9 @@ export default function QuestionFlow() {
 
       {/* ── CTA ──────────────────────────────────────────── */}
 
-      <button
+      <LoadingButton
         onClick={() => {
+          setIsGenerating(true)
           if (!config.designFamily && suggestedFamilies.length > 0) {
             setConfigField('designFamily', suggestedFamilies[0].id)
           }
@@ -301,11 +304,13 @@ export default function QuestionFlow() {
           if (config.people.length === 0) setConfigField('people', ['couple'])
           navigate('/generating')
         }}
+        loading={isGenerating}
+        loadingLabel="מכין..."
         disabled={!canProceed}
-        className="w-full py-4 bg-primary text-on-primary rounded-xl text-lg font-bold shadow-xl shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-40 mt-auto shrink-0"
+        className="w-full py-4 bg-primary text-on-primary rounded-xl text-lg font-bold shadow-xl shadow-primary/20 transition-all disabled:opacity-40 mt-auto shrink-0"
       >
         צור אלבום אוטומטי
-      </button>
+      </LoadingButton>
     </motion.div>
   )
 }

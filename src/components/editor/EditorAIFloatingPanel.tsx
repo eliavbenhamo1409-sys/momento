@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'motion/react'
 import { useUIStore } from '../../store/uiStore'
+import LoadingButton from '../shared/LoadingButton'
 import Icon from '../shared/Icon'
 
 const quickActions = ['תאורה', 'חדות', 'איזון צבע', 'שיפור פנים', 'הסרת רעש']
@@ -82,24 +83,17 @@ export default function EditorAIFloatingPanel({ imageSrc }: Props) {
           placeholder="למשל: להבהיר פנים ולרכך רקע"
           className="w-full bg-surface-container-high border-none rounded-lg text-sm px-3 py-2 placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all outline-none"
         />
-        <button
+        <LoadingButton
           type="button"
           onClick={handleImprove}
-          disabled={isProcessing || (activeChips.length === 0 && !freeText.trim())}
-          className="w-full py-2.5 bg-primary text-on-primary rounded-lg text-sm font-semibold hover:bg-primary-container transition-all flex items-center justify-center gap-2 disabled:opacity-40"
+          loading={isProcessing}
+          loadingLabel="משפר..."
+          disabled={activeChips.length === 0 && !freeText.trim()}
+          className="w-full py-2.5 bg-primary text-on-primary rounded-lg text-sm font-semibold hover:bg-primary-container transition-all flex items-center justify-center gap-2"
         >
-          {isProcessing ? (
-            <>
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
-              משפר...
-            </>
-          ) : (
-            <>
-              <Icon name="magic_button" size={18} />
-              שפר עם AI
-            </>
-          )}
-        </button>
+          <Icon name="magic_button" size={18} />
+          שפר עם AI
+        </LoadingButton>
       </div>
     </motion.div>
   )

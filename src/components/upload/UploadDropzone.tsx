@@ -1,6 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { motion } from 'motion/react'
 import Icon from '../shared/Icon'
+import LoadingButton from '../shared/LoadingButton'
 import { useFileUpload } from '../../hooks/useFileUpload'
 
 export default function UploadDropzone() {
@@ -82,7 +83,7 @@ export default function UploadDropzone() {
         </div>
       </div>
 
-      <button
+      <LoadingButton
         onClick={(e) => {
           e.stopPropagation()
           simulateUpload(78)
@@ -90,7 +91,7 @@ export default function UploadDropzone() {
         className="mt-4 mx-auto block text-xs text-sage hover:underline"
       >
         הדגמה — העלה 78 תמונות לדוגמה
-      </button>
+      </LoadingButton>
     </motion.div>
   )
 }

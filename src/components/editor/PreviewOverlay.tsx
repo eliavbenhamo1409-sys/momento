@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
+import Skeleton from '../shared/Skeleton'
 import Icon from '../shared/Icon'
 import type { PhotoElement, EditorSpread } from '../../types'
 
@@ -146,24 +147,63 @@ function PreviewSpread({ spread }: { spread: EditorSpread }) {
   )
 }
 
+function usePreloadSpreadImages(spreads: EditorSpread[], activeIdx: number) {
+  useEffect(() => {
+    const indices = [activeIdx - 1, activeIdx + 1].filter(
+      (i) => i >= 0 && i < spreads.length,
+    )
+    for (const idx of indices) {
+      const spread = spreads[idx]
+      if (!spread?.design) continue
+      for (const el of spread.design.elements) {
+        if (el.type === 'photo' && 'photoUrl' in el && el.photoUrl) {
+          const img = new Image()
+          img.src = el.photoUrl
+        }
+      }
+    }
+  }, [activeIdx, spreads])
+}
+
 export default function PreviewOverlay() {
-  const { isPreviewOpen, spreads } = useEditorStore(useShallow((s) => ({
+  const { isPreviewOpen, spreads, currentSpreadIndex } = useEditorStore(useShallow((s) => ({
     isPreviewOpen: s.isPreviewOpen,
     spreads: s.spreads,
+    currentSpreadIndex: s.currentSpreadIndex,
   })))
   const togglePreview = useEditorStore((s) => s.togglePreview)
   const navigate = useNavigate()
-  const [activeIdx, setActiveIdx] = useState(0)
+  const [activeIdx, setActiveIdx] = useState(currentSpreadIndex)
+  const [spreadReady, setSpreadReady] = useState(false)
+
+  useEffect(() => {
+    if (isPreviewOpen) {
+      setActiveIdx(currentSpreadIndex)
+      setSpreadReady(false)
+      const timer = setTimeout(() => setSpreadReady(true), 200)
+      return () => clearTimeout(timer)
+    }
+  }, [isPreviewOpen, currentSpreadIndex])
+
+  const handleSpreadChange = useCallback((idx: number) => {
+    setSpreadReady(false)
+    setActiveIdx(idx)
+    requestAnimationFrame(() => {
+      setTimeout(() => setSpreadReady(true), 100)
+    })
+  }, [])
+
+  usePreloadSpreadImages(spreads, activeIdx)
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') togglePreview()
-      if (e.key === 'ArrowLeft') setActiveIdx((p) => Math.min(p + 1, spreads.length - 1))
-      if (e.key === 'ArrowRight') setActiveIdx((p) => Math.max(p - 1, 0))
+      if (e.key === 'ArrowLeft') handleSpreadChange(Math.min(activeIdx + 1, spreads.length - 1))
+      if (e.key === 'ArrowRight') handleSpreadChange(Math.max(activeIdx - 1, 0))
     }
     if (isPreviewOpen) window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [isPreviewOpen, togglePreview, spreads.length])
+  }, [isPreviewOpen, togglePreview, spreads.length, activeIdx, handleSpreadChange])
 
   if (!isPreviewOpen) return null
 
@@ -207,7 +247,7 @@ export default function PreviewOverlay() {
 
       <div className="flex-1 overflow-hidden flex items-center justify-center px-3 md:px-6 relative" dir="ltr">
         <button
-          onClick={() => setActiveIdx((p) => Math.max(p - 1, 0))}
+          onClick={() => handleSpreadChange(Math.max(activeIdx - 1, 0))}
           disabled={activeIdx === 0}
           className="absolute left-2 md:left-6 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-all"
         >
@@ -218,17 +258,22 @@ export default function PreviewOverlay() {
           <motion.div
             key={spreads[activeIdx]?.id}
             initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
+            animate={{ opacity: spreadReady ? 1 : 0.4, scale: spreadReady ? 1 : 0.98 }}
             exit={{ opacity: 0, scale: 0.96 }}
             transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
             className="w-full max-w-4xl aspect-[2/1] bg-white rounded-lg overflow-hidden shadow-[0_20px_80px_-20px_rgba(0,0,0,0.5)] relative flex"
           >
+            {!spreadReady && (
+              <div className="absolute inset-0 z-30 flex items-center justify-center">
+                <Skeleton width="90%" height="80%" borderRadius={8} />
+              </div>
+            )}
             <PreviewSpread spread={spreads[activeIdx]} />
           </motion.div>
         </AnimatePresence>
 
         <button
-          onClick={() => setActiveIdx((p) => Math.min(p + 1, spreads.length - 1))}
+          onClick={() => handleSpreadChange(Math.min(activeIdx + 1, spreads.length - 1))}
           disabled={activeIdx === spreads.length - 1}
           className="absolute right-2 md:right-6 z-10 w-10 h-10 md:w-12 md:h-12 rounded-full bg-white/10 hover:bg-white/20 text-white/60 hover:text-white flex items-center justify-center backdrop-blur-sm disabled:opacity-0 transition-all"
         >
@@ -246,7 +291,7 @@ export default function PreviewOverlay() {
           {spreads.map((_, i) => (
             <button
               key={i}
-              onClick={() => setActiveIdx(i)}
+              onClick={() => handleSpreadChange(i)}
               className={`rounded-full transition-all duration-200 ${
                 i === activeIdx
                   ? 'w-6 h-2 bg-white'

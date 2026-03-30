@@ -50,6 +50,8 @@ export default function LivePreview() {
                     className={`w-full h-full object-cover ${
                       config.mood === 'nostalgic' ? 'sepia' : ''
                     } ${config.style === 'minimal' ? 'grayscale-[20%]' : ''}`}
+                    loading="lazy"
+                    decoding="async"
                   />
                 </div>
                 <div className="w-2/3 h-1.5 bg-surface-container-low rounded-full" />
@@ -64,6 +66,8 @@ export default function LivePreview() {
                       className={`w-full h-full object-cover ${
                         config.mood === 'nostalgic' ? 'sepia' : ''
                       }`}
+                      loading="lazy"
+                      decoding="async"
                     />
                   </div>
                 ))}

@@ -6,6 +6,7 @@ import DashboardHeader from '../components/dashboard/DashboardHeader'
 import ProjectCard from '../components/dashboard/ProjectCard'
 import OrderCard from '../components/dashboard/OrderCard'
 import EmptyState from '../components/dashboard/EmptyState'
+import Skeleton from '../components/shared/Skeleton'
 import Icon from '../components/shared/Icon'
 import { useUIStore } from '../store/uiStore'
 import { listUserAlbums, deleteAlbum, type AlbumRow } from '../lib/albumService'
@@ -41,17 +42,20 @@ export default function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('projects')
   const [albums, setAlbums] = useState<AlbumRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const navigate = useNavigate()
   const { userName, userId, isLoggedIn, openAuthModal } = useUIStore()
 
   const fetchAlbums = useCallback(async () => {
     if (!userId) return
     setLoading(true)
+    setFetchError(false)
     try {
       const data = await listUserAlbums(userId)
       setAlbums(data)
     } catch (err) {
       console.error('Failed to fetch albums:', err)
+      setFetchError(true)
     } finally {
       setLoading(false)
     }
@@ -59,6 +63,7 @@ export default function DashboardScreen() {
 
   useEffect(() => {
     if (!isLoggedIn) {
+      setLoading(false)
       openAuthModal('login', '/dashboard')
       return
     }
@@ -186,11 +191,31 @@ export default function DashboardScreen() {
                 transition={{ duration: 0.35 }}
               >
                 {loading ? (
-                  <div className="flex items-center justify-center py-20">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-8 h-8 border-2 border-sage/30 border-t-sage rounded-full animate-spin" />
-                      <span className="text-sm text-warm-gray">טוען אלבומים...</span>
-                    </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                    {[0, 1, 2].map((i) => (
+                      <div key={i} className="rounded-2xl overflow-hidden bg-white" style={{ boxShadow: '0 2px 16px rgba(90,80,70,0.06)' }}>
+                        <Skeleton height={180} borderRadius={0} />
+                        <div className="p-5 flex flex-col gap-3">
+                          <Skeleton width="60%" height={18} borderRadius={8} />
+                          <Skeleton width="40%" height={14} borderRadius={6} />
+                          <div className="flex gap-4 mt-1">
+                            <Skeleton width={60} height={12} borderRadius={4} />
+                            <Skeleton width={60} height={12} borderRadius={4} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : fetchError ? (
+                  <div className="flex flex-col items-center justify-center py-20 gap-4">
+                    <span className="material-symbols-outlined text-3xl text-warm-gray/50">cloud_off</span>
+                    <p className="text-sm text-warm-gray font-medium">לא הצלחנו לטעון את האלבומים</p>
+                    <button
+                      onClick={fetchAlbums}
+                      className="px-5 py-2 rounded-full bg-sage text-white text-sm font-medium hover:bg-sage/90 transition-colors"
+                    >
+                      נסה שוב
+                    </button>
                   </div>
                 ) : projects.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">

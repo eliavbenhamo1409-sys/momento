@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import PageTransition from '../components/shared/PageTransition'
@@ -40,8 +40,25 @@ export default function GenerationScreen() {
   const [particles, setParticles] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
   const [resultStats, setResultStats] = useState<{ spreads: number; photos: number } | null>(null)
+  const [isStalled, setIsStalled] = useState(false)
+
+  const hasStartedRef = useRef(false)
+  const lastProgressRef = useRef(0)
+  const stallTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const stage = STAGE_LABELS[stageIndex] ?? STAGE_LABELS[0]
+
+  useEffect(() => {
+    lastProgressRef.current = progress
+    setIsStalled(false)
+    clearTimeout(stallTimerRef.current)
+    if (!isComplete && !error) {
+      stallTimerRef.current = setTimeout(() => {
+        if (!isComplete) setIsStalled(true)
+      }, 10000)
+    }
+    return () => clearTimeout(stallTimerRef.current)
+  }, [progress, isComplete, error])
 
   const showNotification = useCallback((text: string, duration = 3000) => {
     setNotification(text)
@@ -93,6 +110,8 @@ export default function GenerationScreen() {
   }, [showNotification])
 
   useEffect(() => {
+    if (hasStartedRef.current) return
+    hasStartedRef.current = true
     runGeneration()
   }, [runGeneration])
 
@@ -254,8 +273,27 @@ export default function GenerationScreen() {
                   </div>
 
                   <AnimatePresence>
+                    {isStalled && !notification && (
+                      <motion.div
+                        key="stalled"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        transition={{ duration: 0.3 }}
+                        className="px-5 py-2.5 bg-surface-container-lowest rounded-xl shadow-md text-sm text-warm-gray flex items-center gap-2"
+                      >
+                        <motion.span
+                          animate={{ opacity: [0.5, 1, 0.5] }}
+                          transition={{ duration: 2, repeat: Infinity }}
+                        >
+                          <Icon name="hourglass_top" size={16} className="text-sage" />
+                        </motion.span>
+                        עדיין עובדים על זה...
+                      </motion.div>
+                    )}
                     {notification && (
                       <motion.div
+                        key="notif"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}

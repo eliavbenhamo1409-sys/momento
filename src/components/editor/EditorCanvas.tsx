@@ -227,6 +227,13 @@ export function AbsolutePhotoElement({
   const removeSlot = useEditorStore((s) => s.removePhotoSlot)
   const [isDragging, setIsDragging] = useState(false)
   const [showZoom, setShowZoom] = useState(false)
+  const [imgLoaded, setImgLoaded] = useState(false)
+  const prevUrlRef = useRef(element.photoUrl)
+
+  if (prevUrlRef.current !== element.photoUrl) {
+    prevUrlRef.current = element.photoUrl
+    setImgLoaded(false)
+  }
   const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const zoomHideTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
   const startPosRef = useRef<{ x: number; y: number; objX: number; objY: number } | null>(null)
@@ -404,19 +411,33 @@ export function AbsolutePhotoElement({
           : Math.max(0, element.borderRadius - element.padding) }}
       >
         {element.photoUrl ? (
-          <img
-            ref={imgRef}
-            src={element.photoUrl}
-            alt=""
-            className="w-full h-full object-cover select-none"
-            draggable={false}
-            style={{
-              objectPosition: element.objectPosition || '50% 50%',
-              objectFit: element.objectFit,
-              transformOrigin: currentScale > 1 ? (element.objectPosition || '50% 50%') : undefined,
-              transform: currentScale > 1 ? `scale(${currentScale})` : undefined,
-            }}
-          />
+          <>
+            {!imgLoaded && (
+              <div
+                className="absolute inset-0 skeleton-shimmer"
+                style={{
+                  background: 'linear-gradient(90deg, var(--color-surface-container) 25%, var(--color-surface-container-low) 50%, var(--color-surface-container) 75%)',
+                  backgroundSize: '200% 100%',
+                  borderRadius: 'inherit',
+                }}
+              />
+            )}
+            <img
+              ref={imgRef}
+              src={element.photoUrl}
+              alt=""
+              className="w-full h-full object-cover select-none transition-opacity duration-300"
+              draggable={false}
+              style={{
+                objectPosition: element.objectPosition || '50% 50%',
+                objectFit: element.objectFit,
+                transformOrigin: currentScale > 1 ? (element.objectPosition || '50% 50%') : undefined,
+                transform: currentScale > 1 ? `scale(${currentScale})` : undefined,
+                opacity: imgLoaded ? 1 : 0,
+              }}
+              onLoad={() => setImgLoaded(true)}
+            />
+          </>
         ) : (
           <div
             className="group/slot relative w-full h-full bg-surface-container-low/40 border-2 border-dashed border-outline-variant/30 rounded-lg flex flex-col items-center justify-center gap-2.5 cursor-pointer hover:bg-primary/[0.04] hover:border-primary/25 transition-all duration-200"
@@ -1040,9 +1061,24 @@ export default function EditorCanvas() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bookRef = useRef<any>(null)
+  const [isFlipping, setIsFlipping] = useState(false)
+  const [isTransitioning, setIsTransitioning] = useState(false)
+  const prevTemplateRef = useRef(spread?.templateId)
+
+  useEffect(() => {
+    if (spread?.templateId && prevTemplateRef.current !== spread.templateId) {
+      prevTemplateRef.current = spread.templateId
+      setIsTransitioning(true)
+      const timer = setTimeout(() => setIsTransitioning(false), 250)
+      return () => clearTimeout(timer)
+    }
+    prevTemplateRef.current = spread?.templateId
+  }, [spread?.templateId])
 
   const onFlip = useCallback((e: { data: number }) => {
+    setIsFlipping(true)
     setCurrentSpread(Math.floor(e.data / 2))
+    setTimeout(() => setIsFlipping(false), 400)
   }, [setCurrentSpread])
 
   const flipNext = useCallback(() => {
@@ -1131,7 +1167,11 @@ export default function EditorCanvas() {
 
         <div
           className="relative flex-1 min-w-0 w-full max-w-[min(84vw,68rem)] aspect-[2/1] max-h-[min(75vh,600px)] md:max-h-[min(68vh,600px)]"
-          style={{ transform: 'scaleX(-1)' }}
+          style={{
+            transform: 'scaleX(-1)',
+            opacity: isTransitioning ? 0.5 : isFlipping ? 0.85 : 1,
+            transition: 'opacity 0.2s ease-out',
+          }}
           onClick={(e) => e.stopPropagation()}
         >
           <HTMLFlipBook
@@ -1151,7 +1191,7 @@ export default function EditorCanvas() {
             useMouseEvents={false}
             showPageCorners={false}
             disableFlipByClick={true}
-            startPage={0}
+            startPage={currentSpreadIndex * 2}
             startZIndex={0}
             autoSize={true}
             clickEventForward={true}

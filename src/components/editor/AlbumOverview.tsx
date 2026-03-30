@@ -1,10 +1,11 @@
 import { useCallback, useRef, useState, useEffect } from 'react'
 import { createPortal } from 'react-dom'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useUIStore } from '../../store/uiStore'
 import { useShallow } from 'zustand/react/shallow'
 import OverviewSpreadCard, { type DragPayload } from './OverviewSpreadCard'
+import LoadingOverlay from '../shared/LoadingOverlay'
 import Icon from '../shared/Icon'
 
 const OVERLAY_SPRING = { type: 'spring' as const, stiffness: 500, damping: 35, mass: 0.8 }
@@ -20,6 +21,13 @@ export default function AlbumOverview() {
   const swapPhotosAcrossSpreads = useEditorStore((s) => s.swapPhotosAcrossSpreads)
   const movePhotoToEmptySlot = useEditorStore((s) => s.movePhotoToEmptySlot)
   const addToast = useUIStore((s) => s.addToast)
+
+  const [gridReady, setGridReady] = useState(false)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setGridReady(true), 250)
+    return () => clearTimeout(timer)
+  }, [])
 
   // ── Drag state (refs for zero-rerender drag tracking) ──
   const [isDragging, setIsDragging] = useState(false)
@@ -175,8 +183,18 @@ export default function AlbumOverview() {
         </motion.button>
       </motion.header>
 
+      {/* Loading gate */}
+      <AnimatePresence>
+        {!gridReady && <LoadingOverlay key="overview-gate" label="טוען מבט על..." fullScreen={false} />}
+      </AnimatePresence>
+
       {/* Grid */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-6">
+      <motion.div
+        className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-6"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: gridReady ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-[90rem] mx-auto">
           {spreads.map((spread, i) => (
             <OverviewSpreadCard
@@ -195,7 +213,7 @@ export default function AlbumOverview() {
             />
           ))}
         </div>
-      </div>
+      </motion.div>
 
       {/* Drag ghost */}
       {isDragging && dragRef.current?.photoUrl && createPortal(

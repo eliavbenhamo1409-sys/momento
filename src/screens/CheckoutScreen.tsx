@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { motion } from 'motion/react'
 import PageTransition from '../components/shared/PageTransition'
 import ProductLayout from '../components/layout/ProductLayout'
+import LoadingButton from '../components/shared/LoadingButton'
 import Icon from '../components/shared/Icon'
 import { useAlbumStore } from '../store/albumStore'
 import { calcAlbumPrice, ALBUM_SIZES } from '../lib/constants'
@@ -184,13 +185,14 @@ export default function CheckoutScreen() {
                 <span>תשלום מאובטח ומוצפן</span>
               </div>
 
-              <button
+              <LoadingButton
                 type="submit"
-                disabled={isProcessing}
-                className="w-full py-3.5 bg-primary text-on-primary rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60"
+                loading={isProcessing}
+                loadingLabel="מעבד..."
+                className="w-full py-3.5 bg-primary text-on-primary rounded-xl font-bold text-lg shadow-lg shadow-primary/20 hover:opacity-90 transition-all"
               >
-                {isProcessing ? 'מעבד...' : `השלם הזמנה — ₪${totalPrice}`}
-              </button>
+                {`השלם הזמנה — ₪${totalPrice}`}
+              </LoadingButton>
             </motion.form>
           </div>
         </div>

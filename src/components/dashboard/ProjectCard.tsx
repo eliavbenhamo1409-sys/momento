@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import { useNavigate } from 'react-router'
 import Icon from '../shared/Icon'
@@ -19,9 +20,21 @@ interface Props {
 
 export default function ProjectCard({ project, index, onDelete }: Props) {
   const navigate = useNavigate()
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const daysAgo = getDaysAgo(project.lastEdited)
   const lastEditedLabel = daysAgo === 0 ? 'היום' : daysAgo === 1 ? 'אתמול' : `לפני ${daysAgo} ימים`
+
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!onDelete) return
+    setIsDeleting(true)
+    try {
+      await onDelete(project.id)
+    } finally {
+      setIsDeleting(false)
+    }
+  }
 
   return (
     <motion.div
@@ -29,6 +42,7 @@ export default function ProjectCard({ project, index, onDelete }: Props) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.06 * index }}
       whileHover={{ y: -4 }}
+      whileTap={{ scale: 0.98 }}
       onClick={() => navigate(`/editor/${project.id}`)}
       className="group cursor-pointer rounded-2xl overflow-hidden"
       style={{
@@ -67,12 +81,23 @@ export default function ProjectCard({ project, index, onDelete }: Props) {
         </div>
 
         {onDelete && (
-          <button
-            onClick={(e) => { e.stopPropagation(); onDelete(project.id) }}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-error/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm"
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleDelete}
+            disabled={isDeleting}
+            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-error/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm disabled:opacity-50"
           >
-            <Icon name="delete" size={16} className="text-error/60" />
-          </button>
+            {isDeleting ? (
+              <motion.span
+                className="inline-block w-4 h-4 rounded-full border-2 border-error/30"
+                style={{ borderTopColor: 'var(--color-error)' }}
+                animate={{ rotate: 360 }}
+                transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
+              />
+            ) : (
+              <Icon name="delete" size={16} className="text-error/60" />
+            )}
+          </motion.button>
         )}
       </div>
 

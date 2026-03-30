@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState } from 'react'
-import { useParams } from 'react-router'
+import { useEffect, useMemo, useState, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import PageTransition from '../components/shared/PageTransition'
+import LoadingOverlay from '../components/shared/LoadingOverlay'
 import EditorTopBar from '../components/editor/EditorTopBar'
 import EditorCanvas from '../components/editor/EditorCanvas'
 import EditorSidebar from '../components/editor/EditorSidebar'
@@ -10,6 +11,7 @@ import PreviewOverlay from '../components/editor/PreviewOverlay'
 import AlbumOverview from '../components/editor/AlbumOverview'
 import PhotoEditorModal from '../components/editor/PhotoEditorModal'
 import DotGrid from '../components/editor/DotGrid'
+import { contentReveal } from '../lib/animations'
 import { useEditorStore } from '../store/editorStore'
 import { useAlbumStore } from '../store/albumStore'
 import { useAutoSave, useAlbumLoad } from '../hooks/useAlbumPersistence'
@@ -18,17 +20,40 @@ import { calcAlbumPrice, ALBUM_SIZES } from '../lib/constants'
 export default function EditorScreen() {
   useAutoSave(25000)
   const { albumId } = useParams<{ albumId?: string }>()
+  const navigate = useNavigate()
   const loadAlbum = useAlbumLoad()
   const [loadingAlbum, setLoadingAlbum] = useState(false)
+  const [loadError, setLoadError] = useState(false)
+  const [contentReady, setContentReady] = useState(false)
+
+  const doLoad = useCallback(async (id: string) => {
+    setLoadingAlbum(true)
+    setLoadError(false)
+    setContentReady(false)
+    try {
+      await loadAlbum(id)
+      requestAnimationFrame(() => {
+        setTimeout(() => setContentReady(true), 150)
+      })
+    } catch {
+      setLoadError(true)
+    } finally {
+      setLoadingAlbum(false)
+    }
+  }, [loadAlbum])
 
   useEffect(() => {
-    if (!albumId) return
+    if (!albumId) {
+      navigate('/dashboard', { replace: true })
+      return
+    }
     const currentAlbumId = useAlbumStore.getState().albumId
-    if (currentAlbumId === albumId) return
-
-    setLoadingAlbum(true)
-    loadAlbum(albumId).finally(() => setLoadingAlbum(false))
-  }, [albumId, loadAlbum])
+    if (currentAlbumId === albumId) {
+      setContentReady(true)
+      return
+    }
+    doLoad(albumId)
+  }, [albumId, doLoad, navigate])
 
   const isPreviewOpen = useEditorStore((s) => s.isPreviewOpen)
   const isOverviewOpen = useEditorStore((s) => s.isOverviewOpen)
@@ -57,19 +82,32 @@ export default function EditorScreen() {
     return () => window.removeEventListener('keydown', onKey)
   }, [togglePreview, toggleOverview])
 
-  if (loadingAlbum) {
+  if (loadingAlbum || loadError) {
     return (
       <PageTransition>
         <div className="h-screen w-screen flex items-center justify-center bg-[#EEECEA]">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-            className="flex flex-col items-center gap-4"
-          >
-            <div className="w-10 h-10 border-2 border-primary/25 border-t-primary rounded-full animate-spin" />
-            <span className="text-sm text-secondary/60 font-medium">טוען אלבום...</span>
-          </motion.div>
+          <AnimatePresence mode="wait">
+            {loadError ? (
+              <motion.div
+                key="error"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center gap-4 text-center"
+              >
+                <span className="material-symbols-outlined text-3xl text-warm-gray/60">error_outline</span>
+                <p className="text-sm font-medium text-on-surface/70 font-headline">לא הצלחנו לטעון את האלבום</p>
+                <button
+                  onClick={() => albumId && doLoad(albumId)}
+                  className="px-5 py-2 rounded-full bg-sage text-white text-sm font-medium hover:bg-sage/90 transition-colors"
+                >
+                  נסה שוב
+                </button>
+              </motion.div>
+            ) : (
+              <LoadingOverlay key="loading" label="טוען אלבום..." fullScreen={false} />
+            )}
+          </AnimatePresence>
         </div>
       </PageTransition>
     )
@@ -80,11 +118,23 @@ export default function EditorScreen() {
       <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#EEECEA] relative">
         <DotGrid />
         <EditorTopBar />
-        <div className="flex-1 relative overflow-hidden z-10">
+
+        <AnimatePresence>
+          {!contentReady && (
+            <LoadingOverlay key="content-gate" label="מכין את העורך..." />
+          )}
+        </AnimatePresence>
+
+        <motion.div
+          className="flex-1 relative overflow-hidden z-10"
+          variants={contentReveal}
+          initial="initial"
+          animate={contentReady ? 'animate' : 'initial'}
+        >
           <EditorCanvas />
           <PageThumbnails />
           <EditorSidebar />
-        </div>
+        </motion.div>
 
         <footer className="w-full bg-white/70 backdrop-blur-lg border-t border-outline-variant/6 flex justify-between items-center px-4 md:px-10 py-2 md:py-2.5 shrink-0 relative z-20">
           <div className="flex items-center gap-4 md:gap-6">

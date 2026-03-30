@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react'
+import React, { useRef, useCallback, useState } from 'react'
 import { motion } from 'motion/react'
 import type { EditorSpread, PhotoElement } from '../../types'
 import Icon from '../shared/Icon'
@@ -77,6 +77,7 @@ function PhotoSlot({
   }, [])
 
   const hasPhoto = !!element.photoUrl
+  const [imgLoaded, setImgLoaded] = useState(false)
 
   return (
     <div
@@ -98,14 +99,22 @@ function PhotoSlot({
       data-spread-id={spreadId}
     >
       {hasPhoto ? (
-        <img
-          src={element.photoUrl!}
-          alt=""
-          className="w-full h-full object-cover select-none"
-          style={{ objectPosition: element.objectPosition }}
-          draggable={false}
-          loading="lazy"
-        />
+        <>
+          {!imgLoaded && (
+            <div className="absolute inset-0 skeleton-shimmer rounded-[inherit]"
+              style={{ background: 'linear-gradient(90deg, var(--color-surface-container) 25%, var(--color-surface-container-low) 50%, var(--color-surface-container) 75%)', backgroundSize: '200% 100%' }}
+            />
+          )}
+          <img
+            src={element.photoUrl!}
+            alt=""
+            className="w-full h-full object-cover select-none transition-opacity duration-300"
+            style={{ objectPosition: element.objectPosition, opacity: imgLoaded ? 1 : 0 }}
+            draggable={false}
+            loading="lazy"
+            onLoad={() => setImgLoaded(true)}
+          />
+        </>
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-black/[0.03] border border-dashed border-black/[0.08] rounded-[inherit]">
           <Icon name="add_photo_alternate" size={14} className="text-secondary/25" />

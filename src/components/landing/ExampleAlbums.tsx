@@ -45,11 +45,13 @@ export default function ExampleAlbums() {
               transition={{ duration: 0.5, delay: i * 0.15 }}
               className="bg-surface-container-lowest rounded-2xl overflow-hidden editorial-shadow group cursor-pointer"
             >
-              <div className="h-72 overflow-hidden">
+              <div className="h-72 overflow-hidden bg-surface-container">
                 <img
                   src={ex.img}
                   alt={ex.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <div className="p-8">

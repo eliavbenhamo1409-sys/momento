@@ -93,9 +93,9 @@ export default function PageThumbnails() {
                       }`}
                     >
                       <div className="w-full h-full flex">
-                        <div className="flex-1 overflow-hidden bg-surface-container-high/60">
+                        <div className="flex-1 overflow-hidden bg-surface-container-high/60 relative">
                           {leftSrc ? (
-                            <img src={leftSrc} alt="" className="w-full h-full object-cover" loading="lazy" />
+                            <img src={leftSrc} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <Icon name="image" size={14} className="text-outline-variant/40" />
@@ -103,9 +103,9 @@ export default function PageThumbnails() {
                           )}
                         </div>
                         <div className="w-px bg-white/50 shrink-0" />
-                        <div className="flex-1 overflow-hidden bg-surface-container-high/60">
+                        <div className="flex-1 overflow-hidden bg-surface-container-high/60 relative">
                           {rightSrc ? (
-                            <img src={rightSrc} alt="" className="w-full h-full object-cover" loading="lazy" />
+                            <img src={rightSrc} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                           ) : (
                             <div className="w-full h-full flex items-center justify-center">
                               <Icon name="image" size={14} className="text-outline-variant/40" />

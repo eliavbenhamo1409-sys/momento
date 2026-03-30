@@ -155,12 +155,14 @@ export default function ConfigureScreen() {
               </div>
 
               {/* Continue */}
-              <button
+              <motion.button
+                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1.01 }}
                 onClick={handleContinue}
-                className="w-full py-4 bg-primary text-on-primary rounded-xl text-lg font-bold shadow-xl shadow-primary/20 hover:scale-[1.01] active:scale-[0.98] transition-all"
+                className="w-full py-4 bg-primary text-on-primary rounded-xl text-lg font-bold shadow-xl shadow-primary/20 transition-all"
               >
                 המשך לעיצוב הסגנון
-              </button>
+              </motion.button>
             </motion.div>
           </div>
 

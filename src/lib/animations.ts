@@ -55,5 +55,21 @@ export const staggerContainer: Variants = {
 export const pageTransition: Variants = {
   initial: { opacity: 0, y: 12 },
   animate: { opacity: 1, y: 0, transition: { duration: 0.3, ease: 'easeOut' } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.25 } },
+  exit: { opacity: 0, y: -8, transition: { duration: 0.3 } },
+}
+
+export const overlayFade: Variants = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
+  exit: { opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } },
+}
+
+export const contentReveal: Variants = {
+  initial: { opacity: 0, scale: 0.98 },
+  animate: {
+    opacity: 1,
+    scale: 1,
+    transition: { type: 'spring', stiffness: 300, damping: 30, mass: 0.8 },
+  },
+  exit: { opacity: 0, scale: 0.98, transition: { duration: 0.15 } },
 }
