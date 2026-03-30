@@ -386,9 +386,8 @@ export function AbsolutePhotoElement({
   return (
     <motion.div
       ref={containerRef}
-      initial={{ opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: isSwapSource ? 1.02 : 1 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      animate={{ scale: isSwapSource ? 1.02 : 1 }}
+      transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ scale: isSwapping ? 1.03 : isSelected && !isDragging ? 1 : 1.008 }}
       className={`group ${ringClass}`}
       style={{
@@ -1183,8 +1182,8 @@ export default function EditorCanvas() {
             maxHeight={600}
             usePortrait={false}
             showCover={false}
-            drawShadow={true}
-            maxShadowOpacity={0.5}
+            drawShadow={false}
+            maxShadowOpacity={0}
             flippingTime={1200}
             useMouseEvents={false}
             showPageCorners={false}
