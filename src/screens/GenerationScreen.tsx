@@ -55,33 +55,17 @@ export default function GenerationScreen() {
   const [stageIndex, setStageIndex] = useState(0)
   const [progress, setProgress] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
-  const [notification, setNotification] = useState<string | null>(null)
+  const [statusMessage, setStatusMessage] = useState('מתחיל לעבד את התמונות שלך')
   const [particles, setParticles] = useState<number[]>([])
   const [error, setError] = useState<string | null>(null)
   const [resultStats, setResultStats] = useState<{ spreads: number; photos: number } | null>(null)
-  const [isStalled, setIsStalled] = useState(false)
 
   const hasStartedRef = useRef(false)
-  const lastProgressRef = useRef(0)
-  const stallTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
 
   const stage = STAGE_LABELS[stageIndex] ?? STAGE_LABELS[0]
 
-  useEffect(() => {
-    lastProgressRef.current = progress
-    setIsStalled(false)
-    clearTimeout(stallTimerRef.current)
-    if (!isComplete && !error) {
-      stallTimerRef.current = setTimeout(() => {
-        if (!isComplete) setIsStalled(true)
-      }, 10000)
-    }
-    return () => clearTimeout(stallTimerRef.current)
-  }, [progress, isComplete, error])
-
-  const showNotification = useCallback((text: string, duration = 3000) => {
-    setNotification(text)
-    setTimeout(() => setNotification(null), duration)
+  const showNotification = useCallback((text: string) => {
+    setStatusMessage(text)
   }, [])
 
   const runGeneration = useCallback(async () => {
@@ -237,10 +221,10 @@ export default function GenerationScreen() {
                     <AnimatePresence mode="wait">
                       <motion.h1
                         key={stage.headline}
-                        initial={{ opacity: 0, y: 8 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -8 }}
-                        transition={{ duration: 0.2 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.4, ease: 'easeInOut' }}
                         className="text-2xl md:text-3xl font-bold text-deep-brown"
                         style={{ fontFamily: 'var(--font-family-headline)' }}
                       >
@@ -253,7 +237,7 @@ export default function GenerationScreen() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2, delay: 0.1 }}
+                        transition={{ duration: 0.35, delay: 0.08, ease: 'easeInOut' }}
                         className="text-warm-gray"
                       >
                         {stage.subtext}
@@ -267,7 +251,7 @@ export default function GenerationScreen() {
                         className="h-full shimmer-bar rounded-full"
                         style={{
                           width: `${progress}%`,
-                          transition: 'width 0.4s ease-out',
+                          transition: 'width 0.8s cubic-bezier(0.22, 1, 0.36, 1)',
                         }}
                       />
                     </div>
@@ -291,32 +275,20 @@ export default function GenerationScreen() {
                     </div>
                   </div>
 
-                  <AnimatePresence>
-                    {isStalled && !notification && (
+                  <div className="h-10 flex items-center justify-center">
+                    <AnimatePresence mode="wait">
                       <motion.div
-                        key="stalled"
-                        initial={{ opacity: 0, y: 10 }}
+                        key={statusMessage}
+                        initial={{ opacity: 0, y: 6 }}
                         animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        transition={{ duration: 0.3 }}
-                        className="px-5 py-2.5 bg-surface-container-lowest rounded-xl shadow-md text-sm text-warm-gray"
-                      >
-                        עדיין עובדים על זה<AnimatedDots />
-                      </motion.div>
-                    )}
-                    {notification && (
-                      <motion.div
-                        key="notif"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -5 }}
-                        transition={{ duration: 0.3 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.35, ease: 'easeInOut' }}
                         className="px-5 py-2.5 bg-surface-container-lowest rounded-xl shadow-md text-sm text-deep-brown"
                       >
-                        {notification}<AnimatedDots />
+                        {statusMessage}<AnimatedDots />
                       </motion.div>
-                    )}
-                  </AnimatePresence>
+                    </AnimatePresence>
+                  </div>
                 </motion.div>
               )}
             </AnimatePresence>
