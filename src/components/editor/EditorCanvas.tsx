@@ -1,4 +1,5 @@
-import { useRef, useMemo, useState, useCallback, useEffect } from 'react'
+import React, { useRef, useMemo, useState, useCallback, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import HTMLFlipBook from 'react-pageflip'
 import { useEditorStore } from '../../store/editorStore'
@@ -200,11 +201,37 @@ export function LegacyPhotoSlot({
   )
 }
 
+// ─── Drag-to-Swap context ─────────────────────────────────────────────
+
+interface DragState {
+  sourceSlotId: string
+  sourceSpreadId: string
+  photoUrl: string
+  cursorX: number
+  cursorY: number
+}
+
+interface DragContext {
+  drag: DragState | null
+  dropTargetSlotId: string | null
+  onDragStart: (slotId: string, spreadId: string, photoUrl: string, x: number, y: number, pointerId: number) => void
+  onDragMove: (x: number, y: number) => void
+  onDragEnd: () => void
+}
+
+const DragCtx = React.createContext<DragContext>({
+  drag: null,
+  dropTargetSlotId: null,
+  onDragStart: () => {},
+  onDragMove: () => {},
+  onDragEnd: () => {},
+})
+
 // ─── Absolute-Positioned Photo Element ───────────────────────────────
 
 export function AbsolutePhotoElement({
   element,
-  spreadId: _spreadId,
+  spreadId = '',
   elementIndex,
   isSelected,
   isSwapSource = false,
@@ -225,7 +252,6 @@ export function AbsolutePhotoElement({
   const updateScale = useEditorStore((s) => s.updatePhotoScale)
   const replaceInSlot = useEditorStore((s) => s.replacePhotoInSlot)
   const removeSlot = useEditorStore((s) => s.removePhotoSlot)
-  const [isDragging, setIsDragging] = useState(false)
   const [showZoom, setShowZoom] = useState(false)
   const [imgLoaded, setImgLoaded] = useState(false)
   const [trackedUrl, setTrackedUrl] = useState(element.photoUrl)
@@ -235,89 +261,75 @@ export function AbsolutePhotoElement({
     setImgLoaded(false)
   }
 
-  const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const { drag, dropTargetSlotId, onDragStart, onDragMove, onDragEnd } = React.useContext(DragCtx)
+  const isDragSource = drag?.sourceSlotId === element.slotId
+  const isDropTarget = dropTargetSlotId === element.slotId && !isDragSource
+
   const zoomHideTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const startPosRef = useRef<{ x: number; y: number; objX: number; objY: number } | null>(null)
-  const didDragRef = useRef(false)
+  const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
+  const startPosRef = useRef<{ x: number; y: number } | null>(null)
+  const didDragStartRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
-  const localPosRef = useRef<string | null>(null)
   const emptyFileRef = useRef<HTMLInputElement>(null)
+  const pointerIdRef = useRef<number | null>(null)
 
   const currentScale = element.scale ?? 1
 
-  const parseObjectPosition = useCallback(() => {
-    const parts = (element.objectPosition || '50% 50%').split(/\s+/)
-    return {
-      x: parseFloat(parts[0]) || 50,
-      y: parseFloat(parts[1]) || 50,
-    }
-  }, [element.objectPosition])
-
   const nudgePosition = useCallback((dx: number, dy: number) => {
-    const pos = parseObjectPosition()
-    const newX = Math.min(100, Math.max(0, pos.x + dx))
-    const newY = Math.min(100, Math.max(0, pos.y + dy))
+    const parts = (element.objectPosition || '50% 50%').split(/\s+/)
+    const posX = parseFloat(parts[0]) || 50
+    const posY = parseFloat(parts[1]) || 50
+    const newX = Math.min(100, Math.max(0, posX + dx))
+    const newY = Math.min(100, Math.max(0, posY + dy))
     updatePos(element.slotId, `${newX.toFixed(1)}% ${newY.toFixed(1)}%`)
-  }, [parseObjectPosition, updatePos, element.slotId])
+  }, [element.objectPosition, updatePos, element.slotId])
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (!element.photoUrl) return
+    if (!element.photoUrl || isSwapping) return
     e.stopPropagation()
-    const pos = parseObjectPosition()
-    startPosRef.current = { x: e.clientX, y: e.clientY, objX: pos.x, objY: pos.y }
-    didDragRef.current = false
-    localPosRef.current = null
+    startPosRef.current = { x: e.clientX, y: e.clientY }
+    didDragStartRef.current = false
+    pointerIdRef.current = e.pointerId
 
     longPressTimer.current = setTimeout(() => {
-      setIsDragging(true)
-      didDragRef.current = true
-      containerRef.current?.setPointerCapture(e.pointerId)
-    }, 300)
-  }, [element.photoUrl, parseObjectPosition])
+      didDragStartRef.current = true
+      onDragStart(element.slotId, spreadId, element.photoUrl!, e.clientX, e.clientY, e.pointerId)
+    }, 250)
+  }, [element.photoUrl, element.slotId, spreadId, isSwapping, onDragStart])
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!isDragging || !startPosRef.current || !containerRef.current) return
+    if (!startPosRef.current) return
+
+    if (!didDragStartRef.current) {
+      const dx = Math.abs(e.clientX - startPosRef.current.x)
+      const dy = Math.abs(e.clientY - startPosRef.current.y)
+      if (dx > 6 || dy > 6) {
+        clearTimeout(longPressTimer.current)
+        didDragStartRef.current = true
+        onDragStart(element.slotId, spreadId, element.photoUrl!, e.clientX, e.clientY, e.pointerId)
+      }
+      return
+    }
+
     e.stopPropagation()
     e.preventDefault()
-
-    const rect = containerRef.current.getBoundingClientRect()
-    const dx = e.clientX - startPosRef.current.x
-    const dy = e.clientY - startPosRef.current.y
-
-    const sensitivityX = 100 / rect.width
-    const sensitivityY = 100 / rect.height
-
-    const newX = Math.min(100, Math.max(0, startPosRef.current.objX - dx * sensitivityX))
-    const newY = Math.min(100, Math.max(0, startPosRef.current.objY - dy * sensitivityY))
-
-    const newPos = `${newX.toFixed(1)}% ${newY.toFixed(1)}%`
-    localPosRef.current = newPos
-    if (imgRef.current) {
-      imgRef.current.style.objectPosition = newPos
-      if (currentScale > 1) imgRef.current.style.transformOrigin = newPos
-    }
-  }, [isDragging, currentScale])
+    onDragMove(e.clientX, e.clientY)
+  }, [element.slotId, element.photoUrl, spreadId, onDragStart, onDragMove])
 
   const handlePointerUp = useCallback((e: React.PointerEvent) => {
     clearTimeout(longPressTimer.current)
 
-    if (isDragging) {
-      if (localPosRef.current) {
-        updatePos(element.slotId, localPosRef.current)
-        localPosRef.current = null
-      }
-      setIsDragging(false)
-      containerRef.current?.releasePointerCapture(e.pointerId)
-      return
-    }
-
-    if (!didDragRef.current) {
+    if (didDragStartRef.current) {
+      onDragEnd()
+    } else {
       e.stopPropagation()
       onSelect()
     }
     startPosRef.current = null
-  }, [isDragging, onSelect, updatePos, element.slotId])
+    didDragStartRef.current = false
+    pointerIdRef.current = null
+  }, [onSelect, onDragEnd])
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!element.photoUrl) return
@@ -357,7 +369,7 @@ export function AbsolutePhotoElement({
     top: `${element.y}%`,
     width: `${element.width}%`,
     height: `${element.height}%`,
-    zIndex: isDragging ? 50 : element.zIndex,
+    zIndex: isDragSource ? 50 : element.zIndex,
     borderWidth: element.borderWidth > 0 && !element.clipPath ? element.borderWidth : undefined,
     borderColor: element.borderWidth > 0 && !element.clipPath ? element.borderColor : undefined,
     borderStyle: element.borderWidth > 0 && !element.clipPath ? 'solid' : undefined,
@@ -369,40 +381,43 @@ export function AbsolutePhotoElement({
     overflow: 'hidden',
     clipPath: element.clipPath || undefined,
     WebkitClipPath: element.clipPath || undefined,
-    cursor: isDragging ? 'grabbing' : 'pointer',
+    cursor: isDragSource ? 'grabbing' : 'pointer',
     touchAction: 'none',
   }
 
   const zoomPct = Math.round(currentScale * 100)
 
-  const ringClass = isSwapSource
-    ? 'ring-[3px] ring-amber-400 ring-offset-[3px] ring-offset-white shadow-[0_0_0_1px_rgba(217,180,30,0.15),0_8px_24px_-4px_rgba(217,180,30,0.20)]'
+  const ringClass = isDropTarget
+    ? 'ring-[3px] ring-sage ring-offset-[3px] ring-offset-white shadow-[0_0_0_1px_rgba(96,92,72,0.15),0_8px_24px_-4px_rgba(96,92,72,0.25)]'
     : isSelected
       ? 'ring-[2.5px] ring-primary ring-offset-[3px] ring-offset-white shadow-[0_0_0_1px_rgba(96,92,72,0.08),0_8px_24px_-4px_rgba(96,92,72,0.18)]'
-      : isDragging
-        ? 'ring-2 ring-amber-400/60'
+      : isDragSource
+        ? 'ring-2 ring-sage/40'
         : ''
 
   return (
     <motion.div
       ref={containerRef}
-      animate={{ scale: isSwapSource ? 1.02 : 1 }}
+      data-slot-id={element.slotId}
+      data-spread-id={spreadId}
+      data-has-photo={element.photoUrl ? 'true' : 'false'}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      whileHover={{ scale: isSwapping ? 1.03 : isSelected && !isDragging ? 1 : 1.008 }}
-      className={`group ${ringClass}`}
+      whileHover={!isDragSource && !drag ? { scale: isSelected ? 1 : 1.008 } : undefined}
+      className={`group ${ringClass} transition-shadow duration-150`}
       style={{
         ...positionStyle,
-        cursor: isSwapping ? 'pointer' : positionStyle.cursor,
+        opacity: isDragSource ? 0.4 : 1,
       }}
-      onPointerDown={isSwapping ? undefined : handlePointerDown}
-      onPointerMove={isSwapping ? undefined : handlePointerMove}
-      onPointerUp={isSwapping ? undefined : handlePointerUp}
-      onPointerCancel={isSwapping ? undefined : () => {
+      onPointerDown={handlePointerDown}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={() => {
         clearTimeout(longPressTimer.current)
-        setIsDragging(false)
+        if (didDragStartRef.current) onDragEnd()
+        startPosRef.current = null
+        didDragStartRef.current = false
       }}
-      onClick={isSwapping ? (e) => { e.stopPropagation(); onSelect() } : undefined}
-      onWheel={isSwapping ? undefined : handleWheel}
+      onWheel={handleWheel}
     >
       <div
         className="w-full h-full overflow-hidden"
@@ -440,7 +455,10 @@ export function AbsolutePhotoElement({
         ) : (
           <div
             className="group/slot relative w-full h-full bg-surface-container-low/40 border-2 border-dashed border-outline-variant/30 rounded-lg flex flex-col items-center justify-center gap-2.5 cursor-pointer hover:bg-primary/[0.04] hover:border-primary/25 transition-all duration-200"
-            onClick={(e) => { e.stopPropagation(); if (!isSwapping) emptyFileRef.current?.click() }}
+            data-slot-id={element.slotId}
+            data-spread-id={spreadId}
+            data-has-photo="false"
+            onClick={(e) => { e.stopPropagation(); if (!drag) emptyFileRef.current?.click() }}
           >
             <input
               ref={emptyFileRef}
@@ -453,11 +471,11 @@ export function AbsolutePhotoElement({
                 e.target.value = ''
               }}
             />
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${isSwapping ? 'bg-amber-400/10' : 'bg-primary/[0.07]'}`}>
-              <Icon name={isSwapping ? 'swap_horiz' : 'add_photo_alternate'} size={22} className={isSwapping ? 'text-amber-400/70' : 'text-primary/40'} />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-primary/[0.07]">
+              <Icon name="add_photo_alternate" size={22} className="text-primary/40" />
             </div>
-            {!isSwapping && <span className="text-[11px] font-semibold text-secondary/50">הוסף תמונה</span>}
-            {!isSwapping && elementIndex >= 0 && (
+            <span className="text-[11px] font-semibold text-secondary/50">הוסף תמונה</span>
+            {elementIndex >= 0 && (
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); removeSlot(elementIndex) }}
@@ -471,49 +489,27 @@ export function AbsolutePhotoElement({
         )}
       </div>
 
-      {/* Swap source badge */}
-      {isSwapSource && (
+      {/* Drop target highlight */}
+      {isDropTarget && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          <div className="bg-amber-500/85 backdrop-blur-sm px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-            <Icon name="check_circle" size={15} className="text-white" />
-            <span className="text-white text-xs font-bold">נבחרה</span>
-          </div>
-        </div>
-      )}
-
-      {/* Swap target hover indicator */}
-      {isSwapTarget && !isSwapSource && (
-        <div className="absolute inset-0 bg-amber-400/0 group-hover:bg-amber-400/10 transition-colors duration-200 flex items-center justify-center pointer-events-none z-20">
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <div className="bg-amber-500/80 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-              <Icon name="swap_horiz" size={15} className="text-white" />
-              <span className="text-white text-xs font-bold">החלף לכאן</span>
-            </div>
+          <div className="bg-sage/80 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
+            <Icon name="swap_horiz" size={15} className="text-white" />
+            <span className="text-white text-xs font-bold">{element.photoUrl ? 'החלף' : 'העבר לכאן'}</span>
           </div>
         </div>
       )}
 
       {/* Zoom indicator */}
-      {showZoom && element.photoUrl && !isSwapping && (
+      {showZoom && element.photoUrl && !drag && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
           <div className="bg-black/55 backdrop-blur-sm px-3.5 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg">
-            <Icon name={currentScale > 1.5 ? 'zoom_in' : currentScale > 1 ? 'zoom_in' : 'zoom_out'} size={15} className="text-white/90" />
+            <Icon name={currentScale > 1 ? 'zoom_in' : 'zoom_out'} size={15} className="text-white/90" />
             <span className="text-white text-xs font-bold tabular-nums">{zoomPct}%</span>
           </div>
         </div>
       )}
 
-      {/* Drag indicator */}
-      {isDragging && !isSwapping && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-          <div className="bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full flex items-center gap-1.5">
-            <Icon name="open_with" size={16} className="text-white" />
-            <span className="text-white text-xs font-medium">גרור למיקום</span>
-          </div>
-        </div>
-      )}
-
-      {!isSelected && !isDragging && !showZoom && !isSwapping && element.photoUrl && (
+      {!isSelected && !isDragSource && !showZoom && !drag && element.photoUrl && (
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-3">
           <span className="bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full text-primary font-medium text-xs flex items-center gap-1.5 shadow-sm">
             <Icon name="touch_app" size={14} />
@@ -522,7 +518,7 @@ export function AbsolutePhotoElement({
         </div>
       )}
 
-      {isSelected && element.photoUrl && !isDragging && !showZoom && !isSwapping && (
+      {isSelected && element.photoUrl && !isDragSource && !showZoom && !drag && (
         <>
           <div className="absolute top-1.5 start-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm z-20">
             <Icon name="check" size={14} className="text-white" />
@@ -1037,6 +1033,8 @@ export default function EditorCanvas() {
     setSwapSource,
     executeSwap,
     cancelSwapMode,
+    swapPhotosAcrossSpreads,
+    movePhotoToEmptySlot,
   } = useEditorStore(useShallow((s) => ({
     spreads: s.spreads,
     currentSpreadIndex: s.currentSpreadIndex,
@@ -1051,6 +1049,8 @@ export default function EditorCanvas() {
     setSwapSource: s.setSwapSource,
     executeSwap: s.executeSwap,
     cancelSwapMode: s.cancelSwapMode,
+    swapPhotosAcrossSpreads: s.swapPhotosAcrossSpreads,
+    movePhotoToEmptySlot: s.movePhotoToEmptySlot,
   })))
 
   const spread: EditorSpread | undefined = spreads[currentSpreadIndex] ?? spreads[0]
@@ -1062,6 +1062,60 @@ export default function EditorCanvas() {
   const bookRef = useRef<any>(null)
   const initialPageRef = useRef(currentSpreadIndex * 2)
   const [isTransitioning, setIsTransitioning] = useState(false)
+
+  // ── Drag-to-swap state ──
+  const [dragState, setDragState] = useState<DragState | null>(null)
+  const [dropTargetSlotId, setDropTargetSlotId] = useState<string | null>(null)
+  const dragPointerIdRef = useRef<number | null>(null)
+
+  const handleDragStart = useCallback((slotId: string, spreadId: string, photoUrl: string, x: number, y: number, pointerId: number) => {
+    setDragState({ sourceSlotId: slotId, sourceSpreadId: spreadId, photoUrl, cursorX: x, cursorY: y })
+    dragPointerIdRef.current = pointerId
+    deselectAll()
+  }, [deselectAll])
+
+  const handleDragMove = useCallback((x: number, y: number) => {
+    setDragState((prev) => prev ? { ...prev, cursorX: x, cursorY: y } : null)
+    const els = document.elementsFromPoint(x, y)
+    let foundSlot: string | null = null
+    for (const el of els) {
+      const slotId = (el as HTMLElement).dataset?.slotId
+      if (slotId && slotId !== dragState?.sourceSlotId) {
+        foundSlot = slotId
+        break
+      }
+    }
+    setDropTargetSlotId(foundSlot)
+  }, [dragState?.sourceSlotId])
+
+  const handleDragEnd = useCallback(() => {
+    if (dragState && dropTargetSlotId) {
+      const currentSpread = spreads[currentSpreadIndex]
+      if (currentSpread?.design) {
+        const tgtEl = currentSpread.design.elements.find(
+          (el) => el.type === 'photo' && el.slotId === dropTargetSlotId,
+        ) as PhotoElement | undefined
+        const srcSpreadId = dragState.sourceSpreadId
+        const srcSlotId = dragState.sourceSlotId
+        if (tgtEl?.photoUrl) {
+          swapPhotosAcrossSpreads(srcSpreadId, srcSlotId, currentSpread.id, dropTargetSlotId)
+        } else {
+          movePhotoToEmptySlot(srcSpreadId, srcSlotId, currentSpread.id, dropTargetSlotId)
+        }
+      }
+    }
+    setDragState(null)
+    setDropTargetSlotId(null)
+    dragPointerIdRef.current = null
+  }, [dragState, dropTargetSlotId, spreads, currentSpreadIndex, swapPhotosAcrossSpreads, movePhotoToEmptySlot])
+
+  const dragCtxValue = useMemo<DragContext>(() => ({
+    drag: dragState,
+    dropTargetSlotId,
+    onDragStart: handleDragStart,
+    onDragMove: handleDragMove,
+    onDragEnd: handleDragEnd,
+  }), [dragState, dropTargetSlotId, handleDragStart, handleDragMove, handleDragEnd])
   const prevSpreadIdRef = useRef(spread?.id)
   const prevTemplateRef = useRef(spread?.templateId)
 
@@ -1109,13 +1163,34 @@ export default function EditorCanvas() {
   )
 
   return (
+    <DragCtx.Provider value={dragCtxValue}>
     <div
       className="flex-1 flex flex-col items-center justify-center overflow-hidden relative bg-transparent pr-4 md:pr-20 pt-4 md:pt-16 pb-4"
       onClick={() => {
         if (isSwapping) cancelSwapMode()
-        else deselectAll()
+        else if (!dragState) deselectAll()
       }}
+      onPointerMove={dragState ? (e) => handleDragMove(e.clientX, e.clientY) : undefined}
+      onPointerUp={dragState ? () => handleDragEnd() : undefined}
     >
+      {/* Drag ghost */}
+      {dragState && createPortal(
+        <div
+          className="fixed pointer-events-none z-[9999]"
+          style={{
+            left: dragState.cursorX - 40,
+            top: dragState.cursorY - 40,
+            width: 80,
+            height: 80,
+          }}
+        >
+          <div className="w-full h-full rounded-xl overflow-hidden shadow-2xl ring-2 ring-sage/50 opacity-90">
+            <img src={dragState.photoUrl} alt="" className="w-full h-full object-cover" draggable={false} />
+          </div>
+        </div>,
+        document.body,
+      )}
+
       {/* ── Swap Mode Banner ────────────────────────────── */}
       <AnimatePresence>
         {isSwapping && (
@@ -1261,5 +1336,6 @@ export default function EditorCanvas() {
         />
       </div>
     </div>
+    </DragCtx.Provider>
   )
 }
