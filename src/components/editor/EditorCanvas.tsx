@@ -1062,17 +1062,20 @@ export default function EditorCanvas() {
   const bookRef = useRef<any>(null)
   const initialPageRef = useRef(currentSpreadIndex * 2)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const prevSpreadIdRef = useRef(spread?.id)
   const prevTemplateRef = useRef(spread?.templateId)
 
   useEffect(() => {
-    if (spread?.templateId && prevTemplateRef.current !== spread.templateId) {
-      prevTemplateRef.current = spread.templateId
+    const sameSpread = prevSpreadIdRef.current === spread?.id
+    const templateChanged = prevTemplateRef.current !== spread?.templateId
+    prevSpreadIdRef.current = spread?.id
+    prevTemplateRef.current = spread?.templateId
+    if (sameSpread && templateChanged) {
       setIsTransitioning(true)
       const timer = setTimeout(() => setIsTransitioning(false), 250)
       return () => clearTimeout(timer)
     }
-    prevTemplateRef.current = spread?.templateId
-  }, [spread?.templateId])
+  }, [spread?.id, spread?.templateId])
 
   const onFlip = useCallback((e: { data: number }) => {
     setCurrentSpread(Math.floor(e.data / 2))
