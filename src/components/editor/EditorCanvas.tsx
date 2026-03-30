@@ -227,6 +227,108 @@ const DragCtx = React.createContext<DragContext>({
   onDragEnd: () => {},
 })
 
+// ─── Photo Toolbar Portal ─────────────────────────────────────────────
+
+function PhotoToolbarPortal({
+  containerRef,
+  zoomPct,
+  currentScale,
+  slotId,
+  onZoomIn,
+  onZoomOut,
+  onReset,
+  onReplace,
+  onDelete,
+}: {
+  containerRef: React.RefObject<HTMLDivElement | null>
+  zoomPct: number
+  currentScale: number
+  slotId: string
+  onZoomIn: () => void
+  onZoomOut: () => void
+  onReset: () => void
+  onReplace: () => void
+  onDelete: () => void
+}) {
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+
+  useEffect(() => {
+    let rafId: number
+    const update = () => {
+      const el = containerRef.current
+      if (!el) { rafId = requestAnimationFrame(update); return }
+      const rect = el.getBoundingClientRect()
+      setPos((prev) => {
+        if (prev && Math.abs(prev.x - (rect.left + rect.width / 2)) < 0.5 && Math.abs(prev.y - (rect.top - 8)) < 0.5) return prev
+        return { x: rect.left + rect.width / 2, y: rect.top - 8 }
+      })
+      rafId = requestAnimationFrame(update)
+    }
+    rafId = requestAnimationFrame(update)
+    return () => cancelAnimationFrame(rafId)
+  }, [containerRef, slotId])
+
+  if (!pos) return null
+
+  return createPortal(
+    <div
+      className="fixed z-[9999] pointer-events-auto"
+      style={{ left: pos.x, top: pos.y, transform: 'translate(-50%, -100%)' }}
+      onClick={(e) => e.stopPropagation()}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <div className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-deep-brown/90 backdrop-blur-md shadow-xl shadow-black/15">
+        <button
+          onClick={onZoomOut}
+          disabled={currentScale <= 1}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30"
+          title="הקטן"
+        >
+          <Icon name="remove" size={16} />
+        </button>
+        <span className="text-[10px] text-white/70 font-bold tabular-nums w-8 text-center select-none">{zoomPct}%</span>
+        <button
+          onClick={onZoomIn}
+          disabled={currentScale >= 3}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30"
+          title="הגדל"
+        >
+          <Icon name="add" size={16} />
+        </button>
+
+        <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+        <button
+          onClick={onReset}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all"
+          title="אפס מיקום"
+        >
+          <Icon name="center_focus_strong" size={16} />
+        </button>
+
+        <div className="w-px h-4 bg-white/20 mx-0.5" />
+
+        <button
+          onClick={onReplace}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all"
+          title="החלף תמונה"
+        >
+          <Icon name="swap_horiz" size={16} />
+        </button>
+
+        <button
+          onClick={onDelete}
+          className="w-7 h-7 rounded-lg flex items-center justify-center text-red-300 hover:bg-red-500/20 active:scale-90 transition-all"
+          title="הסר תמונה"
+        >
+          <Icon name="delete" size={16} />
+        </button>
+      </div>
+    </div>,
+    document.body,
+  )
+}
+
 // ─── Absolute-Positioned Photo Element ───────────────────────────────
 
 export function AbsolutePhotoElement({
@@ -234,8 +336,6 @@ export function AbsolutePhotoElement({
   spreadId = '',
   elementIndex,
   isSelected,
-  isSwapSource = false,
-  isSwapTarget = false,
   isSwapping = false,
   onSelect,
 }: {
@@ -243,8 +343,6 @@ export function AbsolutePhotoElement({
   spreadId?: string
   elementIndex: number
   isSelected: boolean
-  isSwapSource?: boolean
-  isSwapTarget?: boolean
   isSwapping?: boolean
   onSelect: () => void
 }) {
@@ -252,6 +350,9 @@ export function AbsolutePhotoElement({
   const updateScale = useEditorStore((s) => s.updatePhotoScale)
   const replaceInSlot = useEditorStore((s) => s.replacePhotoInSlot)
   const removeSlot = useEditorStore((s) => s.removePhotoSlot)
+  const clearPhoto = useEditorStore((s) => s.removePhotoFromSlot)
+  const resizeSlot = useEditorStore((s) => s.resizePhotoSlot)
+  const moveSlot = useEditorStore((s) => s.movePhotoSlot)
   const [showZoom, setShowZoom] = useState(false)
   const [imgLoaded, setImgLoaded] = useState(false)
   const [trackedUrl, setTrackedUrl] = useState(element.photoUrl)
@@ -272,18 +373,10 @@ export function AbsolutePhotoElement({
   const containerRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   const emptyFileRef = useRef<HTMLInputElement>(null)
+  const replaceFileRef = useRef<HTMLInputElement>(null)
   const pointerIdRef = useRef<number | null>(null)
 
   const currentScale = element.scale ?? 1
-
-  const nudgePosition = useCallback((dx: number, dy: number) => {
-    const parts = (element.objectPosition || '50% 50%').split(/\s+/)
-    const posX = parseFloat(parts[0]) || 50
-    const posY = parseFloat(parts[1]) || 50
-    const newX = Math.min(100, Math.max(0, posX + dx))
-    const newY = Math.min(100, Math.max(0, posY + dy))
-    updatePos(element.slotId, `${newX.toFixed(1)}% ${newY.toFixed(1)}%`)
-  }, [element.objectPosition, updatePos, element.slotId])
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!element.photoUrl || isSwapping) return
@@ -378,9 +471,9 @@ export function AbsolutePhotoElement({
     padding: element.padding > 0 && !element.clipPath ? element.padding : undefined,
     backgroundColor: element.padding > 0 && !element.clipPath ? '#FFFFFF' : undefined,
     transform: element.rotation !== 0 ? `rotate(${element.rotation.toFixed(1)}deg)` : undefined,
-    overflow: 'hidden',
-    clipPath: element.clipPath || undefined,
-    WebkitClipPath: element.clipPath || undefined,
+    overflow: isSelected ? 'visible' : 'hidden',
+    clipPath: isSelected ? undefined : (element.clipPath || undefined),
+    WebkitClipPath: isSelected ? undefined : (element.clipPath || undefined),
     cursor: isDragSource ? 'grabbing' : 'pointer',
     touchAction: 'none',
   }
@@ -421,9 +514,13 @@ export function AbsolutePhotoElement({
     >
       <div
         className="w-full h-full overflow-hidden"
-        style={{ borderRadius: element.borderRadius > 8
-          ? Math.max(4, element.borderRadius * 0.6)
-          : Math.max(0, element.borderRadius - element.padding) }}
+        style={{
+          borderRadius: element.borderRadius > 8
+            ? Math.max(4, element.borderRadius * 0.6)
+            : Math.max(0, element.borderRadius - element.padding),
+          clipPath: isSelected ? (element.clipPath || undefined) : undefined,
+          WebkitClipPath: isSelected ? (element.clipPath || undefined) : undefined,
+        }}
       >
         {element.photoUrl ? (
           <>
@@ -518,61 +615,99 @@ export function AbsolutePhotoElement({
         </div>
       )}
 
+      {/* ── Inline floating toolbar (portal) when selected ── */}
       {isSelected && element.photoUrl && !isDragSource && !showZoom && !drag && (
         <>
-          <div className="absolute top-1.5 start-1.5 w-5 h-5 rounded-full bg-primary flex items-center justify-center shadow-sm z-20">
-            <Icon name="check" size={14} className="text-white" />
-          </div>
+          <PhotoToolbarPortal
+            containerRef={containerRef}
+            zoomPct={zoomPct}
+            currentScale={currentScale}
+            slotId={element.slotId}
+            onZoomIn={() => updateScale(element.slotId, Math.min(3, currentScale + 0.15))}
+            onZoomOut={() => updateScale(element.slotId, Math.max(1, currentScale - 0.15))}
+            onReset={() => { updatePos(element.slotId, '50% 50%'); updateScale(element.slotId, 1) }}
+            onReplace={() => replaceFileRef.current?.click()}
+            onDelete={() => clearPhoto(element.slotId)}
+          />
 
-          {/* Position nudge controls — visible when zoomed */}
-          {currentScale > 1 && (
-            <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center">
-              {/* Up */}
-              <button
-                className="pointer-events-auto absolute top-1.5 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-black/45 backdrop-blur-sm hover:bg-black/65 active:scale-90 flex items-center justify-center transition-all shadow-md"
-                onClick={(e) => { e.stopPropagation(); nudgePosition(0, -8) }}
-                aria-label="הזז למעלה"
-              >
-                <Icon name="expand_less" size={20} className="text-white" />
-              </button>
+          {/* Hidden file input for replace */}
+          <input
+            ref={replaceFileRef}
+            type="file"
+            accept="image/*"
+            className="sr-only"
+            onChange={(e) => {
+              const f = e.target.files?.[0]
+              if (f) replaceInSlot(element.slotId, f)
+              e.target.value = ''
+            }}
+          />
 
-              {/* Down */}
-              <button
-                className="pointer-events-auto absolute bottom-1.5 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-black/45 backdrop-blur-sm hover:bg-black/65 active:scale-90 flex items-center justify-center transition-all shadow-md"
-                onClick={(e) => { e.stopPropagation(); nudgePosition(0, 8) }}
-                aria-label="הזז למטה"
-              >
-                <Icon name="expand_more" size={20} className="text-white" />
-              </button>
+          {/* Resize handles */}
+          {(['nw', 'ne', 'sw', 'se'] as const).map((corner) => (
+            <div
+              key={corner}
+              className={`absolute w-3 h-3 rounded-full bg-white border-2 border-primary shadow-sm z-40 pointer-events-auto ${
+                corner === 'nw' ? 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize' :
+                corner === 'ne' ? 'top-0 right-0 translate-x-1/2 -translate-y-1/2 cursor-ne-resize' :
+                corner === 'sw' ? 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-sw-resize' :
+                'bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-se-resize'
+              }`}
+              onPointerDown={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
+                let lastX = e.clientX
+                let lastY = e.clientY
+                const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
+                if (!parentRect) return
 
-              {/* Left */}
-              <button
-                className="pointer-events-auto absolute left-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/45 backdrop-blur-sm hover:bg-black/65 active:scale-90 flex items-center justify-center transition-all shadow-md"
-                onClick={(e) => { e.stopPropagation(); nudgePosition(-8, 0) }}
-                aria-label="הזז שמאלה"
-              >
-                <Icon name="chevron_left" size={20} className="text-white" />
-              </button>
+                const onMove = (ev: PointerEvent) => {
+                  const dx = ((ev.clientX - lastX) / parentRect.width) * 100
+                  const dy = ((ev.clientY - lastY) / parentRect.height) * 100
+                  lastX = ev.clientX
+                  lastY = ev.clientY
+                  const wDelta = corner.includes('e') ? dx : corner.includes('w') ? -dx : 0
+                  const hDelta = corner.includes('s') ? dy : corner.includes('n') ? -dy : 0
+                  resizeSlot(element.slotId, { width: wDelta, height: hDelta })
+                  if (corner.includes('w')) moveSlot(element.slotId, { x: dx })
+                  if (corner.includes('n')) moveSlot(element.slotId, { y: dy })
+                }
+                const onUp = () => {
+                  window.removeEventListener('pointermove', onMove)
+                  window.removeEventListener('pointerup', onUp)
+                }
+                window.addEventListener('pointermove', onMove)
+                window.addEventListener('pointerup', onUp)
+              }}
+            />
+          ))}
 
-              {/* Right */}
-              <button
-                className="pointer-events-auto absolute right-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/45 backdrop-blur-sm hover:bg-black/65 active:scale-90 flex items-center justify-center transition-all shadow-md"
-                onClick={(e) => { e.stopPropagation(); nudgePosition(8, 0) }}
-                aria-label="הזז ימינה"
-              >
-                <Icon name="chevron_right" size={20} className="text-white" />
-              </button>
+          {/* Move overlay — drag entire slot */}
+          <div
+            className="absolute inset-0 z-[35] cursor-move"
+            onPointerDown={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+              let lastX = e.clientX
+              let lastY = e.clientY
+              const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
+              if (!parentRect) return
 
-              {/* Reset center */}
-              <button
-                className="pointer-events-auto w-7 h-7 rounded-full bg-black/50 backdrop-blur-sm hover:bg-black/70 active:scale-90 flex items-center justify-center transition-all shadow-md"
-                onClick={(e) => { e.stopPropagation(); updatePos(element.slotId, '50% 50%') }}
-                aria-label="מרכז"
-              >
-                <Icon name="center_focus_strong" size={16} className="text-white" />
-              </button>
-            </div>
-          )}
+              const onMove = (ev: PointerEvent) => {
+                const dx = ((ev.clientX - lastX) / parentRect.width) * 100
+                const dy = ((ev.clientY - lastY) / parentRect.height) * 100
+                lastX = ev.clientX
+                lastY = ev.clientY
+                moveSlot(element.slotId, { x: dx, y: dy })
+              }
+              const onUp = () => {
+                window.removeEventListener('pointermove', onMove)
+                window.removeEventListener('pointerup', onUp)
+              }
+              window.addEventListener('pointermove', onMove)
+              window.addEventListener('pointerup', onUp)
+            }}
+          />
         </>
       )}
     </motion.div>

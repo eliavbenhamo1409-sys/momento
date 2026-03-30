@@ -219,8 +219,6 @@ const MemoPhotoWrapper = React.memo(function MemoPhotoWrapper({
   elementIndex,
   pid,
   isSelected,
-  isSwapSource,
-  isSwapTarget,
   isSwapping,
   onPhotoClick,
 }: {
@@ -229,8 +227,6 @@ const MemoPhotoWrapper = React.memo(function MemoPhotoWrapper({
   elementIndex: number
   pid: string
   isSelected: boolean
-  isSwapSource: boolean
-  isSwapTarget: boolean
   isSwapping: boolean
   onPhotoClick: (slotId: string, pid: string) => void
 }) {
@@ -244,8 +240,6 @@ const MemoPhotoWrapper = React.memo(function MemoPhotoWrapper({
       spreadId={spreadId}
       elementIndex={elementIndex}
       isSelected={isSelected}
-      isSwapSource={isSwapSource}
-      isSwapTarget={isSwapTarget}
       isSwapping={isSwapping}
       onSelect={handleSelect}
     />
@@ -286,7 +280,7 @@ function AbsolutePageElements({
   selectPhoto,
   selectText,
   swapPhase,
-  swapSourceSlotId,
+  swapSourceSlotId: _swapSourceSlotId,
   onSwapClick,
 }: {
   spread: EditorSpread
@@ -342,8 +336,6 @@ function AbsolutePageElements({
               elementIndex={getGlobalIndex(el)}
               pid={pid}
               isSelected={!isSwapping && selectedPhotoId === pid}
-              isSwapSource={swapPhase === 'pick-target' && swapSourceSlotId === el.slotId}
-              isSwapTarget={swapPhase === 'pick-target' && swapSourceSlotId !== el.slotId}
               isSwapping={isSwapping}
               onPhotoClick={handlePhotoClick}
             />

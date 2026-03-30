@@ -65,40 +65,8 @@ function Separator() {
   )
 }
 
-function PhotoEditPanel() {
-  const { selectedPhotoId, spreads, currentSpreadIndex } = useEditorStore(useShallow((s) => ({
-    selectedPhotoId: s.selectedPhotoId,
-    spreads: s.spreads,
-    currentSpreadIndex: s.currentSpreadIndex,
-  })))
-
-  const spread = spreads[currentSpreadIndex]
-  const slotId = selectedPhotoId?.replace(`${spread?.id}-`, '') ?? ''
-  const photoElement = spread?.design?.elements.find(
-    (el) => el.type === 'photo' && el.slotId === slotId,
-  )
-  const hasPhoto = photoElement && 'photoUrl' in photoElement && photoElement.photoUrl
-
-  if (!selectedPhotoId || !hasPhoto) return null
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, x: -16 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: -12 }}
-      className="absolute md:right-full md:top-0 md:me-3 max-md:bottom-full max-md:mb-3 max-md:right-0 w-44 rounded-2xl bg-white/95 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_rgba(45,40,35,0.12)] p-3.5 flex flex-col items-center gap-2 pointer-events-auto text-center"
-    >
-      <Icon name="touch_app" size={20} className="text-primary/60" />
-      <span className="text-[11px] text-secondary/70 font-medium leading-snug">
-        חלון עריכה פתוח
-      </span>
-    </motion.div>
-  )
-}
-
 export default function EditorSidebar() {
-  const { selectedPhotoId, spreadCount, currentSpreadId, swapPhase } = useEditorStore(useShallow((s) => ({
-    selectedPhotoId: s.selectedPhotoId,
+  const { spreadCount, currentSpreadId, swapPhase } = useEditorStore(useShallow((s) => ({
     spreadCount: s.spreads.length,
     currentSpreadId: s.spreads[s.currentSpreadIndex]?.id ?? null,
     swapPhase: s.swapPhase,
@@ -233,7 +201,6 @@ export default function EditorSidebar() {
         />
 
         <AnimatePresence>
-          {selectedPhotoId && <PhotoEditPanel />}
           {showLayoutPicker && (
             <LayoutPickerPanel
               key="layout-picker"
