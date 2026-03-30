@@ -344,7 +344,11 @@ function ResizeHandle({
   resizeSlot: (slotId: string, delta: { width?: number; height?: number }) => void
   moveSlot: (slotId: string, delta: { x?: number; y?: number }) => void
 }) {
-  const stateRef = useRef<{ lastX: number; lastY: number; parentW: number; parentH: number } | null>(null)
+  const elRef = useRef<HTMLDivElement>(null)
+  const resizeRef = useRef(resizeSlot)
+  const moveRef = useRef(moveSlot)
+  resizeRef.current = resizeSlot
+  moveRef.current = moveSlot
 
   const cls =
     corner === 'nw' ? 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize' :
@@ -352,38 +356,45 @@ function ResizeHandle({
     corner === 'sw' ? 'bottom-0 left-0 -translate-x-1/2 translate-y-1/2 cursor-sw-resize' :
     'bottom-0 right-0 translate-x-1/2 translate-y-1/2 cursor-se-resize'
 
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const el = elRef.current
+    if (!el) return
+    el.setPointerCapture(e.pointerId)
+
+    let lastX = e.clientX
+    let lastY = e.clientY
+    const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
+    const parentW = parentRect?.width ?? 1
+    const parentH = parentRect?.height ?? 1
+
+    const onMove = (ev: PointerEvent) => {
+      const dx = ((ev.clientX - lastX) / parentW) * 100
+      const dy = ((ev.clientY - lastY) / parentH) * 100
+      lastX = ev.clientX
+      lastY = ev.clientY
+      const wDelta = corner.includes('e') ? dx : corner.includes('w') ? -dx : 0
+      const hDelta = corner.includes('s') ? dy : corner.includes('n') ? -dy : 0
+      resizeRef.current(slotId, { width: wDelta, height: hDelta })
+      if (corner.includes('w')) moveRef.current(slotId, { x: dx })
+      if (corner.includes('n')) moveRef.current(slotId, { y: dy })
+    }
+    const onUp = (ev: PointerEvent) => {
+      ev.stopPropagation()
+      el.releasePointerCapture(ev.pointerId)
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerup', onUp)
+    }
+    el.addEventListener('pointermove', onMove)
+    el.addEventListener('pointerup', onUp)
+  }, [corner, slotId, containerRef])
+
   return (
     <div
+      ref={elRef}
       className={`absolute w-3 h-3 rounded-full bg-white border-2 border-primary shadow-sm z-40 pointer-events-auto ${cls}`}
-      onPointerDown={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-        e.currentTarget.setPointerCapture(e.pointerId)
-        const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
-        stateRef.current = {
-          lastX: e.clientX, lastY: e.clientY,
-          parentW: parentRect?.width ?? 1, parentH: parentRect?.height ?? 1,
-        }
-      }}
-      onPointerMove={(e) => {
-        const s = stateRef.current
-        if (!s) return
-        if (!e.currentTarget.hasPointerCapture(e.pointerId)) return
-        const dx = ((e.clientX - s.lastX) / s.parentW) * 100
-        const dy = ((e.clientY - s.lastY) / s.parentH) * 100
-        s.lastX = e.clientX
-        s.lastY = e.clientY
-        const wDelta = corner.includes('e') ? dx : corner.includes('w') ? -dx : 0
-        const hDelta = corner.includes('s') ? dy : corner.includes('n') ? -dy : 0
-        resizeSlot(slotId, { width: wDelta, height: hDelta })
-        if (corner.includes('w')) moveSlot(slotId, { x: dx })
-        if (corner.includes('n')) moveSlot(slotId, { y: dy })
-      }}
-      onPointerUp={(e) => {
-        e.stopPropagation()
-        e.currentTarget.releasePointerCapture(e.pointerId)
-        stateRef.current = null
-      }}
+      onPointerDown={handlePointerDown}
     />
   )
 }
@@ -401,47 +412,53 @@ function MoveOverlay({
   moveSlot: (slotId: string, delta: { x?: number; y?: number }) => void
   onSelect: () => void
 }) {
-  const stateRef = useRef<{
-    lastX: number; lastY: number
-    startX: number; startY: number
-    parentW: number; parentH: number
-    didMove: boolean
-    active: boolean
-  } | null>(null)
+  const elRef = useRef<HTMLDivElement>(null)
+  const moveRef = useRef(moveSlot)
+  const selectRef = useRef(onSelect)
+  moveRef.current = moveSlot
+  selectRef.current = onSelect
+
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const el = elRef.current
+    if (!el) return
+    el.setPointerCapture(e.pointerId)
+
+    let lastX = e.clientX
+    let lastY = e.clientY
+    const startX = e.clientX
+    const startY = e.clientY
+    let didMove = false
+    const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
+    const parentW = parentRect?.width ?? 1
+    const parentH = parentRect?.height ?? 1
+
+    const onMove = (ev: PointerEvent) => {
+      if (!didMove && Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return
+      didMove = true
+      const dx = ((ev.clientX - lastX) / parentW) * 100
+      const dy = ((ev.clientY - lastY) / parentH) * 100
+      lastX = ev.clientX
+      lastY = ev.clientY
+      moveRef.current(slotId, { x: dx, y: dy })
+    }
+    const onUp = (ev: PointerEvent) => {
+      ev.stopPropagation()
+      el.releasePointerCapture(ev.pointerId)
+      el.removeEventListener('pointermove', onMove)
+      el.removeEventListener('pointerup', onUp)
+      if (!didMove) selectRef.current()
+    }
+    el.addEventListener('pointermove', onMove)
+    el.addEventListener('pointerup', onUp)
+  }, [slotId, containerRef])
 
   return (
     <div
+      ref={elRef}
       className="absolute inset-0 z-[35] cursor-move"
-      onPointerDown={(e) => {
-        e.stopPropagation()
-        e.preventDefault()
-        e.currentTarget.setPointerCapture(e.pointerId)
-        const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
-        stateRef.current = {
-          lastX: e.clientX, lastY: e.clientY,
-          startX: e.clientX, startY: e.clientY,
-          parentW: parentRect?.width ?? 1, parentH: parentRect?.height ?? 1,
-          didMove: false, active: true,
-        }
-      }}
-      onPointerMove={(e) => {
-        const s = stateRef.current
-        if (!s?.active) return
-        if (!s.didMove && Math.abs(e.clientX - s.startX) < 4 && Math.abs(e.clientY - s.startY) < 4) return
-        s.didMove = true
-        const dx = ((e.clientX - s.lastX) / s.parentW) * 100
-        const dy = ((e.clientY - s.lastY) / s.parentH) * 100
-        s.lastX = e.clientX
-        s.lastY = e.clientY
-        moveSlot(slotId, { x: dx, y: dy })
-      }}
-      onPointerUp={(e) => {
-        e.stopPropagation()
-        e.currentTarget.releasePointerCapture(e.pointerId)
-        const s = stateRef.current
-        stateRef.current = null
-        if (s && !s.didMove) onSelect()
-      }}
+      onPointerDown={handlePointerDown}
     />
   )
 }
