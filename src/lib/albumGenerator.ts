@@ -122,7 +122,7 @@ export async function generateAlbum(
     for (let attempt = 0; attempt < 2 && !batchScored; attempt++) {
       try {
         if (attempt > 0) {
-          onProgress(0, Math.round((batchesDone / batches.length) * 55), `ניסיון חוזר (Gemini)... ${allScores.length}/${photos.length}`)
+          onProgress(0, Math.round((batchesDone / batches.length) * 55), `ניסיון חוזר... ${allScores.length}/${photos.length}`)
           await sleep(1000 * attempt)
         }
         const scores = await analyzePhotoBatchGemini(batch, orientations)
@@ -138,7 +138,7 @@ export async function generateAlbum(
     // Fallback: try OpenAI if Gemini failed
     if (!batchScored) {
       try {
-        onProgress(0, Math.round((batchesDone / batches.length) * 55), `מנסה ערוץ חלופי (OpenAI)...`)
+        onProgress(0, Math.round((batchesDone / batches.length) * 55), `מנסה ערוץ חלופי...`)
         const scores = await analyzePhotoBatch(batch, orientations)
         allScores.push(...scores)
         aiSuccessCount += batch.length

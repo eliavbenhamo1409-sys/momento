@@ -257,7 +257,7 @@ export default function GenerationScreen() {
                     </div>
 
                     <div className="flex justify-between items-center">
-                      <div className="flex flex-wrap gap-2">
+                      <div className="flex flex-wrap gap-2" dir="ltr">
                         {STAGE_LABELS.map((s, i) => (
                           <span
                             key={s.headline}
