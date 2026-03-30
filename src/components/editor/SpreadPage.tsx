@@ -313,8 +313,8 @@ function AbsolutePageElements({
   }, [isSwapping, onSwapClick, selectPhoto, selectedPhotoId])
 
   const handleQuoteClick = useCallback((gIdx: number) => {
-    selectText(selectedTextIndex === gIdx ? null : gIdx)
-  }, [selectText, selectedTextIndex])
+    selectText(gIdx)
+  }, [selectText])
 
   return (
     <>
