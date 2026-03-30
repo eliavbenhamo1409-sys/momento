@@ -616,67 +616,95 @@ export function AbsolutePhotoElement({
     setImgLoaded(false)
   }
 
-  const { drag, dropTargetSlotId, onDragStart, onDragMove, onDragEnd } = React.useContext(DragCtx)
+  const { drag, dropTargetSlotId } = React.useContext(DragCtx)
   const isDragSource = drag?.sourceSlotId === element.slotId
   const isDropTarget = dropTargetSlotId === element.slotId && !isDragSource
 
   const zoomHideTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const longPressTimer = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const startPosRef = useRef<{ x: number; y: number } | null>(null)
-  const didDragStartRef = useRef(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const imgRef = useRef<HTMLImageElement>(null)
   const emptyFileRef = useRef<HTMLInputElement>(null)
   const replaceFileRef = useRef<HTMLInputElement>(null)
-  const pointerIdRef = useRef<number | null>(null)
 
   const currentScale = element.scale ?? 1
 
+  const onSelectRef = useRef(onSelect)
+  onSelectRef.current = onSelect
+  const moveSlotRef = useRef(moveSlot)
+  moveSlotRef.current = moveSlot
+
+  // Pointer-down → select on click, move on drag (native listeners for
+  // uninterrupted tracking even after React re-renders add MoveOverlay).
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!element.photoUrl || isSwapping) return
     e.stopPropagation()
-    startPosRef.current = { x: e.clientX, y: e.clientY }
-    didDragStartRef.current = false
-    pointerIdRef.current = e.pointerId
-
-    longPressTimer.current = setTimeout(() => {
-      didDragStartRef.current = true
-      onDragStart(element.slotId, spreadId, element.photoUrl!, e.clientX, e.clientY, e.pointerId)
-    }, 250)
-  }, [element.photoUrl, element.slotId, spreadId, isSwapping, onDragStart])
-
-  const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!startPosRef.current) return
-
-    if (!didDragStartRef.current) {
-      const dx = Math.abs(e.clientX - startPosRef.current.x)
-      const dy = Math.abs(e.clientY - startPosRef.current.y)
-      if (dx > 6 || dy > 6) {
-        clearTimeout(longPressTimer.current)
-        didDragStartRef.current = true
-        onDragStart(element.slotId, spreadId, element.photoUrl!, e.clientX, e.clientY, e.pointerId)
-      }
-      return
-    }
-
-    e.stopPropagation()
     e.preventDefault()
-    onDragMove(e.clientX, e.clientY)
-  }, [element.slotId, element.photoUrl, spreadId, onDragStart, onDragMove])
 
-  const handlePointerUp = useCallback((e: React.PointerEvent) => {
-    clearTimeout(longPressTimer.current)
+    const container = containerRef.current
+    if (!container) return
+    container.setPointerCapture(e.pointerId)
 
-    if (didDragStartRef.current) {
-      onDragEnd()
-    } else {
-      e.stopPropagation()
-      onSelect()
+    const startX = e.clientX
+    const startY = e.clientY
+    let lastX = startX
+    let lastY = startY
+    let didMove = false
+
+    const parentEl = container.parentElement
+    if (!parentEl) return
+    const parentRect = parentEl.getBoundingClientRect()
+    const parentW = parentRect.width || 1
+    const parentH = parentRect.height || 1
+
+    const initLeft = element.x
+    const initTop = element.y
+    let accumDx = 0
+    let accumDy = 0
+    let rafId = 0
+
+    const flush = () => {
+      rafId = 0
+      container.style.left = `${initLeft + accumDx}%`
+      container.style.top = `${initTop + accumDy}%`
     }
-    startPosRef.current = null
-    didDragStartRef.current = false
-    pointerIdRef.current = null
-  }, [onSelect, onDragEnd])
+
+    const onMove = (ev: PointerEvent) => {
+      if (!didMove) {
+        if (Math.abs(ev.clientX - startX) < 4 && Math.abs(ev.clientY - startY) < 4) return
+        didMove = true
+        onSelectRef.current()
+      }
+      const dx = ((ev.clientX - lastX) / parentW) * 100
+      const dy = ((ev.clientY - lastY) / parentH) * 100
+      lastX = ev.clientX
+      lastY = ev.clientY
+      accumDx += dx
+      accumDy += dy
+      if (!rafId) rafId = requestAnimationFrame(flush)
+    }
+
+    const cleanup = () => {
+      if (rafId) cancelAnimationFrame(rafId)
+      try { container.releasePointerCapture(e.pointerId) } catch { /* already released */ }
+      container.removeEventListener('pointermove', onMove)
+      container.removeEventListener('pointerup', onUp)
+      container.removeEventListener('pointercancel', cleanup)
+    }
+
+    const onUp = (ev: PointerEvent) => {
+      ev.stopPropagation()
+      cleanup()
+      if (didMove) {
+        moveSlotRef.current(element.slotId, { x: accumDx, y: accumDy })
+      } else {
+        onSelectRef.current()
+      }
+    }
+
+    container.addEventListener('pointermove', onMove)
+    container.addEventListener('pointerup', onUp)
+    container.addEventListener('pointercancel', cleanup)
+  }, [element.photoUrl, element.slotId, element.x, element.y, isSwapping])
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
     if (!element.photoUrl) return
@@ -704,10 +732,7 @@ export function AbsolutePhotoElement({
   }, [element.photoUrl])
 
   useEffect(() => {
-    return () => {
-      clearTimeout(longPressTimer.current)
-      clearTimeout(zoomHideTimer.current)
-    }
+    return () => clearTimeout(zoomHideTimer.current)
   }, [])
 
   const positionStyle: React.CSSProperties = {
@@ -756,14 +781,6 @@ export function AbsolutePhotoElement({
         opacity: isDragSource ? 0.4 : 1,
       }}
       onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={() => {
-        clearTimeout(longPressTimer.current)
-        if (didDragStartRef.current) onDragEnd()
-        startPosRef.current = null
-        didDragStartRef.current = false
-      }}
       onWheel={handleWheel}
     >
       <div
