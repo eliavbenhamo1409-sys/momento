@@ -1,6 +1,5 @@
 import type { Photo, PhotoOrientation, PhotoScore, SpreadPlan, PageGroup } from '../types'
 import { detectOrientation } from './photoUtils'
-import { extractPhotoDate } from './photoUtils'
 
 type OrientedPhoto = {
   id: string

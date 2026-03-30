@@ -11,7 +11,7 @@ import type {
 } from '../types'
 import { batchArray, detectOrientation, getImageDimensions, extractPhotoDate } from './photoUtils'
 import { analyzePhotoBatch, generateSpreadBackgrounds } from './openai'
-import { curatePhotos, buildPageGroups } from './photoScorer'
+import { curatePhotos } from './photoScorer'
 import {
   placePhotosInSpreads,
   computeSmartFacePosition,
@@ -20,7 +20,6 @@ import {
   findFaceSafeTemplate,
   rebuildSpreadWithTemplate,
 } from './photoPlacer'
-import { buildSmartSpreadPlans } from './smartLayoutPicker'
 import { buildOrientationSpreadPlans } from './orientationLayoutBuilder'
 import { getDesignFamily } from './designFamilies'
 import { planAlbumSequence } from './rhythmOrchestrator'
