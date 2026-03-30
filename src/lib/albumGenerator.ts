@@ -11,7 +11,7 @@ import type {
 } from '../types'
 import { batchArray, detectOrientation, getImageDimensions, extractPhotoDate } from './photoUtils'
 import { analyzePhotoBatch, generateSpreadBackgrounds } from './openai'
-import { curatePhotos } from './photoScorer'
+import { curatePhotos, buildPageGroups } from './photoScorer'
 import {
   placePhotosInSpreads,
   computeSmartFacePosition,
@@ -20,7 +20,7 @@ import {
   findFaceSafeTemplate,
   rebuildSpreadWithTemplate,
 } from './photoPlacer'
-import { buildOrientationSpreadPlans } from './orientationLayoutBuilder'
+import { buildSmartSpreadPlans } from './smartLayoutPicker'
 import { getDesignFamily } from './designFamilies'
 import { planAlbumSequence } from './rhythmOrchestrator'
 import { resolveAlbumVisuals } from './resolveSpreadVisuals'
@@ -66,7 +66,7 @@ export async function generateAlbum(
 
   // ── Stage 1 (0-25%): Photo Scoring via Vision API ─────────────
 
-  onProgress(0, 0, '📸 מתחיל לנתח את התמונות שלך...')
+  onProgress(0, 0, 'מתחיל לנתח את התמונות שלך...')
 
   const orientations = new Map<
     string,
@@ -106,7 +106,7 @@ export async function generateAlbum(
   }
   if (dateLookup.size > 0) {
     console.log(`[אלבום חכם] חולצו תאריכים מ-${dateLookup.size}/${photos.length} תמונות`)
-    onProgress(0, 3, `📅 חולצו תאריכים מ-${dateLookup.size} תמונות...`)
+    onProgress(0, 3, `חולצו תאריכים מ-${dateLookup.size} תמונות...`)
   }
 
   const batches = batchArray(photos, BATCH_SIZE)
@@ -130,71 +130,68 @@ export async function generateAlbum(
 
     batchesDone++
     const pct = Math.round((batchesDone / batches.length) * 25)
-    onProgress(0, pct, `🧠 מזהה פרצופים, סצנות ורגשות... ${allScores.length}/${photos.length}`)
+    onProgress(0, pct, `מזהה פרצופים, סצנות ורגשות... ${allScores.length}/${photos.length}`)
   }
 
-  onProgress(0, 25, `✅ ניתוח הושלם — ${allScores.length} תמונות נסרקו בהצלחה`)
+  onProgress(0, 25, `ניתוח הושלם — ${allScores.length} תמונות נסרקו`)
 
   // ── Stage 2 (25-35%): Curation & Ranking ──────────────────────
 
-  onProgress(1, 26, '⭐ מדרג תמונות לפי איכות, חדות ורגש...')
+  onProgress(1, 26, 'מדרג תמונות לפי איכות, חדות ורגש...')
 
   const curated = curatePhotos(allScores, config)
 
-  onProgress(1, 30, `🏆 נבחרו ${curated.totalSelected} התמונות הטובות מתוך ${curated.totalOriginal}`)
+  onProgress(1, 30, `נבחרו ${curated.totalSelected} התמונות הטובות מתוך ${curated.totalOriginal}`)
 
   if (curated.removed.length > 0) {
-    onProgress(1, 33, `🗑️ סוננו ${curated.removed.length} תמונות כפולות או חלשות`)
+    onProgress(1, 33, `סוננו ${curated.removed.length} תמונות כפולות או חלשות`)
   }
 
   await sleep(400)
-  onProgress(1, 35, '✅ דירוג התמונות הושלם')
+  onProgress(1, 35, 'דירוג התמונות הושלם')
 
-  // ── Stage 3 (35-55%): Date Sort + Orientation-Based Layout ──────
+  // ── Stage 3 (35-55%): Smart Grouping & Template Picking ──────
 
-  onProgress(2, 36, '📅 ממיין תמונות לפי תאריך וכיוון...')
+  onProgress(2, 36, 'ממיין תמונות לפי תאריך וסצנה...')
 
   const selectedScores = curated.selected.map((r) => r.score)
 
-  console.log('[אלבום חכם] ── שלב 3: מיון לפי תאריך + כיוון ──')
+  console.log('[אלבום חכם] ── שלב 3: קיבוץ תמונות ──')
   console.log(`[אלבום חכם] ${selectedScores.length} תמונות אחרי סינון, יעד ${spreadCount} עמודים כפולים`)
   const orientCounts = { landscape: 0, portrait: 0, square: 0 }
   for (const s of selectedScores) { orientCounts[s.orientation]++ }
   console.log(`[אלבום חכם] חלוקת כיוונים: ${orientCounts.portrait} אורכי, ${orientCounts.landscape} רוחבי, ${orientCounts.square} ריבועי`)
 
+  const pageGroups = buildPageGroups(selectedScores, spreadCount, dateLookup)
+
+  console.log(`[אלבום חכם] נוצרו ${pageGroups.length} קבוצות:`)
+  for (const g of pageGroups) {
+    console.log(`  ${g.groupId}: ${g.photoIds.length} תמונות | אורכי:${g.orientationMix.portrait} רוחבי:${g.orientationMix.landscape} ריבועי:${g.orientationMix.square} | איכות=${g.bestPhotoQuality} | נושא=${g.theme}`)
+  }
+
   const scoreMap = new Map(allScores.map((s) => [s.photoId, s]))
   const photoMap = new Map(photos.map((p) => [p.id, p]))
 
-  onProgress(2, 42, '📐 בוחר פריסה לפי כיוון וגודל התמונות...')
+  onProgress(2, 45, 'בוחר תבנית מתאימה לכל עמוד...')
 
-  const selectedPhotos = curated.selected.map(r => {
-    const photo = photos.find(p => p.id === r.score.photoId)
-    return photo!
-  }).filter(Boolean)
+  const spreadPlans = buildSmartSpreadPlans(pageGroups, scoreMap, spreadCount)
 
-  const { plans: spreadPlans, groups: pageGroups } = await buildOrientationSpreadPlans(
-    selectedPhotos,
-    selectedScores,
-    spreadCount,
-    dateLookup,
-  )
-
-  console.log('[אלבום חכם] ── שלב 3.5: פריסה לפי כיוון ──')
+  console.log('[אלבום חכם] ── שלב 3.5: בחירת תבניות ──')
   for (const plan of spreadPlans) {
     const group = pageGroups[plan.spreadIndex]
     console.log(`  עמוד ${plan.spreadIndex}: תבנית="${plan.templateId}" | ${plan.assignedPhotoIds.length} תמונות | כיוונים — אורכי:${group?.orientationMix.portrait} רוחבי:${group?.orientationMix.landscape} ריבועי:${group?.orientationMix.square}`)
   }
 
-  onProgress(2, 52, `📖 תוכנן אלבום — ${spreadPlans.length} עמודים כפולים`)
+  onProgress(2, 52, `תוכנן אלבום חכם — ${spreadPlans.length} עמודים כפולים`)
 
   const sequencePlan: SpreadSequenceSlot[] = planAlbumSequence(family, spreadCount, curated)
 
   await sleep(300)
-  onProgress(2, 55, '✅ תכנון פריסה חכמה הושלם')
+  onProgress(2, 55, 'תכנון פריסה הושלם')
 
   // ── Stage 4 (55-75%): Photo-to-Slot Assignment ────────────────
 
-  onProgress(3, 56, '🖼️ משבץ כל תמונה בעמוד המתאים לה...')
+  onProgress(3, 56, 'משבץ כל תמונה בעמוד המתאים לה...')
 
   const spreads = placePhotosInSpreads(spreadPlans, scoreMap, photoMap, spreadCount)
 
@@ -204,14 +201,14 @@ export async function generateAlbum(
     console.log(`  עמוד ${spread.id}: תבנית="${spread.templateId}" | חריצים=[${slotInfo}]`)
   }
 
-  onProgress(3, 72, `✅ שובצו ${curated.totalSelected} תמונות ב-${spreads.length} עמודים`)
+  onProgress(3, 72, `שובצו ${curated.totalSelected} תמונות ב-${spreads.length} עמודים`)
 
   await sleep(300)
-  onProgress(3, 75, '🎯 שיבוץ תמונות הושלם — כל תמונה במקומה')
+  onProgress(3, 75, 'שיבוץ תמונות הושלם')
 
   // ── Stage 4.5 (75-78%): Mood Concept Assignment ────────────────
 
-  onProgress(3, 76, '🎨 בוחר קונספט עיצובי ייחודי לכל עמוד...')
+  onProgress(3, 76, 'בוחר קונספט עיצובי לכל עמוד...')
 
   const moodAssignments = assignMoodConcepts(
     spreads,
@@ -227,7 +224,7 @@ export async function generateAlbum(
     }
   }
 
-  onProgress(3, 78, `🎨 נבחרו ${moodAssignments.length} קונספטים עיצוביים`)
+  onProgress(3, 78, `נבחרו ${moodAssignments.length} קונספטים עיצוביים`)
 
   // ── Stage 4.7 (78-88%): AI Background Generation ──────────────
 
@@ -235,7 +232,7 @@ export async function generateAlbum(
   const moodPacksForBg = moodAssignments.map((a) => a.pack)
 
   if (config.backgroundMode === 'ai-generated') {
-    onProgress(4, 79, '🖌️ מעצב רקעים ייחודיים לכל עמוד...')
+    onProgress(4, 79, 'מעצב רקעים ייחודיים לכל עמוד...')
     const vibeText = config.vibeText || ''
     onProgress(4, 80, `מייצר ${spreads.length} רקעים מקוריים עם AI — כל עמוד ייחודי...`)
 
@@ -257,13 +254,13 @@ export async function generateAlbum(
       onProgress(4, 87, 'משתמש ברקעים מובנים')
     }
   } else {
-    onProgress(4, 87, '⬜ רקע לבן נקי — מיני מליסטי ואלגנטי')
+    onProgress(4, 87, 'רקע לבן נקי')
     generatedBackgrounds = new Array(spreads.length).fill(null)
   }
 
   // ── Stage 5 (88-92%): Visual Resolution ────────────────────────
 
-  onProgress(4, 88, `✨ מקמפל עיצוב — סגנון ${family.nameHe}...`)
+  onProgress(4, 88, `מקמפל עיצוב — סגנון ${family.nameHe}...`)
 
   const resolvedSpreads = resolveAlbumVisuals(spreads, sequencePlan, family)
 
@@ -281,7 +278,7 @@ export async function generateAlbum(
 
   // ── Stage 5.5 (85-95%): Composition Building ──────────────────
 
-  onProgress(4, 86, '🏗️ בונה קומפוזיציות מדויקות לכל עמוד...')
+  onProgress(4, 86, 'בונה קומפוזיציות לכל עמוד...')
 
   console.log(`[אלבום חכם] ── שלב 5.5: בניית קומפוזיציה (רקע=${config.backgroundMode === 'white' ? 'לבן' : 'AI'}) ──`)
 
@@ -306,7 +303,7 @@ export async function generateAlbum(
 
   // ── Stage 6 (91-98%): Face Verification Scan (Multi-Pass) ──────
 
-  onProgress(5, 92, '🔍 סורק פרצופים בכל העמודים...')
+  onProgress(5, 92, 'סורק פרצופים בכל העמודים...')
   await sleep(400)
 
   const faceScoreMap = new Map(allScores.map((s) => [s.photoId, s]))
@@ -386,13 +383,13 @@ export async function generateAlbum(
   console.log(`[אלבום חכם] סה״כ: ${totalFacePhotos} תמונות עם פנים, ${allFaceIssues.length} בעיות חיתוך`)
 
   if (allFaceIssues.length === 0) {
-    onProgress(5, 96, '✅ כל הפרצופים במקום מושלם — לא נדרשו תיקונים!')
+    onProgress(5, 96, 'כל הפרצופים במקום — לא נדרשו תיקונים')
     await sleep(500)
     console.log('[אלבום חכם] ══════════ סריקת פנים — הכל תקין! ══════════')
   } else {
     // ── Pass 2: Fix via objectPosition for moderate issues ────────
 
-    onProgress(5, 93, `⚠️ נמצאו ${allFaceIssues.length} בעיות חיתוך — מתחיל תיקון...`)
+    onProgress(5, 93, `נמצאו ${allFaceIssues.length} בעיות חיתוך — מתחיל תיקון...`)
     await sleep(400)
 
     console.log('[אלבום חכם] ══════════ סריקת פנים — פאס 2: תיקון מיקום ══════════')
@@ -435,7 +432,7 @@ export async function generateAlbum(
       }
     }
 
-    onProgress(5, 94, `✨ תוקנו ${positionFixes} תמונות במיקום`)
+    onProgress(5, 94, `תוקנו ${positionFixes} תמונות במיקום`)
     await sleep(300)
 
     console.log(`[אלבום חכם] פאס 2 סיכום: ${positionFixes} תוקנו, ${stillBroken.length} עדיין בעייתיים`)
@@ -443,7 +440,7 @@ export async function generateAlbum(
     // ── Pass 3: Template swap for severe issues ──────────────────
 
     if (stillBroken.length > 0) {
-      onProgress(5, 94, `🔄 ${stillBroken.length} תמונות עדיין בעייתיות — מחליף מבנה עמודים...`)
+      onProgress(5, 94, `${stillBroken.length} תמונות עדיין בעייתיות — מחליף מבנה עמודים...`)
       await sleep(400)
 
       console.log('[אלבום חכם] ══════════ סריקת פנים — פאס 3: החלפת מבנה עמודים ══════════')
@@ -555,8 +552,8 @@ export async function generateAlbum(
       }
 
       onProgress(5, 95, templateSwaps > 0
-        ? `🔄 הוחלפו ${templateSwaps} מבנים + ${positionFixes} מיקומים תוקנו`
-        : `✨ ${positionFixes + positionFallbackFixes} תמונות תוקנו`)
+        ? `הוחלפו ${templateSwaps} מבנים + ${positionFixes} מיקומים תוקנו`
+        : `${positionFixes + positionFallbackFixes} תמונות תוקנו`)
       await sleep(400)
 
       console.log(`[אלבום חכם] פאס 3 סיכום: ${templateSwaps} החלפות מבנה, ${positionFallbackFixes} תיקוני מיקום בכוח`)
@@ -596,9 +593,9 @@ export async function generateAlbum(
     console.log(`[אלבום חכם] אימות סופי: ${finalOk} תקינים, ${finalWarnings} עם אזהרות`)
 
     if (finalWarnings === 0) {
-      onProgress(5, 96, `✅ כל ${finalOk} הפרצופים במקומם — מושלם!`)
+      onProgress(5, 96, `כל ${finalOk} הפרצופים במקומם`)
     } else {
-      onProgress(5, 96, `✅ ${finalOk} פרצופים תקינים, ${finalWarnings} עם אזהרה קלה`)
+      onProgress(5, 96, `${finalOk} פרצופים תקינים, ${finalWarnings} עם אזהרה קלה`)
     }
     await sleep(400)
 
@@ -607,16 +604,16 @@ export async function generateAlbum(
 
   // ── Stage 7 (98-100%): Final Assembly ──────────────────────────
 
-  onProgress(5, 97, '🎨 מבצע ליטוש אחרון...')
+  onProgress(5, 97, 'מבצע ליטוש אחרון...')
   await sleep(400)
 
-  onProgress(5, 98, '📖 מרכיב את האלבום הסופי...')
+  onProgress(5, 98, 'מרכיב את האלבום הסופי...')
   await sleep(300)
 
-  onProgress(5, 99, '✨ בודק שהכל מושלם...')
+  onProgress(5, 99, 'בודק שהכל מושלם...')
   await sleep(200)
 
-  onProgress(5, 100, '🎉 האלבום שלך מוכן!')
+  onProgress(5, 100, 'האלבום שלך מוכן')
 
   return {
     spreads: composedSpreads,

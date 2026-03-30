@@ -38,13 +38,16 @@ function orientationFitScore(
 const PORTRAIT_TEMPLATES = [
   'portrait-duo', 'portrait-trio', 'portrait-hero-grid',
   'portrait-grid-4', 'portrait-5', 'portrait-6',
+  'single-portrait',
 ]
 const LANDSCAPE_TEMPLATES = [
   'three-rows', 'full-spread', 'grid-3x2', 'detail-grid',
+  'landscape-top-2sq', '2sq-top-landscape', 'two-landscapes-stacked',
 ]
 const MIXED_TEMPLATES = [
   'mixed-top-bottom', 'hero-top-grid-bottom', 'mosaic-5',
   'hero-left-grid-right', 'balanced-4', 'grid-2x2',
+  'cross-diagonal',
 ]
 
 function scoreTemplateForGroup(
@@ -99,13 +102,15 @@ function scoreTemplateForGroup(
   }
 
   let heroBonus = 0
-  if (group.bestPhotoQuality >= 9) {
+  if (group.bestPhotoQuality >= 8) {
     const bestPhoto = scores.get(group.bestPhotoId)
     if (bestPhoto) {
       if (bestPhoto.orientation === 'landscape' && tid === 'full-spread') heroBonus += 0.5
+      if (bestPhoto.orientation === 'portrait' && (tid === 'single-portrait' || tid === 'full-spread')) heroBonus += 0.5
       if (bestPhoto.orientation === 'portrait' && PORTRAIT_TEMPLATES.includes(tid)) heroBonus += 0.4
       const heroSlot = template.slots.find((s) => s.importance === 'hero')
       if (heroSlot) heroBonus += 0.1
+      if (group.bestPhotoQuality >= 9) heroBonus += 0.15
     }
   }
 

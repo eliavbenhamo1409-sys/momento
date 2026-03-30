@@ -341,12 +341,15 @@ export function buildPageGroups(
   // Sort each group internally by quality (best first)
   for (const g of rawGroups) g.sort((a, b) => b.overallQuality - a.overallQuality)
 
-  // Extract hero photos (quality >= 9) into standalone 1-photo groups
+  // Extract hero photos into standalone 1-photo groups for full-page treatment
   const heroGroups: PageGroup[] = []
   const normalGroups: PhotoScore[][] = []
 
   for (const group of rawGroups) {
-    const heroPhoto = group.find((p) => p.overallQuality >= 9 && (p.isHeroCandidate || p.isHighlight))
+    const heroPhoto = group.find((p) =>
+      (p.overallQuality >= 9 && (p.isHeroCandidate || p.isHighlight)) ||
+      (p.overallQuality >= 8 && p.isHeroCandidate && p.isCoverCandidate)
+    )
     if (heroPhoto && group.length > 1) {
       heroGroups.push(buildGroupMeta(`hero-${heroPhoto.photoId}`, [heroPhoto], 'hero'))
       const rest = group.filter((p) => p.photoId !== heroPhoto.photoId)

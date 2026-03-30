@@ -10,12 +10,12 @@ import { generateAlbum } from '../lib/albumGenerator'
 import { buildFallbackSpreads } from '../lib/photoPlacer'
 
 const STAGE_LABELS = [
-  { headline: 'מנתח את התמונות שלך', subtext: 'מזהה פנים, סצנות ואיכות כל תמונה' },
-  { headline: 'מדרג ומסנן', subtext: 'שומר רק את הרגעים הכי טובים' },
-  { headline: 'מתכנן פריסת עמודים', subtext: 'בוחר תבניות עיצוב מותאמות לסגנון שלך' },
-  { headline: 'מתאים תמונות לעמודים', subtext: 'שיבוץ חכם לפי גודל, כיוון ואיכות' },
-  { headline: 'חיתוכים חכמים', subtext: 'מוודא שפרצופים לא נחתכים' },
-  { headline: 'מרכיב את האלבום', subtext: 'שלמים אחרונים' },
+  { headline: 'מסנן וממיין תמונות', subtext: 'מזהה פנים, סצנות ואיכות' },
+  { headline: 'מדרג תמונות', subtext: 'שומר רק את הרגעים הטובים ביותר' },
+  { headline: 'ממיין לפי תאריך ומשבץ', subtext: 'בוחר תבנית מתאימה לכל עמוד' },
+  { headline: 'ממקם תמונות בעמודים', subtext: 'שיבוץ חכם לפי גודל וכיוון' },
+  { headline: 'בודק חיתוכי פנים', subtext: 'מוודא שכל הפרצופים נראים' },
+  { headline: 'מרכיב את האלבום', subtext: 'נגיעות אחרונות' },
 ]
 
 function Particle({ delay }: { delay: number }) {
@@ -28,6 +28,25 @@ function Particle({ delay }: { delay: number }) {
       className="absolute w-1 h-1 rounded-full bg-sage/40"
       style={{ bottom: '20%', left: `${40 + Math.random() * 20}%` }}
     />
+  )
+}
+
+function AnimatedDots() {
+  return (
+    <span className="inline-flex w-[1.2em] justify-start" dir="ltr">
+      <motion.span
+        animate={{ opacity: [0, 1, 0] }}
+        transition={{ duration: 1.4, repeat: Infinity, times: [0, 0.3, 1] }}
+      >.</motion.span>
+      <motion.span
+        animate={{ opacity: [0, 1, 0] }}
+        transition={{ duration: 1.4, repeat: Infinity, times: [0, 0.3, 1], delay: 0.2 }}
+      >.</motion.span>
+      <motion.span
+        animate={{ opacity: [0, 1, 0] }}
+        transition={{ duration: 1.4, repeat: Infinity, times: [0, 0.3, 1], delay: 0.4 }}
+      >.</motion.span>
+    </span>
   )
 }
 
@@ -280,15 +299,9 @@ export default function GenerationScreen() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
                         transition={{ duration: 0.3 }}
-                        className="px-5 py-2.5 bg-surface-container-lowest rounded-xl shadow-md text-sm text-warm-gray flex items-center gap-2"
+                        className="px-5 py-2.5 bg-surface-container-lowest rounded-xl shadow-md text-sm text-warm-gray"
                       >
-                        <motion.span
-                          animate={{ opacity: [0.5, 1, 0.5] }}
-                          transition={{ duration: 2, repeat: Infinity }}
-                        >
-                          <Icon name="hourglass_top" size={16} className="text-sage" />
-                        </motion.span>
-                        עדיין עובדים על זה...
+                        עדיין עובדים על זה<AnimatedDots />
                       </motion.div>
                     )}
                     {notification && (
@@ -298,10 +311,9 @@ export default function GenerationScreen() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -5 }}
                         transition={{ duration: 0.3 }}
-                        className="px-5 py-2.5 bg-surface-container-lowest rounded-xl shadow-md text-sm text-deep-brown flex items-center gap-2"
+                        className="px-5 py-2.5 bg-surface-container-lowest rounded-xl shadow-md text-sm text-deep-brown"
                       >
-                        <Icon name="info" size={16} className="text-sage" />
-                        {notification}
+                        {notification}<AnimatedDots />
                       </motion.div>
                     )}
                   </AnimatePresence>

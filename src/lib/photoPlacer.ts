@@ -121,6 +121,7 @@ function matchPhotosToSlots(
   slots: SlotDefinition[],
   photos: PhotoScore[],
   photoUrlMap: Map<string, string>,
+  globalUsed?: Set<string>,
 ): SlotAssignment[] {
   const sortedSlots = [...slots].sort((a, b) => {
     const order = { hero: 0, primary: 1, secondary: 2, accent: 3 }
@@ -137,9 +138,10 @@ function matchPhotosToSlots(
   for (let i = 0; i < Math.min(heroPhotos.length, heroSlots.length); i++) {
     const photo = heroPhotos[i]
     const slot = heroSlots[i]
-    if (usedPhotos.has(photo.photoId)) continue
+    if (usedPhotos.has(photo.photoId) || globalUsed?.has(photo.photoId)) continue
 
     usedPhotos.add(photo.photoId)
+    globalUsed?.add(photo.photoId)
     const crop = computeCrop(photo, slot)
     assignments.push({
       spreadIndex: 0,
@@ -160,7 +162,7 @@ function matchPhotosToSlots(
     let bestScore = -Infinity
 
     for (const photo of sortedPhotos) {
-      if (usedPhotos.has(photo.photoId)) continue
+      if (usedPhotos.has(photo.photoId) || globalUsed?.has(photo.photoId)) continue
 
       const oScore = orientationMatchScore(slot.accepts, photo.orientation)
       const iScore = importanceMatchScore(slot.importance, photo.overallQuality)
@@ -184,6 +186,7 @@ function matchPhotosToSlots(
 
     if (bestCandidate) {
       usedPhotos.add(bestCandidate.photoId)
+      globalUsed?.add(bestCandidate.photoId)
       assignments.push({
         spreadIndex: 0,
         slotId: bestCandidate.slotId,
@@ -232,13 +235,15 @@ export function placePhotosInSpreads(
     photoUrlMap.set(id, photo.fullUrl)
   }
 
+  const globalUsed = new Set<string>()
+
   return plans.map((plan, idx) => {
     const template = getTemplate(plan.templateId) ?? getFallbackTemplate(idx, totalSpreads)
     const planScores = plan.assignedPhotoIds
       .map((id) => allScores.get(id))
       .filter(Boolean) as PhotoScore[]
 
-    const assignments = matchPhotosToSlots(template.slots, planScores, photoUrlMap)
+    const assignments = matchPhotosToSlots(template.slots, planScores, photoUrlMap, globalUsed)
     const slotDataArr = assignments.map(cropToSlotData)
 
     const leftSlots = template.slots.filter((s) => s.page === 'left')
