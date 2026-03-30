@@ -226,6 +226,29 @@ const DragCtx = React.createContext<DragContext>({
 
 // ─── Photo Toolbar Portal ─────────────────────────────────────────────
 
+function ToolbarTooltip({ text, children }: { text: string; children: React.ReactNode }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="relative" onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)}>
+      {children}
+      <AnimatePresence>
+        {show && (
+          <motion.div
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 2 }}
+            transition={{ duration: 0.15 }}
+            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 rounded-lg bg-[#1a1816] text-white text-[10px] font-medium whitespace-nowrap shadow-lg pointer-events-none z-50"
+          >
+            {text}
+            <div className="absolute top-full left-1/2 -translate-x-1/2 -mt-px w-0 h-0 border-l-[5px] border-r-[5px] border-t-[5px] border-l-transparent border-r-transparent border-t-[#1a1816]" />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 function PhotoToolbarPortal({
   containerRef,
   zoomPct,
@@ -233,6 +256,7 @@ function PhotoToolbarPortal({
   slotId,
   photoUrl,
   isMoveMode,
+  currentPadding,
   onZoomIn,
   onZoomOut,
   onReset,
@@ -240,6 +264,8 @@ function PhotoToolbarPortal({
   onDelete,
   onAiResult,
   onToggleMove,
+  onSwap,
+  onPaddingChange,
 }: {
   containerRef: React.RefObject<HTMLDivElement | null>
   zoomPct: number
@@ -247,6 +273,7 @@ function PhotoToolbarPortal({
   slotId: string
   photoUrl: string
   isMoveMode: boolean
+  currentPadding: number
   onZoomIn: () => void
   onZoomOut: () => void
   onReset: () => void
@@ -254,12 +281,16 @@ function PhotoToolbarPortal({
   onDelete: () => void
   onAiResult: (slotId: string, dataUrl: string) => void
   onToggleMove: () => void
+  onSwap: () => void
+  onPaddingChange: (padding: number) => void
 }) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
   const [aiOpen, setAiOpen] = useState(false)
   const [aiPrompt, setAiPrompt] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
+  const [aiProgress, setAiProgress] = useState(0)
   const [aiError, setAiError] = useState('')
+  const [showPadding, setShowPadding] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -286,8 +317,15 @@ function PhotoToolbarPortal({
     if (!aiPrompt.trim() || aiLoading) return
     setAiLoading(true)
     setAiError('')
+    setAiProgress(10)
+
+    const progressInterval = setInterval(() => {
+      setAiProgress((p) => Math.min(p + Math.random() * 12, 90))
+    }, 600)
+
     try {
       const { editPhotoWithAI } = await import('../../lib/openai')
+      setAiProgress(25)
 
       let dataUrl: string | null = null
       if (photoUrl.startsWith('data:')) {
@@ -318,11 +356,16 @@ function PhotoToolbarPortal({
 
       if (!dataUrl) {
         setAiError('לא ניתן לטעון את התמונה')
+        clearInterval(progressInterval)
         setAiLoading(false)
+        setAiProgress(0)
         return
       }
 
+      setAiProgress(40)
       const result = await editPhotoWithAI(aiPrompt, dataUrl)
+      setAiProgress(100)
+
       if (result) {
         onAiResult(slotId, result)
         setAiPrompt('')
@@ -334,7 +377,9 @@ function PhotoToolbarPortal({
       console.error('AI edit failed:', err)
       setAiError('שגיאה בעריכת AI')
     } finally {
+      clearInterval(progressInterval)
       setAiLoading(false)
+      setTimeout(() => setAiProgress(0), 400)
     }
   }, [aiPrompt, aiLoading, photoUrl, slotId, onAiResult, containerRef])
 
@@ -348,104 +393,173 @@ function PhotoToolbarPortal({
       onPointerDown={(e) => e.stopPropagation()}
     >
       {/* AI prompt panel */}
-      {aiOpen && (
-        <div className="mb-2 flex flex-col gap-1.5">
-          <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-deep-brown/90 backdrop-blur-md shadow-xl shadow-black/15 min-w-[280px]">
-            <Icon name="auto_fix_high" size={16} className="text-amber-300 shrink-0" />
-            <input
-              ref={inputRef}
-              dir="rtl"
-              type="text"
-              value={aiPrompt}
-              onChange={(e) => { setAiPrompt(e.target.value); setAiError('') }}
-              onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); if (e.key === 'Escape') setAiOpen(false) }}
-              placeholder="תאר מה לשנות בתמונה..."
-              disabled={aiLoading}
-              className="flex-1 bg-white/10 text-white text-xs rounded-lg px-2.5 py-1.5 placeholder:text-white/40 outline-none focus:ring-1 focus:ring-white/30 disabled:opacity-50"
-            />
-            <button
-              onClick={handleAiSubmit}
-              disabled={!aiPrompt.trim() || aiLoading}
-              className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-300 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30 shrink-0"
-            >
-              {aiLoading
-                ? <div className="w-4 h-4 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
-                : <Icon name="send" size={16} />}
-            </button>
-          </div>
-          {aiError && (
-            <div dir="rtl" className="px-3 py-1.5 rounded-lg bg-red-500/80 text-white text-[11px] font-medium text-center backdrop-blur-sm">
-              {aiError}
+      <AnimatePresence>
+        {aiOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.2 }}
+            className="mb-2 flex flex-col gap-1.5"
+          >
+            <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-[#1a1816]/95 backdrop-blur-md shadow-xl shadow-black/15 min-w-[280px]">
+              <Icon name="auto_fix_high" size={16} className="text-amber-300 shrink-0" />
+              <input
+                ref={inputRef}
+                dir="rtl"
+                type="text"
+                value={aiPrompt}
+                onChange={(e) => { setAiPrompt(e.target.value); setAiError('') }}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleAiSubmit(); if (e.key === 'Escape') setAiOpen(false) }}
+                placeholder="תאר מה לשנות בתמונה..."
+                disabled={aiLoading}
+                className="flex-1 bg-white/10 text-white text-xs rounded-lg px-2.5 py-1.5 placeholder:text-white/40 outline-none focus:ring-1 focus:ring-white/30 disabled:opacity-50"
+              />
+              <button
+                onClick={handleAiSubmit}
+                disabled={!aiPrompt.trim() || aiLoading}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-300 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30 shrink-0"
+              >
+                {aiLoading
+                  ? <div className="w-4 h-4 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
+                  : <Icon name="send" size={16} />}
+              </button>
             </div>
-          )}
-        </div>
-      )}
+            {aiLoading && aiProgress > 0 && (
+              <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
+                <motion.div
+                  className="h-full bg-amber-400 rounded-full"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${aiProgress}%` }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                />
+              </div>
+            )}
+            {aiError && (
+              <div dir="rtl" className="px-3 py-1.5 rounded-lg bg-red-500/80 text-white text-[11px] font-medium text-center backdrop-blur-sm">
+                {aiError}
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Padding control */}
+      <AnimatePresence>
+        {showPadding && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 4 }}
+            transition={{ duration: 0.2 }}
+            className="mb-2 flex items-center gap-2 px-3 py-2 rounded-xl bg-[#1a1816]/95 backdrop-blur-md shadow-xl shadow-black/15"
+            dir="rtl"
+          >
+            <Icon name="padding" size={14} className="text-white/60 shrink-0" />
+            <input
+              type="range"
+              min={0}
+              max={20}
+              step={1}
+              value={currentPadding}
+              onChange={(e) => onPaddingChange(Number(e.target.value))}
+              className="flex-1 h-1 appearance-none bg-white/20 rounded-full accent-white cursor-pointer [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:shadow-md"
+            />
+            <span className="text-[10px] text-white/60 font-bold tabular-nums w-5 text-center">{currentPadding}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Main toolbar */}
-      <div className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-deep-brown/90 backdrop-blur-md shadow-xl shadow-black/15">
-        <button
-          onClick={onZoomOut}
-          disabled={currentScale <= 1}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30"
-          title="הקטן"
-        >
-          <Icon name="remove" size={16} />
-        </button>
+      <div className="flex items-center gap-1 px-2 py-1.5 rounded-xl bg-[#1a1816]/95 backdrop-blur-md shadow-xl shadow-black/15">
+        <ToolbarTooltip text="הקטן">
+          <button
+            onClick={onZoomOut}
+            disabled={currentScale <= 1}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30"
+          >
+            <Icon name="remove" size={16} />
+          </button>
+        </ToolbarTooltip>
         <span className="text-[10px] text-white/70 font-bold tabular-nums w-8 text-center select-none">{zoomPct}%</span>
-        <button
-          onClick={onZoomIn}
-          disabled={currentScale >= 3}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30"
-          title="הגדל"
-        >
-          <Icon name="add" size={16} />
-        </button>
+        <ToolbarTooltip text="הגדל">
+          <button
+            onClick={onZoomIn}
+            disabled={currentScale >= 3}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30"
+          >
+            <Icon name="add" size={16} />
+          </button>
+        </ToolbarTooltip>
 
         <div className="w-px h-4 bg-white/20 mx-0.5" />
 
-        <button
-          onClick={onToggleMove}
-          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${isMoveMode ? 'bg-sky-500/30 text-sky-300' : 'text-white/80 hover:bg-white/15'}`}
-          title="הזז במרחב"
-        >
-          <Icon name="open_with" size={16} />
-        </button>
+        <ToolbarTooltip text="הזז במרחב">
+          <button
+            onClick={onToggleMove}
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${isMoveMode ? 'bg-sky-500/30 text-sky-300' : 'text-white/80 hover:bg-white/15'}`}
+          >
+            <Icon name="open_with" size={16} />
+          </button>
+        </ToolbarTooltip>
 
-        <button
-          onClick={onReset}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all"
-          title="אפס מיקום"
-        >
-          <Icon name="center_focus_strong" size={16} />
-        </button>
+        <ToolbarTooltip text="שוליים">
+          <button
+            onClick={() => setShowPadding((v) => !v)}
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${showPadding ? 'bg-violet-500/30 text-violet-300' : 'text-white/80 hover:bg-white/15'}`}
+          >
+            <Icon name="padding" size={16} />
+          </button>
+        </ToolbarTooltip>
+
+        <ToolbarTooltip text="אפס מיקום">
+          <button
+            onClick={onReset}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all"
+          >
+            <Icon name="center_focus_strong" size={16} />
+          </button>
+        </ToolbarTooltip>
 
         <div className="w-px h-4 bg-white/20 mx-0.5" />
 
-        <button
-          onClick={() => { setAiOpen(!aiOpen); setAiError('') }}
-          className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${aiOpen ? 'bg-amber-500/30 text-amber-300' : 'text-white/80 hover:bg-white/15'}`}
-          title="עריכת AI"
-        >
-          <Icon name="auto_fix_high" size={16} />
-        </button>
+        <ToolbarTooltip text="עריכת AI">
+          <button
+            onClick={() => { setAiOpen(!aiOpen); setAiError(''); setShowPadding(false) }}
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${aiOpen ? 'bg-amber-500/30 text-amber-300' : 'text-white/80 hover:bg-white/15'}`}
+          >
+            <Icon name="auto_fix_high" size={16} />
+          </button>
+        </ToolbarTooltip>
 
         <div className="w-px h-4 bg-white/20 mx-0.5" />
 
-        <button
-          onClick={onReplace}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all"
-          title="החלף תמונה"
-        >
-          <Icon name="swap_horiz" size={16} />
-        </button>
+        <ToolbarTooltip text="החלף עם תמונה אחרת">
+          <button
+            onClick={onSwap}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all"
+          >
+            <Icon name="swap_horiz" size={16} />
+          </button>
+        </ToolbarTooltip>
 
-        <button
-          onClick={onDelete}
-          className="w-7 h-7 rounded-lg flex items-center justify-center text-red-300 hover:bg-red-500/20 active:scale-90 transition-all"
-          title="הסר תמונה"
-        >
-          <Icon name="delete" size={16} />
-        </button>
+        <ToolbarTooltip text="החלף תמונה">
+          <button
+            onClick={onReplace}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all"
+          >
+            <Icon name="image" size={16} />
+          </button>
+        </ToolbarTooltip>
+
+        <ToolbarTooltip text="הסר תמונה">
+          <button
+            onClick={onDelete}
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-red-300 hover:bg-red-500/20 active:scale-90 transition-all"
+          >
+            <Icon name="delete" size={16} />
+          </button>
+        </ToolbarTooltip>
       </div>
     </div>,
     document.body,
@@ -962,6 +1076,7 @@ export function AbsolutePhotoElement({
             slotId={element.slotId}
             photoUrl={element.photoUrl!}
             isMoveMode={isMoveMode}
+            currentPadding={element.padding}
             onZoomIn={() => updateScale(element.slotId, Math.min(3, currentScale + 0.15))}
             onZoomOut={() => updateScale(element.slotId, Math.max(1, currentScale - 0.15))}
             onReset={() => { updatePos(element.slotId, '50% 50%'); updateScale(element.slotId, 1) }}
@@ -969,6 +1084,14 @@ export function AbsolutePhotoElement({
             onDelete={() => clearPhoto(element.slotId)}
             onAiResult={(sid, dataUrl) => setPhotoUrl(sid, dataUrl)}
             onToggleMove={() => setIsMoveMode((v) => !v)}
+            onSwap={() => {
+              const { enterSwapMode } = useEditorStore.getState()
+              enterSwapMode()
+            }}
+            onPaddingChange={(p) => {
+              const { updatePhotoPadding } = useEditorStore.getState()
+              updatePhotoPadding(element.slotId, p)
+            }}
           />
 
           {/* Hidden file input for replace */}

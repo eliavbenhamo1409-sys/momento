@@ -75,6 +75,8 @@ interface EditorState {
   setPhotoSlotUrl: (slotId: string, url: string) => void
   updatePhotoObjectPosition: (slotId: string, objectPosition: string) => void
   updatePhotoScale: (slotId: string, scale: number) => void
+  updatePhotoPadding: (slotId: string, padding: number) => void
+  moveElementLayer: (elementIndex: number, direction: 'up' | 'down') => void
   removePhotoFromSlot: (slotId: string) => void
   changeSpreadTemplate: (templateId: string) => void
   addTextToSpread: (text: string, fontFamily: string) => void
@@ -337,6 +339,45 @@ export const useEditorStore = create<EditorState>((set) => ({
         if (el.type !== 'photo' || el.slotId !== slotId) return el
         return { ...el, scale: Math.max(1, Math.min(3, scale)) } as PhotoElement
       })
+
+      const spreads = [...s.spreads]
+      spreads[idx] = { ...spread, design: { ...spread.design, elements } }
+      return { spreads }
+    }),
+
+  updatePhotoPadding: (slotId, padding) =>
+    set((s) => {
+      const idx = s.currentSpreadIndex
+      const spread = s.spreads[idx]
+      if (!spread?.design) return s
+
+      const elements = spread.design.elements.map((el) => {
+        if (el.type !== 'photo' || el.slotId !== slotId) return el
+        return { ...el, padding: Math.max(0, Math.min(20, padding)) } as PhotoElement
+      })
+
+      const spreads = [...s.spreads]
+      spreads[idx] = { ...spread, design: { ...spread.design, elements } }
+      return { spreads }
+    }),
+
+  moveElementLayer: (elementIndex, direction) =>
+    set((s) => {
+      const idx = s.currentSpreadIndex
+      const spread = s.spreads[idx]
+      if (!spread?.design) return s
+
+      const elements = [...spread.design.elements]
+      const swapIdx = direction === 'up' ? elementIndex + 1 : elementIndex - 1
+      if (swapIdx < 0 || swapIdx >= elements.length) return s
+
+      const elA = { ...elements[elementIndex] }
+      const elB = { ...elements[swapIdx] }
+      const tmpZ = (elA as PhotoElement).zIndex
+      ;(elA as PhotoElement).zIndex = (elB as PhotoElement).zIndex
+      ;(elB as PhotoElement).zIndex = tmpZ
+      elements[elementIndex] = elA
+      elements[swapIdx] = elB
 
       const spreads = [...s.spreads]
       spreads[idx] = { ...spread, design: { ...spread.design, elements } }

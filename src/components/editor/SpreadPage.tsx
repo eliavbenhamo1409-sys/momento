@@ -537,6 +537,10 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
             overflow: 'hidden',
             transform: 'scaleX(-1)',
           }}
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest('[data-slot-id], [data-has-photo]')) return
+            document.dispatchEvent(new CustomEvent('momento:bg-click'))
+          }}
         >
           <PageBackground
             design={useAbs ? design : undefined}

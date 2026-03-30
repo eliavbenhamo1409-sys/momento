@@ -10,8 +10,8 @@ type Tab = 'gallery' | 'ai'
 
 const TARGETS: { id: Target; label: string; icon: string; ratio: '16:9' | '1:1' }[] = [
   { id: 'spread', label: 'כל הדף', icon: 'panorama', ratio: '16:9' },
-  { id: 'left', label: 'עמוד שמאל', icon: 'crop_portrait', ratio: '1:1' },
   { id: 'right', label: 'עמוד ימין', icon: 'crop_portrait', ratio: '1:1' },
+  { id: 'left', label: 'עמוד שמאל', icon: 'crop_portrait', ratio: '1:1' },
 ]
 
 const QUICK_PROMPTS = [
@@ -101,24 +101,32 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
     onClose()
   }
 
-  const handleApplyColor = (color: string) => {
-    const { spreads, currentSpreadIndex } = useEditorStore.getState()
-    const spread = spreads[currentSpreadIndex]
-    if (!spread?.design) return
-
-    useEditorStore.setState((state) => {
-      const newSpreads = [...state.spreads]
-      const s = { ...newSpreads[state.currentSpreadIndex] }
-      const d = { ...s.design! }
-      const bg = { ...d.background, color }
-      d.background = bg
-      s.design = d
-      newSpreads[state.currentSpreadIndex] = s
-      return { spreads: newSpreads }
-    })
-
-    addToast('צבע הרקע שונה', 'success')
+  const handleApplyColor = (color: string, applyToAll = false) => {
+    if (applyToAll) {
+      useEditorStore.setState((state) => {
+        const newSpreads = state.spreads.map((s) => {
+          if (!s.design) return s
+          return { ...s, design: { ...s.design, background: { ...s.design.background, color } } }
+        })
+        return { spreads: newSpreads }
+      })
+      addToast('הרקע הוחל על כל האלבום', 'success')
+    } else {
+      useEditorStore.setState((state) => {
+        const newSpreads = [...state.spreads]
+        const s = { ...newSpreads[state.currentSpreadIndex] }
+        const d = { ...s.design! }
+        const bg = { ...d.background, color }
+        d.background = bg
+        s.design = d
+        newSpreads[state.currentSpreadIndex] = s
+        return { spreads: newSpreads }
+      })
+      addToast('צבע הרקע שונה', 'success')
+    }
   }
+
+  const [lastAppliedColor, setLastAppliedColor] = useState<string | null>(null)
 
   return (
     <motion.div
@@ -197,8 +205,8 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
                     key={bg.value}
                     whileHover={{ scale: 1.06 }}
                     whileTap={{ scale: 0.94 }}
-                    onClick={() => handleApplyColor(bg.value)}
-                    className="flex flex-col items-center gap-1 group"
+                    onClick={() => { handleApplyColor(bg.value); setLastAppliedColor(bg.value) }}
+                    className={`flex flex-col items-center gap-1 group ${lastAppliedColor === bg.value ? 'ring-2 ring-primary ring-offset-1 ring-offset-white rounded-xl' : ''}`}
                   >
                     <div
                       className="w-full aspect-square rounded-xl border border-black/[0.06] shadow-sm group-hover:shadow-md transition-shadow"
@@ -210,6 +218,20 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
                   </motion.button>
                 ))}
               </div>
+
+              {lastAppliedColor && (
+                <motion.button
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => handleApplyColor(lastAppliedColor, true)}
+                  className="w-full mt-3 py-2 bg-primary/10 hover:bg-primary/15 text-primary rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                >
+                  <Icon name="select_all" size={14} />
+                  החל על כל האלבום
+                </motion.button>
+              )}
             </div>
 
             {/* Placeholder for uploaded backgrounds */}
