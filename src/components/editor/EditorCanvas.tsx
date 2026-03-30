@@ -426,14 +426,13 @@ export function AbsolutePhotoElement({
               ref={imgRef}
               src={element.photoUrl}
               alt=""
-              className="w-full h-full object-cover select-none transition-opacity duration-300"
+              className="w-full h-full object-cover select-none"
               draggable={false}
               style={{
                 objectPosition: element.objectPosition || '50% 50%',
                 objectFit: element.objectFit,
                 transformOrigin: currentScale > 1 ? (element.objectPosition || '50% 50%') : undefined,
                 transform: currentScale > 1 ? `scale(${currentScale})` : undefined,
-                opacity: imgLoaded ? 1 : 0,
               }}
               onLoad={() => setImgLoaded(true)}
             />
@@ -1061,6 +1060,7 @@ export default function EditorCanvas() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bookRef = useRef<any>(null)
+  const initialPageRef = useRef(currentSpreadIndex * 2)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const prevTemplateRef = useRef(spread?.templateId)
 
@@ -1188,7 +1188,7 @@ export default function EditorCanvas() {
             useMouseEvents={false}
             showPageCorners={false}
             disableFlipByClick={true}
-            startPage={currentSpreadIndex * 2}
+            startPage={initialPageRef.current}
             startZIndex={0}
             autoSize={true}
             clickEventForward={true}
