@@ -30,11 +30,9 @@ export default function LoadingButton({
     >
       {loading ? (
         <span className="flex items-center justify-center gap-2">
-          <motion.span
-            className="inline-block w-4 h-4 rounded-full border-2 border-current/30"
+          <span
+            className="inline-block w-4 h-4 rounded-full border-2 border-current/30 animate-spin"
             style={{ borderTopColor: 'currentColor' }}
-            animate={{ rotate: 360 }}
-            transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
           />
           {loadingLabel && <span>{loadingLabel}</span>}
         </span>

@@ -175,12 +175,9 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
       >
         {isGenerating ? (
           <>
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
-            >
+            <span className="inline-block animate-spin">
               <Icon name="progress_activity" size={18} />
-            </motion.div>
+            </span>
             יוצר רקע...
           </>
         ) : (

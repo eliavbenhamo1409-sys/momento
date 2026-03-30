@@ -88,11 +88,9 @@ export default function ProjectCard({ project, index, onDelete }: Props) {
             className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-error/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm disabled:opacity-50"
           >
             {isDeleting ? (
-              <motion.span
-                className="inline-block w-4 h-4 rounded-full border-2 border-error/30"
+              <span
+                className="inline-block w-4 h-4 rounded-full border-2 border-error/30 animate-spin"
                 style={{ borderTopColor: 'var(--color-error)' }}
-                animate={{ rotate: 360 }}
-                transition={{ duration: 0.7, repeat: Infinity, ease: 'linear' }}
               />
             ) : (
               <Icon name="delete" size={16} className="text-error/60" />
