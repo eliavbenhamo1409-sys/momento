@@ -682,7 +682,7 @@ export function AbsolutePhotoElement({
             />
           ))}
 
-          {/* Move overlay — drag entire slot */}
+          {/* Move overlay — drag entire slot; click-without-drag deselects */}
           <div
             className="absolute inset-0 z-[35] cursor-move"
             onPointerDown={(e) => {
@@ -690,12 +690,15 @@ export function AbsolutePhotoElement({
               e.preventDefault()
               let lastX = e.clientX
               let lastY = e.clientY
+              let didMove = false
               const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
               if (!parentRect) return
 
               const onMove = (ev: PointerEvent) => {
                 const dx = ((ev.clientX - lastX) / parentRect.width) * 100
                 const dy = ((ev.clientY - lastY) / parentRect.height) * 100
+                if (!didMove && Math.abs(ev.clientX - e.clientX) < 4 && Math.abs(ev.clientY - e.clientY) < 4) return
+                didMove = true
                 lastX = ev.clientX
                 lastY = ev.clientY
                 moveSlot(element.slotId, { x: dx, y: dy })
@@ -703,6 +706,7 @@ export function AbsolutePhotoElement({
               const onUp = () => {
                 window.removeEventListener('pointermove', onMove)
                 window.removeEventListener('pointerup', onUp)
+                if (!didMove) onSelect()
               }
               window.addEventListener('pointermove', onMove)
               window.addEventListener('pointerup', onUp)
