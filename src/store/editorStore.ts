@@ -605,19 +605,31 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const spreads = [...s.spreads]
 
-      const srcElements = srcSpread.design.elements.map((el) =>
-        el.type === 'photo' && el.slotId === srcSlotId
-          ? { ...el, photoUrl: tgtEl.photoUrl, photoId: tgtEl.photoId, objectPosition: tgtEl.objectPosition, scale: tgtEl.scale } as PhotoElement
-          : el,
-      )
-      spreads[srcIdx] = { ...srcSpread, design: { ...srcSpread.design, elements: srcElements } }
+      if (srcIdx === tgtIdx) {
+        const elements = srcSpread.design.elements.map((el) => {
+          if (el.type !== 'photo') return el
+          if (el.slotId === srcSlotId)
+            return { ...el, photoUrl: tgtEl.photoUrl, photoId: tgtEl.photoId, objectPosition: tgtEl.objectPosition, scale: tgtEl.scale } as PhotoElement
+          if (el.slotId === tgtSlotId)
+            return { ...el, photoUrl: srcEl.photoUrl, photoId: srcEl.photoId, objectPosition: srcEl.objectPosition, scale: srcEl.scale } as PhotoElement
+          return el
+        })
+        spreads[srcIdx] = { ...srcSpread, design: { ...srcSpread.design, elements } }
+      } else {
+        const srcElements = srcSpread.design.elements.map((el) =>
+          el.type === 'photo' && el.slotId === srcSlotId
+            ? { ...el, photoUrl: tgtEl.photoUrl, photoId: tgtEl.photoId, objectPosition: tgtEl.objectPosition, scale: tgtEl.scale } as PhotoElement
+            : el,
+        )
+        spreads[srcIdx] = { ...srcSpread, design: { ...srcSpread.design, elements: srcElements } }
 
-      const tgtElements = tgtSpread.design.elements.map((el) =>
-        el.type === 'photo' && el.slotId === tgtSlotId
-          ? { ...el, photoUrl: srcEl.photoUrl, photoId: srcEl.photoId, objectPosition: srcEl.objectPosition, scale: srcEl.scale } as PhotoElement
-          : el,
-      )
-      spreads[tgtIdx] = { ...tgtSpread, design: { ...tgtSpread.design, elements: tgtElements } }
+        const tgtElements = tgtSpread.design.elements.map((el) =>
+          el.type === 'photo' && el.slotId === tgtSlotId
+            ? { ...el, photoUrl: srcEl.photoUrl, photoId: srcEl.photoId, objectPosition: srcEl.objectPosition, scale: srcEl.scale } as PhotoElement
+            : el,
+        )
+        spreads[tgtIdx] = { ...tgtSpread, design: { ...tgtSpread.design, elements: tgtElements } }
+      }
 
       return { spreads }
     }),
@@ -639,19 +651,31 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const spreads = [...s.spreads]
 
-      const srcElements = srcSpread.design.elements.map((el) =>
-        el.type === 'photo' && el.slotId === srcSlotId
-          ? { ...el, photoUrl: null, photoId: '' } as PhotoElement
-          : el,
-      )
-      spreads[srcIdx] = { ...srcSpread, design: { ...srcSpread.design, elements: srcElements } }
+      if (srcIdx === tgtIdx) {
+        const elements = srcSpread.design.elements.map((el) => {
+          if (el.type !== 'photo') return el
+          if (el.slotId === srcSlotId)
+            return { ...el, photoUrl: null, photoId: '' } as PhotoElement
+          if (el.slotId === tgtSlotId)
+            return { ...el, photoUrl: srcEl.photoUrl, photoId: srcEl.photoId, objectPosition: srcEl.objectPosition, scale: srcEl.scale } as PhotoElement
+          return el
+        })
+        spreads[srcIdx] = { ...srcSpread, design: { ...srcSpread.design, elements } }
+      } else {
+        const srcElements = srcSpread.design.elements.map((el) =>
+          el.type === 'photo' && el.slotId === srcSlotId
+            ? { ...el, photoUrl: null, photoId: '' } as PhotoElement
+            : el,
+        )
+        spreads[srcIdx] = { ...srcSpread, design: { ...srcSpread.design, elements: srcElements } }
 
-      const tgtElements = tgtSpread.design.elements.map((el) =>
-        el.type === 'photo' && el.slotId === tgtSlotId
-          ? { ...el, photoUrl: srcEl.photoUrl, photoId: srcEl.photoId, objectPosition: srcEl.objectPosition, scale: srcEl.scale } as PhotoElement
-          : el,
-      )
-      spreads[tgtIdx] = { ...tgtSpread, design: { ...tgtSpread.design, elements: tgtElements } }
+        const tgtElements = tgtSpread.design.elements.map((el) =>
+          el.type === 'photo' && el.slotId === tgtSlotId
+            ? { ...el, photoUrl: srcEl.photoUrl, photoId: srcEl.photoId, objectPosition: srcEl.objectPosition, scale: srcEl.scale } as PhotoElement
+            : el,
+        )
+        spreads[tgtIdx] = { ...tgtSpread, design: { ...tgtSpread.design, elements: tgtElements } }
+      }
 
       return { spreads }
     }),
