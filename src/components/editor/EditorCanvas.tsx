@@ -397,6 +397,10 @@ function PhotoToolbarPortal({
 }
 
 // ─── Resize Handle (pointer-captured) ───────────────────────────────
+// Direct DOM manipulation during drag for 60 fps smoothness,
+// commits final rect to the store on pointer-up.
+
+const MIN_SIZE_PCT = 4
 
 function ResizeHandle({
   corner,
@@ -425,50 +429,82 @@ function ResizeHandle({
     e.stopPropagation()
     e.preventDefault()
     const el = elRef.current
-    if (!el) return
+    const target = containerRef.current
+    if (!el || !target) return
     el.setPointerCapture(e.pointerId)
 
     const startX = e.clientX
     const startY = e.clientY
-    const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
-    const parentW = parentRect?.width ?? 1
-    const parentH = parentRect?.height ?? 1
+    const parentEl = target.parentElement
+    if (!parentEl) return
+    const parentRect = parentEl.getBoundingClientRect()
+    const parentW = parentRect.width || 1
+    const parentH = parentRect.height || 1
 
     const initX = element.x
     const initY = element.y
     const initW = element.width
     const initH = element.height
+
+    // Anchor = opposite corner (stays fixed)
     const anchorX = corner.includes('w') ? initX + initW : initX
     const anchorY = corner.includes('n') ? initY + initH : initY
 
-    const onMove = (ev: PointerEvent) => {
-      const totalDxPct = ((ev.clientX - startX) / parentW) * 100
-      const totalDyPct = ((ev.clientY - startY) / parentH) * 100
+    // Dragged corner's initial position in %
+    const cornerX0 = corner.includes('e') ? initX + initW : initX
+    const cornerY0 = corner.includes('s') ? initY + initH : initY
 
-      const signX = corner.includes('e') ? 1 : -1
-      const signY = corner.includes('s') ? 1 : -1
+    let rafId = 0
+    let pendingEv: PointerEvent | null = null
+    let lastRect = { x: initX, y: initY, width: initW, height: initH }
 
-      const rawW = initW + signX * totalDxPct
-      const rawH = initH + signY * totalDyPct
+    const flush = () => {
+      rafId = 0
+      const ev = pendingEv
+      if (!ev) return
+      pendingEv = null
 
-      const scaleByW = rawW / initW
-      const scaleByH = rawH / initH
-      const scale = Math.max(0.15, (Math.abs(scaleByW) + Math.abs(scaleByH)) / 2)
+      const dxPct = ((ev.clientX - startX) / parentW) * 100
+      const dyPct = ((ev.clientY - startY) / parentH) * 100
 
-      const newW = initW * scale
-      const newH = initH * scale
+      // New dragged-corner position tracks the cursor 1:1
+      const cx = cornerX0 + dxPct
+      const cy = cornerY0 + dyPct
 
-      const newX = corner.includes('w') ? anchorX - newW : anchorX
-      const newY = corner.includes('n') ? anchorY - newH : anchorY
+      let newW = Math.abs(cx - anchorX)
+      let newH = Math.abs(cy - anchorY)
+      if (newW < MIN_SIZE_PCT) newW = MIN_SIZE_PCT
+      if (newH < MIN_SIZE_PCT) newH = MIN_SIZE_PCT
 
-      setRectRef.current(slotId, { x: newX, y: newY, width: newW, height: newH })
+      const newX = cx < anchorX ? anchorX - newW : anchorX
+      const newY = cy < anchorY ? anchorY - newH : anchorY
+
+      lastRect = { x: newX, y: newY, width: newW, height: newH }
+
+      // Direct DOM write — bypasses React for zero-latency visual feedback
+      target.style.left = `${newX}%`
+      target.style.top = `${newY}%`
+      target.style.width = `${newW}%`
+      target.style.height = `${newH}%`
     }
+
+    const onMove = (ev: PointerEvent) => {
+      pendingEv = ev
+      if (!rafId) rafId = requestAnimationFrame(flush)
+    }
+
     const onUp = (ev: PointerEvent) => {
       ev.stopPropagation()
+      if (rafId) cancelAnimationFrame(rafId)
+      // Apply any pending move
+      if (pendingEv) { pendingEv = ev; flush() }
       el.releasePointerCapture(ev.pointerId)
       el.removeEventListener('pointermove', onMove)
       el.removeEventListener('pointerup', onUp)
+      // Commit final rect to store so React takes over
+      setRectRef.current(slotId, lastRect)
     }
+
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
   }, [corner, slotId, containerRef, element.x, element.y, element.width, element.height])
