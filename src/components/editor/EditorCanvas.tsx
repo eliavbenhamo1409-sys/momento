@@ -432,8 +432,8 @@ function PhotoToolbarPortal({
               >
                 {aiLoading ? (
                   <div className="relative w-7 h-7 flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-white/25 border-t-white rounded-full animate-spin" />
-                    <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-white tabular-nums">{aiProgress}</span>
+                    <div className="w-5 h-5 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
+                    <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-amber-300 tabular-nums">{aiProgress}</span>
                   </div>
                 ) : (
                   <Icon name="send" size={16} />
