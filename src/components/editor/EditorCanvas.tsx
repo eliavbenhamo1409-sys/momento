@@ -432,8 +432,8 @@ function PhotoToolbarPortal({
               >
                 {aiLoading ? (
                   <div className="relative w-7 h-7 flex items-center justify-center">
-                    <div className="w-5 h-5 border-2 border-yellow-400/30 border-t-yellow-400 rounded-full animate-spin" style={{ filter: 'drop-shadow(0 0 3px rgba(250,204,21,0.6))' }} />
-                    <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-yellow-400 tabular-nums" style={{ textShadow: '0 0 4px rgba(250,204,21,0.5)' }}>{aiProgress}</span>
+                    <div className="w-5 h-5 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" style={{ filter: 'drop-shadow(0 0 3px rgba(252,211,77,0.6))' }} />
+                    <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-amber-300 tabular-nums" style={{ textShadow: '0 0 4px rgba(252,211,77,0.5)' }}>{aiProgress}</span>
                   </div>
                 ) : (
                   <Icon name="send" size={16} />
