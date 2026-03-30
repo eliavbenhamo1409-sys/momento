@@ -313,19 +313,32 @@ function PhotoToolbarPortal({
     if (aiOpen) setTimeout(() => inputRef.current?.focus(), 100)
   }, [aiOpen])
 
+  const aiStartTimeRef = useRef(0)
+  const aiProgressTimerRef = useRef<ReturnType<typeof setInterval>>(undefined)
+
+  useEffect(() => {
+    if (aiLoading) {
+      aiStartTimeRef.current = Date.now()
+      const DURATION = 16000
+      aiProgressTimerRef.current = setInterval(() => {
+        const elapsed = Date.now() - aiStartTimeRef.current
+        const pct = Math.min(Math.round((elapsed / DURATION) * 95), 95)
+        setAiProgress(pct)
+      }, 200)
+    } else {
+      clearInterval(aiProgressTimerRef.current)
+    }
+    return () => clearInterval(aiProgressTimerRef.current)
+  }, [aiLoading])
+
   const handleAiSubmit = useCallback(async () => {
     if (!aiPrompt.trim() || aiLoading) return
     setAiLoading(true)
     setAiError('')
-    setAiProgress(10)
-
-    const progressInterval = setInterval(() => {
-      setAiProgress((p) => Math.min(p + Math.random() * 12, 90))
-    }, 600)
+    setAiProgress(0)
 
     try {
       const { editPhotoWithAI } = await import('../../lib/openai')
-      setAiProgress(25)
 
       let dataUrl: string | null = null
       if (photoUrl.startsWith('data:')) {
@@ -356,13 +369,11 @@ function PhotoToolbarPortal({
 
       if (!dataUrl) {
         setAiError('לא ניתן לטעון את התמונה')
-        clearInterval(progressInterval)
         setAiLoading(false)
         setAiProgress(0)
         return
       }
 
-      setAiProgress(40)
       const result = await editPhotoWithAI(aiPrompt, dataUrl)
       setAiProgress(100)
 
@@ -377,9 +388,8 @@ function PhotoToolbarPortal({
       console.error('AI edit failed:', err)
       setAiError('שגיאה בעריכת AI')
     } finally {
-      clearInterval(progressInterval)
       setAiLoading(false)
-      setTimeout(() => setAiProgress(0), 400)
+      setTimeout(() => setAiProgress(0), 500)
     }
   }, [aiPrompt, aiLoading, photoUrl, slotId, onAiResult, containerRef])
 
@@ -418,23 +428,21 @@ function PhotoToolbarPortal({
               <button
                 onClick={handleAiSubmit}
                 disabled={!aiPrompt.trim() || aiLoading}
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-amber-300 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30 shrink-0"
+                className="w-8 h-8 rounded-lg flex items-center justify-center text-amber-300 hover:bg-white/15 active:scale-90 transition-all disabled:opacity-30 shrink-0 relative"
               >
-                {aiLoading
-                  ? <div className="w-4 h-4 border-2 border-amber-300/30 border-t-amber-300 rounded-full animate-spin" />
-                  : <Icon name="send" size={16} />}
+                {aiLoading ? (
+                  <div className="relative w-7 h-7 flex items-center justify-center">
+                    <svg className="w-7 h-7 animate-spin" viewBox="0 0 28 28">
+                      <circle cx="14" cy="14" r="12" fill="none" stroke="rgba(251,191,36,0.2)" strokeWidth="2.5" />
+                      <circle cx="14" cy="14" r="12" fill="none" stroke="#fbbf24" strokeWidth="2.5" strokeLinecap="round" strokeDasharray="75.4" strokeDashoffset={75.4 - (75.4 * Math.min(aiProgress, 100)) / 100} className="transition-[stroke-dashoffset] duration-300 ease-out" />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-[7px] font-bold text-amber-300 tabular-nums">{aiProgress}</span>
+                  </div>
+                ) : (
+                  <Icon name="send" size={16} />
+                )}
               </button>
             </div>
-            {aiLoading && aiProgress > 0 && (
-              <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                <motion.div
-                  className="h-full bg-amber-400 rounded-full"
-                  initial={{ width: 0 }}
-                  animate={{ width: `${aiProgress}%` }}
-                  transition={{ duration: 0.4, ease: 'easeOut' }}
-                />
-              </div>
-            )}
             {aiError && (
               <div dir="rtl" className="px-3 py-1.5 rounded-lg bg-red-500/80 text-white text-[11px] font-medium text-center backdrop-blur-sm">
                 {aiError}
