@@ -68,6 +68,7 @@ interface EditorState {
   addSpread: () => void
   deleteSpread: (spreadId: string) => void
   resizePhotoSlot: (slotId: string, delta: { width?: number; height?: number }) => void
+  setPhotoSlotRect: (slotId: string, rect: { x: number; y: number; width: number; height: number }) => void
   movePhotoSlot: (slotId: string, delta: { x?: number; y?: number }) => void
   updatePhotoSlotRadius: (slotId: string, radius: number) => void
   replacePhotoInSlot: (slotId: string, file: File) => void
@@ -205,6 +206,28 @@ export const useEditorStore = create<EditorState>((set) => ({
           ...photo,
           width: Math.max(10, Math.min(95, photo.width + (delta.width ?? 0))),
           height: Math.max(10, Math.min(95, photo.height + (delta.height ?? 0))),
+        }
+      })
+
+      const spreads = [...s.spreads]
+      spreads[idx] = { ...spread, design: { ...spread.design, elements } }
+      return { spreads }
+    }),
+
+  setPhotoSlotRect: (slotId, rect) =>
+    set((s) => {
+      const idx = s.currentSpreadIndex
+      const spread = s.spreads[idx]
+      if (!spread?.design) return s
+
+      const elements = spread.design.elements.map((el) => {
+        if (el.type !== 'photo' || el.slotId !== slotId) return el
+        return {
+          ...el,
+          x: Math.max(0, Math.min(90, rect.x)),
+          y: Math.max(0, Math.min(90, rect.y)),
+          width: Math.max(5, Math.min(100, rect.width)),
+          height: Math.max(5, Math.min(100, rect.height)),
         }
       })
 

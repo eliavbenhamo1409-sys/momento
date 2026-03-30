@@ -335,20 +335,18 @@ function ResizeHandle({
   corner,
   containerRef,
   slotId,
-  resizeSlot,
-  moveSlot,
+  element,
+  setRect,
 }: {
   corner: 'nw' | 'ne' | 'sw' | 'se'
   containerRef: React.RefObject<HTMLDivElement | null>
   slotId: string
-  resizeSlot: (slotId: string, delta: { width?: number; height?: number }) => void
-  moveSlot: (slotId: string, delta: { x?: number; y?: number }) => void
+  element: { x: number; y: number; width: number; height: number }
+  setRect: (slotId: string, rect: { x: number; y: number; width: number; height: number }) => void
 }) {
   const elRef = useRef<HTMLDivElement>(null)
-  const resizeRef = useRef(resizeSlot)
-  const moveRef = useRef(moveSlot)
-  resizeRef.current = resizeSlot
-  moveRef.current = moveSlot
+  const setRectRef = useRef(setRect)
+  setRectRef.current = setRect
 
   const cls =
     corner === 'nw' ? 'top-0 left-0 -translate-x-1/2 -translate-y-1/2 cursor-nw-resize' :
@@ -363,22 +361,40 @@ function ResizeHandle({
     if (!el) return
     el.setPointerCapture(e.pointerId)
 
-    let lastX = e.clientX
-    let lastY = e.clientY
+    const startX = e.clientX
+    const startY = e.clientY
     const parentRect = containerRef.current?.parentElement?.getBoundingClientRect()
     const parentW = parentRect?.width ?? 1
     const parentH = parentRect?.height ?? 1
 
+    const initX = element.x
+    const initY = element.y
+    const initW = element.width
+    const initH = element.height
+    const anchorX = corner.includes('w') ? initX + initW : initX
+    const anchorY = corner.includes('n') ? initY + initH : initY
+
     const onMove = (ev: PointerEvent) => {
-      const dx = ((ev.clientX - lastX) / parentW) * 100
-      const dy = ((ev.clientY - lastY) / parentH) * 100
-      lastX = ev.clientX
-      lastY = ev.clientY
-      const wDelta = corner.includes('e') ? dx : corner.includes('w') ? -dx : 0
-      const hDelta = corner.includes('s') ? dy : corner.includes('n') ? -dy : 0
-      resizeRef.current(slotId, { width: wDelta, height: hDelta })
-      if (corner.includes('w')) moveRef.current(slotId, { x: dx })
-      if (corner.includes('n')) moveRef.current(slotId, { y: dy })
+      const totalDxPct = ((ev.clientX - startX) / parentW) * 100
+      const totalDyPct = ((ev.clientY - startY) / parentH) * 100
+
+      const signX = corner.includes('e') ? 1 : -1
+      const signY = corner.includes('s') ? 1 : -1
+
+      const rawW = initW + signX * totalDxPct
+      const rawH = initH + signY * totalDyPct
+
+      const scaleByW = rawW / initW
+      const scaleByH = rawH / initH
+      const scale = Math.max(0.15, (Math.abs(scaleByW) + Math.abs(scaleByH)) / 2)
+
+      const newW = initW * scale
+      const newH = initH * scale
+
+      const newX = corner.includes('w') ? anchorX - newW : anchorX
+      const newY = corner.includes('n') ? anchorY - newH : anchorY
+
+      setRectRef.current(slotId, { x: newX, y: newY, width: newW, height: newH })
     }
     const onUp = (ev: PointerEvent) => {
       ev.stopPropagation()
@@ -388,7 +404,7 @@ function ResizeHandle({
     }
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
-  }, [corner, slotId, containerRef])
+  }, [corner, slotId, containerRef, element.x, element.y, element.width, element.height])
 
   return (
     <div
@@ -485,8 +501,8 @@ export function AbsolutePhotoElement({
   const replaceInSlot = useEditorStore((s) => s.replacePhotoInSlot)
   const removeSlot = useEditorStore((s) => s.removePhotoSlot)
   const clearPhoto = useEditorStore((s) => s.removePhotoFromSlot)
-  const resizeSlot = useEditorStore((s) => s.resizePhotoSlot)
   const moveSlot = useEditorStore((s) => s.movePhotoSlot)
+  const setRect = useEditorStore((s) => s.setPhotoSlotRect)
   const [showZoom, setShowZoom] = useState(false)
   const [imgLoaded, setImgLoaded] = useState(false)
   const [trackedUrl, setTrackedUrl] = useState(element.photoUrl)
@@ -777,15 +793,15 @@ export function AbsolutePhotoElement({
             }}
           />
 
-          {/* Resize handles — pointer capture ensures release fires anywhere */}
+          {/* Resize handles — proportional Canva-style resize */}
           {(['nw', 'ne', 'sw', 'se'] as const).map((corner) => (
             <ResizeHandle
               key={corner}
               corner={corner}
               containerRef={containerRef}
               slotId={element.slotId}
-              resizeSlot={resizeSlot}
-              moveSlot={moveSlot}
+              element={element}
+              setRect={setRect}
             />
           ))}
 
