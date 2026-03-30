@@ -717,14 +717,19 @@ export function AbsolutePhotoElement({
     const [posXStr, posYStr] = (element.objectPosition || '50% 50%').split(' ')
     let posX = parseFloat(posXStr) || 50
     let posY = parseFloat(posYStr) || 50
-    const scale = element.scale ?? 1
+    const effScale = Math.max(1.12, element.scale ?? 1)
     let rafId = 0
+    const imgEl = container.querySelector('img') as HTMLImageElement | null
 
-    const flush = () => {
-      rafId = 0
-      const img = container.querySelector('img')
-      if (img) img.style.objectPosition = `${posX.toFixed(1)}% ${posY.toFixed(1)}%`
+    const applyToDOM = () => {
+      if (imgEl) {
+        const val = `${posX.toFixed(1)}% ${posY.toFixed(1)}%`
+        imgEl.style.objectPosition = val
+        imgEl.style.transformOrigin = val
+      }
     }
+
+    const flush = () => { rafId = 0; applyToDOM() }
 
     const onMove = (ev: PointerEvent) => {
       if (!didMove) {
@@ -737,7 +742,7 @@ export function AbsolutePhotoElement({
       lastX = ev.clientX
       lastY = ev.clientY
 
-      const sens = Math.max(1, scale) * 0.8
+      const sens = effScale * 0.9
       posX = Math.max(0, Math.min(100, posX - (dx / cW) * 100 * sens))
       posY = Math.max(0, Math.min(100, posY - (dy / cH) * 100 * sens))
       if (!rafId) rafId = requestAnimationFrame(flush)
@@ -755,6 +760,7 @@ export function AbsolutePhotoElement({
       ev.stopPropagation()
       cleanup()
       if (didMove) {
+        applyToDOM()
         updatePosRef.current(element.slotId, `${posX.toFixed(1)}% ${posY.toFixed(1)}%`)
       } else {
         onSelectRef.current()
@@ -874,8 +880,8 @@ export function AbsolutePhotoElement({
               style={{
                 objectPosition: element.objectPosition || '50% 50%',
                 objectFit: element.objectFit,
-                transformOrigin: currentScale > 1 ? (element.objectPosition || '50% 50%') : undefined,
-                transform: currentScale > 1 ? `scale(${currentScale})` : undefined,
+                transformOrigin: element.objectPosition || '50% 50%',
+                transform: `scale(${Math.max(1.12, currentScale)})`,
               }}
               onLoad={() => setImgLoaded(true)}
             />
