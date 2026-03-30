@@ -10,7 +10,7 @@ import type {
   PhotoElement,
 } from '../types'
 import { batchArray, detectOrientation, getImageDimensions, extractPhotoDate } from './photoUtils'
-import { analyzePhotoBatch, generateSpreadBackgrounds } from './openai'
+import { analyzePhotoBatch, analyzePhotoBatchGemini, generateSpreadBackgrounds } from './openai'
 import { curatePhotos, buildPageGroups } from './photoScorer'
 import {
   placePhotosInSpreads,
@@ -112,13 +112,45 @@ export async function generateAlbum(
   const batches = batchArray(photos, BATCH_SIZE)
   const allScores: PhotoScore[] = []
   let batchesDone = 0
+  let aiSuccessCount = 0
+  let fallbackCount = 0
 
   for (const batch of batches) {
-    try {
-      const scores = await analyzePhotoBatch(batch, orientations)
-      allScores.push(...scores)
-    } catch (err) {
-      console.error('Batch analysis failed, using defaults:', err)
+    let batchScored = false
+
+    // Try Gemini first (primary)
+    for (let attempt = 0; attempt < 2 && !batchScored; attempt++) {
+      try {
+        if (attempt > 0) {
+          onProgress(0, Math.round((batchesDone / batches.length) * 25), `ניסיון חוזר (Gemini)... ${allScores.length}/${photos.length}`)
+          await sleep(1000 * attempt)
+        }
+        const scores = await analyzePhotoBatchGemini(batch, orientations)
+        allScores.push(...scores)
+        aiSuccessCount += batch.length
+        batchScored = true
+        console.log(`[AI Scoring] Gemini succeeded for batch ${batchesDone + 1}/${batches.length}`)
+      } catch (err) {
+        console.error(`[AI Scoring] Gemini attempt ${attempt + 1} failed:`, err)
+      }
+    }
+
+    // Fallback: try OpenAI if Gemini failed
+    if (!batchScored) {
+      try {
+        onProgress(0, Math.round((batchesDone / batches.length) * 25), `מנסה ערוץ חלופי (OpenAI)...`)
+        const scores = await analyzePhotoBatch(batch, orientations)
+        allScores.push(...scores)
+        aiSuccessCount += batch.length
+        batchScored = true
+        console.log(`[AI Scoring] OpenAI fallback succeeded for batch ${batchesDone + 1}/${batches.length}`)
+      } catch (err) {
+        console.error(`[AI Scoring] OpenAI fallback also failed:`, err)
+      }
+    }
+
+    // Last resort: default scores
+    if (!batchScored) {
       for (const photo of batch) {
         const dims = orientations.get(photo.id) ?? {
           orientation: detectOrientation(photo.width, photo.height) as PhotoOrientation,
@@ -126,14 +158,22 @@ export async function generateAlbum(
         }
         allScores.push(createDefaultScore(photo.id, dims.orientation, dims.aspectRatio))
       }
+      fallbackCount += batch.length
+      console.warn(`[AI Scoring] Batch ${batchesDone + 1} fell back to defaults (${batch.length} photos)`)
     }
 
     batchesDone++
     const pct = Math.round((batchesDone / batches.length) * 25)
-    onProgress(0, pct, `מזהה פרצופים, סצנות ורגשות... ${allScores.length}/${photos.length}`)
+    onProgress(0, pct, `מנתח תמונות... ${allScores.length}/${photos.length}`)
   }
 
-  onProgress(0, 25, `ניתוח הושלם — ${allScores.length} תמונות נסרקו`)
+  if (fallbackCount > 0) {
+    console.warn(`[AI Scoring] ${fallbackCount}/${photos.length} photos used default scores (AI unavailable)`)
+    onProgress(0, 25, `ניתוח הושלם — ${aiSuccessCount} נותחו עם AI, ${fallbackCount} עם ברירות מחדל`)
+  } else {
+    console.log(`[AI Scoring] All ${aiSuccessCount} photos scored by AI successfully`)
+    onProgress(0, 25, `ניתוח AI הושלם — ${allScores.length} תמונות נסרקו בהצלחה`)
+  }
 
   // ── Stage 2 (25-35%): Curation & Ranking ──────────────────────
 

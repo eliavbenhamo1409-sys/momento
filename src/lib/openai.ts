@@ -146,6 +146,102 @@ export async function analyzePhotoBatch(
   })
 }
 
+// ─── Layer 1b: Photo Scoring via Gemini Vision ──────────────────────
+
+export async function analyzePhotoBatchGemini(
+  photos: Photo[],
+  orientations: Map<string, { orientation: PhotoOrientation; aspectRatio: number }>,
+): Promise<PhotoScore[]> {
+  const ai = getGeminiClient()
+
+  const parts: Array<{ text: string } | { inlineData: { mimeType: string; data: string } }> = []
+  parts.push({
+    text: `${SCORING_SYSTEM_PROMPT}\n\nAnalyze these ${photos.length} photos (numbered 1 to ${photos.length}). Return structured scores as specified.`,
+  })
+
+  for (const photo of photos) {
+    const prepared = await preparePhotoForVision(photo)
+    if (prepared.type === 'base64') {
+      const parsed = parseDataUrl(prepared.dataUrl)
+      if (parsed) {
+        parts.push({ inlineData: { mimeType: parsed.mimeType, data: parsed.data } })
+      }
+    } else {
+      const resp = await fetch(prepared.url)
+      const blob = await resp.blob()
+      const buf = await blob.arrayBuffer()
+      const b64 = btoa(
+        new Uint8Array(buf).reduce((s, b) => s + String.fromCharCode(b), ''),
+      )
+      parts.push({ inlineData: { mimeType: blob.type || 'image/jpeg', data: b64 } })
+    }
+  }
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: [{ role: 'user', parts }],
+    config: {
+      responseMimeType: 'application/json',
+      temperature: 0.2,
+    },
+  })
+
+  const text = response.text ?? ''
+  const cleaned = text.replace(/```json\s*|```\s*/g, '').trim()
+  const parsed = JSON.parse(cleaned) as {
+    photos: Array<{
+      sharpness: number
+      exposure: number
+      composition: number
+      overall_quality: number
+      scene: string
+      people_count: number
+      has_faces: boolean
+      faces_region: string
+      emotion: string
+      color_dominant: string
+      is_highlight: boolean
+      is_cover_candidate: boolean
+      is_hero_candidate: boolean
+      is_closeup: boolean
+      is_group_shot: boolean
+      description: string
+      setting?: string
+    }>
+  }
+
+  return parsed.photos.map((raw, i) => {
+    const photo = photos[i]
+    const dims = orientations.get(photo.id) ?? {
+      orientation: detectOrientation(photo.width, photo.height),
+      aspectRatio: photo.width / photo.height,
+    }
+
+    return {
+      photoId: photo.id,
+      orientation: dims.orientation,
+      aspectRatio: dims.aspectRatio,
+      sharpness: clamp(raw.sharpness, 1, 10),
+      exposure: clamp(raw.exposure, 1, 10),
+      composition: clamp(raw.composition, 1, 10),
+      overallQuality: clamp(raw.overall_quality, 1, 10),
+      scene: raw.scene as PhotoScore['scene'],
+      peopleCount: raw.people_count ?? 0,
+      hasFaces: raw.has_faces ?? false,
+      facesRegion: (raw.faces_region ?? 'none') as PhotoScore['facesRegion'],
+      emotion: raw.emotion as PhotoScore['emotion'],
+      colorDominant: raw.color_dominant as PhotoScore['colorDominant'],
+      isHighlight: raw.is_highlight ?? false,
+      isCoverCandidate: raw.is_cover_candidate ?? false,
+      isHeroCandidate: raw.is_hero_candidate ?? false,
+      isCloseup: raw.is_closeup ?? false,
+      isGroupShot: raw.is_group_shot ?? false,
+      description: raw.description ?? '',
+      setting: raw.setting ?? undefined,
+    }
+  })
+}
+
 // ─── Layer 3: Template Selection (Text API) ─────────────────────────
 
 function buildLayoutSystemPrompt(family: DesignFamily): string {
