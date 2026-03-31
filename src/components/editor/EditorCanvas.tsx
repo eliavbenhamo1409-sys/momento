@@ -1699,17 +1699,17 @@ export default function EditorCanvas() {
     }
   }, [spread?.id, spread?.templateId])
 
-  const onFlip = useCallback((e: { data: number }) => {
-    requestAnimationFrame(() => {
-      setCurrentSpread(Math.floor(e.data / 2))
-    })
-  }, [setCurrentSpread])
-
-  const onChangeState = useCallback((e: { data: string }) => {
+  const onChangeState = useCallback((e: { data: string; object: { getCurrentPageIndex: () => number } }) => {
     if (e.data === 'flipping') {
       deselectAll()
     }
-  }, [deselectAll])
+    if (e.data === 'read') {
+      requestAnimationFrame(() => {
+        const page = e.object.getCurrentPageIndex()
+        setCurrentSpread(Math.floor(page / 2))
+      })
+    }
+  }, [deselectAll, setCurrentSpread])
 
   const flipNext = useCallback(() => {
     deselectAll()
@@ -1823,7 +1823,6 @@ export default function EditorCanvas() {
         <div
           className="relative flex-1 min-w-0 w-full max-w-[min(84vw,68rem)] aspect-[2/1] max-h-[min(75vh,600px)] md:max-h-[min(68vh,600px)]"
           style={{
-            transform: 'scaleX(-1)',
             opacity: isTransitioning ? 0.5 : 1,
             transition: 'opacity 0.2s ease-out',
           }}
@@ -1852,7 +1851,6 @@ export default function EditorCanvas() {
             clickEventForward={true}
             mobileScrollSupport={true}
             swipeDistance={30}
-            onFlip={onFlip}
             onChangeState={onChangeState}
             className="album-flipbook"
             style={flipBookStyle}

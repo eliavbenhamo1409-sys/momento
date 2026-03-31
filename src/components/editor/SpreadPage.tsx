@@ -702,13 +702,13 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
         data-density="hard"
       >
         <div
+          dir="rtl"
           style={{
             backgroundColor: bgColor,
             width: '100%',
             height: '100%',
             position: 'relative',
             overflow: 'hidden',
-            transform: 'scaleX(-1)',
           }}
           onClick={(e) => {
             if ((e.target as HTMLElement).closest('[data-slot-id], [data-has-photo]')) return
