@@ -20,21 +20,16 @@ function orientationFitScore(
   photoOrientation: 'landscape' | 'portrait' | 'square',
 ): number {
   const pref = slotPreference(slot)
-  const aspect = slot.width / slot.height
-
-  if (photoOrientation === 'square' && (aspect > 2.0 || aspect < 0.5)) return -0.8
-  if (photoOrientation === 'square' && (aspect > 1.5 || aspect < 0.67)) return 0.1
 
   if (slot.accepts.includes(photoOrientation)) return 1.0
-
-  if (photoOrientation === 'portrait' && pref === 'landscape') return -0.5
-  if (photoOrientation === 'landscape' && pref === 'portrait') return -0.3
-
   if (pref === photoOrientation) return 0.9
   if (pref === 'square') return 0.7
-  if (slot.accepts.includes('any')) return 0.4
+  if (slot.accepts.includes('any')) return 0.5
 
-  return 0.1
+  if (photoOrientation === 'portrait' && pref === 'landscape') return 0.1
+  if (photoOrientation === 'landscape' && pref === 'portrait') return 0.15
+
+  return 0.3
 }
 
 // ─── Template scoring against a group ────────────────────────────────
@@ -54,6 +49,8 @@ const MIXED_TEMPLATES = [
   'grid-3x2', 'detail-grid', 'cross-diagonal', 'three-rows',
   'asymmetric-hero-steps', 'l-shape', 'dynamic-trio', 'staggered-grid',
   'photo-over-photo', 'photo-over-photo-right',
+  'editorial-grid-duo', 'editorial-hero-mosaic', 'editorial-stagger-3',
+  'editorial-magazine', 'editorial-cinematic',
 ]
 
 const EXTREME_ORIENTATION_TEMPLATES = new Set([
@@ -64,6 +61,8 @@ const EXTREME_ORIENTATION_TEMPLATES = new Set([
 ])
 const MAX_EXTREME_PAGES = 2
 
+const OVERLAY_TEMPLATE_IDS = new Set(['photo-over-photo', 'photo-over-photo-right'])
+
 function scoreTemplateForGroup(
   template: LayoutTemplate,
   group: PageGroup,
@@ -73,6 +72,13 @@ function scoreTemplateForGroup(
   const { orientationMix } = group
   const total = group.photoIds.length
   if (total < template.minPhotos || total > template.maxPhotos) return -1
+
+  if (OVERLAY_TEMPLATE_IDS.has(template.id)) {
+    const groupPhotos = group.photoIds.map(id => scores.get(id)).filter(Boolean) as PhotoScore[]
+    const settings = groupPhotos.map(p => p.setting?.toLowerCase()).filter(Boolean)
+    const uniqueSettings = new Set(settings)
+    if (uniqueSettings.size > 1) return -1
+  }
 
   const groupPhotos = group.photoIds
     .map((id) => scores.get(id))
@@ -131,6 +137,13 @@ function scoreTemplateForGroup(
 
   const photoCountMatch = 1 - Math.abs(total - (template.minPhotos + template.maxPhotos) / 2)
     / Math.max(template.maxPhotos - template.minPhotos, 1) * 0.1
+
+  // Iron rule: both pages must have at least 1 slot (unless spanning)
+  if (!template.spanning) {
+    const leftSlotCount = template.slots.filter(s => s.page === 'left').length
+    const rightSlotCount = template.slots.filter(s => s.page === 'right').length
+    if (leftSlotCount === 0 || rightSlotCount === 0) return -1
+  }
 
   const realSlotCount = slots.length
   const emptySlots = realSlotCount - total

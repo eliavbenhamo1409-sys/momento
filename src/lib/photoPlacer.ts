@@ -34,15 +34,14 @@ function orientationMatchScore(
   slot?: SlotDefinition,
   recommendedDisplay?: PhotoOrientation,
 ): number {
-  const display = recommendedDisplay ?? photoOrientation
-  if (slot) {
-    const aspect = slotAspectRatio(slot)
-    if (display === 'square' && (aspect > 2.0 || aspect < 0.5)) return -0.5
-    if (display === 'square' && (aspect > 1.5 || aspect < 0.67)) return 0.15
-  }
   if (slotAccepts.includes('any')) return 0.8
   if (slotAccepts.includes(photoOrientation)) return 1.0
-  return 0.2
+  const display = recommendedDisplay ?? photoOrientation
+  if (slot) {
+    const pref = slot.width / slot.height > 1.3 ? 'landscape' : slot.width / slot.height < 0.77 ? 'portrait' : 'square'
+    if (pref === display) return 0.9
+  }
+  return 0.3
 }
 
 // ─── Quality-to-importance score ────────────────────────────────────
@@ -320,6 +319,36 @@ export function placePhotosInSpreads(
       return a?.photoUrl ?? null
     })
 
+    const hasLeft = leftPhotos.some(p => p !== null)
+    const hasRight = rightPhotos.some(p => p !== null)
+
+    if ((!hasLeft || !hasRight) && !template.spanning && planScores.length >= 2) {
+      const fallback = getFallbackTemplate(idx, totalSpreads)
+      if (fallback.id !== template.id) {
+        const fbAssignments = matchPhotosToSlots(fallback.slots, planScores, photoUrlMap)
+        const fbSlotData = fbAssignments.map(cropToSlotData)
+        const fbLeft = fallback.slots.filter(s => s.page === 'left').map(s => {
+          const a = fbAssignments.find(a => a.slotId === s.id)
+          return a?.photoUrl ?? null
+        })
+        const fbRight = fallback.slots.filter(s => s.page === 'right').map(s => {
+          const a = fbAssignments.find(a => a.slotId === s.id)
+          return a?.photoUrl ?? null
+        })
+        if (fbLeft.some(p => p !== null) && fbRight.some(p => p !== null)) {
+          return {
+            id: `spread-${idx}-${Date.now().toString(36)}`,
+            templateId: fallback.id,
+            leftPhotos: fbLeft,
+            rightPhotos: fbRight,
+            quote: plan.quote,
+            slots: fbSlotData,
+            theme: plan.theme,
+          }
+        }
+      }
+    }
+
     return {
       id: `spread-${idx}-${Date.now().toString(36)}`,
       templateId: template.id,
@@ -458,14 +487,13 @@ function slotAcceptsOrientation(
   slotH?: number,
   recommendedDisplay?: PhotoOrientation,
 ): number {
-  const display = recommendedDisplay ?? orientation
-  if (slotW && slotH) {
-    const aspect = slotW / slotH
-    if (display === 'square' && (aspect > 2.0 || aspect < 0.5)) return -0.5
-    if (display === 'square' && (aspect > 1.5 || aspect < 0.67)) return 0.15
-  }
   if (accepts.includes('any')) return 0.8
   if (accepts.includes(orientation as 'portrait' | 'landscape')) return 1.0
+  const display = recommendedDisplay ?? orientation
+  if (slotW && slotH) {
+    const pref = slotW / slotH > 1.3 ? 'landscape' : slotW / slotH < 0.77 ? 'portrait' : 'square'
+    if (pref === display) return 0.9
+  }
   return 0.3
 }
 

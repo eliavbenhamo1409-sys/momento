@@ -718,26 +718,26 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
-  // ── 25. Grid 4+4 (8 photos) ─────────────────────────────────────
+  // ── 25. Editorial 4+4 (8 photos, asymmetric) ───────────────────
   {
     id: 'grid-4-4',
-    name: 'רשת 4+4',
+    name: 'אדיטוריאל 4+4',
     category: 'grid',
     minPhotos: 8,
     maxPhotos: 8,
     acceptsQuote: false,
-    cannotRepeatWithin: 4,
+    cannotRepeatWithin: 999,
     bestForMood: ['joyful', 'energetic', 'nostalgic'],
     bestForScene: ['detail', 'group', 'outdoor', 'indoor', 'food'],
     slots: [
-      slot('l-tl', 'left', 0, 0, 50, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('l-tr', 'left', 50, 0, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('l-bl', 'left', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('l-br', 'left', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('r-tl', 'right', 0, 0, 50, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('r-tr', 'right', 50, 0, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('r-bl', 'right', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('r-br', 'right', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-hero', 'left', 0, 0, 60, 55, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-tr', 'left', 60, 0, 40, 40, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bl', 'left', 0, 55, 40, 45, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-br', 'left', 40, 55, 60, 45, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-tl', 'right', 0, 0, 45, 60, { importance: 'primary', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-tr', 'right', 45, 0, 55, 40, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bl', 'right', 45, 40, 55, 60, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-br', 'right', 0, 60, 45, 40, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
     ],
   },
 
@@ -864,20 +864,27 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
-  // ── 31. Single Portrait Full Page ──────────────────────────────────
+  // ── 31. Single Portrait + Accent Right ──────────────────────────────
   {
     id: 'single-portrait',
-    name: 'תמונה אורכית מלאה',
+    name: 'תמונה אורכית + אקסנט',
     category: 'hero',
-    minPhotos: 1,
-    maxPhotos: 1,
-    acceptsQuote: false,
+    minPhotos: 2,
+    maxPhotos: 3,
+    acceptsQuote: true,
+    quotePosition: 'right-bottom',
     cannotRepeatWithin: 3,
     bestForMood: ['dramatic', 'romantic', 'tender', 'serene'],
     bestForScene: ['portrait', 'outdoor', 'indoor'],
     slots: [
-      slot('portrait-full', 'left', 10, 0, 80, 100, {
+      slot('portrait-full', 'left', 5, 5, 90, 90, {
         importance: 'hero', minQuality: 6, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-main', 'right', 10, 5, 80, 55, {
+        importance: 'primary', minQuality: 4, accepts: ['any'],
+      }),
+      slot('right-accent', 'right', 20, 65, 60, 30, {
+        importance: 'accent', minQuality: 3, accepts: ['any'],
       }),
     ],
   },
@@ -1074,6 +1081,104 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       }),
     ],
   },
+
+  // ── 39. Editorial: Left Grid + Right Duo (6 photos) ───────────────
+  {
+    id: 'editorial-grid-duo',
+    name: 'רשת + זוג אורכיות',
+    category: 'balanced',
+    minPhotos: 5,
+    maxPhotos: 6,
+    acceptsQuote: false,
+    cannotRepeatWithin: 3,
+    bestForMood: ['joyful', 'energetic', 'nostalgic', 'romantic'],
+    bestForScene: ['group', 'outdoor', 'indoor', 'portrait'],
+    slots: [
+      slot('l-tl', 'left', 0, 0, 50, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-tr', 'left', 50, 0, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bl', 'left', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-br', 'left', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-left', 'right', 0, 0, 50, 100, { importance: 'hero', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-right', 'right', 50, 0, 50, 100, { importance: 'primary', minQuality: 4, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 40. Editorial: Hero + Mosaic (5 photos) ───────────────────────
+  {
+    id: 'editorial-hero-mosaic',
+    name: 'גיבור + פסיפס',
+    category: 'hero',
+    minPhotos: 4,
+    maxPhotos: 5,
+    acceptsQuote: true,
+    quotePosition: 'right-bottom',
+    cannotRepeatWithin: 3,
+    bestForMood: ['dramatic', 'romantic', 'serene', 'nostalgic'],
+    bestForScene: ['outdoor', 'portrait', 'landscape_scenic'],
+    slots: [
+      slot('l-hero', 'left', 0, 0, 100, 60, { importance: 'hero', minQuality: 6, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+      slot('l-accent', 'left', 0, 60, 100, 40, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-tall', 'right', 0, 0, 40, 100, { importance: 'primary', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-top-right', 'right', 40, 0, 60, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom-right', 'right', 40, 50, 60, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 41. Editorial: Stagger 3 (3 photos, asymmetric breathing) ─────
+  {
+    id: 'editorial-stagger-3',
+    name: 'שלישייה אדיטוריאלית',
+    category: 'balanced',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: true,
+    quotePosition: 'right-bottom',
+    cannotRepeatWithin: 3,
+    bestForMood: ['serene', 'romantic', 'nostalgic', 'dramatic'],
+    bestForScene: ['portrait', 'outdoor', 'landscape_scenic'],
+    slots: [
+      slot('l-tall', 'left', 0, 0, 45, 100, { importance: 'hero', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+      slot('l-wide', 'left', 45, 0, 55, 55, { importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-main', 'right', 10, 10, 80, 80, { importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 42. Editorial: Magazine Spread (4 photos, editorial flow) ─────
+  {
+    id: 'editorial-magazine',
+    name: 'מגזין',
+    category: 'balanced',
+    minPhotos: 4,
+    maxPhotos: 4,
+    acceptsQuote: false,
+    cannotRepeatWithin: 3,
+    bestForMood: ['dramatic', 'energetic', 'joyful'],
+    bestForScene: ['outdoor', 'group', 'action', 'portrait'],
+    slots: [
+      slot('l-hero', 'left', 0, 0, 65, 65, { importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bottom', 'left', 0, 65, 65, 35, { importance: 'accent', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-top', 'right', 0, 0, 100, 45, { importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom', 'right', 15, 45, 70, 55, { importance: 'secondary', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 43. Editorial: Cinematic Duo (2 photos, big breathing room) ───
+  {
+    id: 'editorial-cinematic',
+    name: 'קולנועי',
+    category: 'hero',
+    minPhotos: 2,
+    maxPhotos: 2,
+    acceptsQuote: true,
+    quotePosition: 'right-bottom',
+    cannotRepeatWithin: 3,
+    bestForMood: ['dramatic', 'romantic', 'serene', 'nostalgic'],
+    bestForScene: ['portrait', 'landscape_scenic', 'outdoor'],
+    slots: [
+      slot('l-main', 'left', 5, 5, 90, 90, { importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-main', 'right', 5, 5, 90, 90, { importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
 ]
 
 // ─── Template Lookup ────────────────────────────────────────────────
@@ -1125,30 +1230,30 @@ export function isTemplateAllowedAtPosition(
 /** Deterministic fallback sequence when AI is unavailable */
 export const FALLBACK_SEQUENCE: string[] = [
   'cover-hero',
-  'detail-grid',
+  'editorial-hero-mosaic',
   'photo-over-photo',
   'hero-top-grid-bottom',
-  'portrait-duo',
-  'asymmetric-hero-steps',
-  'mosaic-5',
+  'editorial-cinematic',
+  'editorial-grid-duo',
   'dynamic-trio',
   'portrait-hero-grid',
+  'editorial-magazine',
   'hero-left-grid-right',
-  'staggered-grid',
+  'editorial-stagger-3',
   'l-shape',
-  'three-rows',
+  'asymmetric-hero-steps',
   'photo-over-photo-right',
   'portrait-trio',
-  'grid-2x2',
-  'hero-top-grid-bottom',
+  'mosaic-5',
+  'editorial-hero-mosaic',
   'balanced-4',
   'trio-left-hero-right',
   'grid-3x2',
-  'mosaic-5',
-  'asymmetric-hero-steps',
-  'portrait-grid-4',
+  'editorial-grid-duo',
+  'staggered-grid',
   'detail-grid',
   'hero-left-grid-right',
+  'editorial-magazine',
 ]
 
 /** Get a deterministic template for a given spread index (fallback mode) */

@@ -39,7 +39,7 @@ For EACH image (numbered starting from 1), return a JSON object with these EXACT
 - is_hero_candidate: boolean (works well as a large/full-page photo?)
 - is_closeup: boolean
 - is_group_shot: boolean (3+ people)
-- recommended_display: one of: "square", "landscape", "portrait" — How this photo should be displayed in the album. IMPORTANT: default to "square" for the vast majority of photos. Only use "landscape" for photos with a truly wide scenic composition that would lose significant impact if cropped to square (e.g. wide panorama, expansive beach sunset with horizon). Only use "portrait" for photos with a tall vertical composition where important content would be cut off in square crop (e.g. full-body standing portrait, tall building). When in doubt, always choose "square".
+- recommended_display: one of: "square", "landscape", "portrait" — Choose the display format that best honors the photo's natural composition. Use "portrait" for vertical subjects (standing people, full-body shots, tall scenes). Use "landscape" for wide scenes (panoramas, group shots, scenic horizons). Use "square" for balanced compositions that work well cropped either way. Be honest about what looks best — don't force one format.
 - description: one sentence in Hebrew describing the photo
 - setting: a short English tag for the specific setting/location (e.g. "ski resort", "beach sunset", "restaurant dinner", "park picnic", "city street", "home living room", "wedding ceremony", "pool party"). Be specific — two photos at the same place should get the same tag.
 
@@ -279,9 +279,11 @@ CRITICAL RULES:
 - Don't repeat the same template within its cannotRepeatWithin distance.
 - Don't use the same category more than 2 times in a row.
 - Hero/primary slots should get the highest-quality photos.
-- Group photos by theme or event when descriptions suggest it.
+- STORY-FIRST GROUPING: Photos with the same "setting" tag belong to the same event/moment. NEVER mix photos from different settings on a single spread. A proposal ceremony photo must NOT appear next to a casual ski photo. Each spread = one moment, one story.
 - Each photo can only appear in ONE spread.
+- EVERY spread must have photos on BOTH the left and right pages. No empty pages allowed.
 - The number of photos assigned MUST be between the template's minPhotos and maxPhotos AND not exceed the sequence plan's maxPhotos.
+- Prefer editorial, asymmetric layouts over symmetric grids. Avoid using grid-4-4 or grid-2x2 more than once in the entire album.
 - Quote language: Hebrew. Quotes should be 1-2 sentences, emotional, and relevant to the photos' mood.
 - Max quote length: ${family.textBehavior.quoteMaxLength} characters.
 
@@ -372,6 +374,8 @@ export async function selectTemplatesForSpreads(
     emotion: s.emotion,
     people: s.peopleCount,
     orientation: s.orientation,
+    recommendedDisplay: s.recommendedDisplay,
+    setting: s.setting,
     isHighlight: s.isHighlight,
     isCoverCandidate: s.isCoverCandidate,
     isHeroCandidate: s.isHeroCandidate,

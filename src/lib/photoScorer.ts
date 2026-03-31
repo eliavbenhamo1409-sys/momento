@@ -271,6 +271,20 @@ function photoAffinity(
  * Greedy agglomerative clustering using multi-signal affinity.
  * Returns array of photo groups.
  */
+function settingsMatch(a: PhotoScore, b: PhotoScore): boolean {
+  if (!a.setting || !b.setting) return false
+  return a.setting.toLowerCase() === b.setting.toLowerCase()
+}
+
+function groupDominantSetting(group: PhotoScore[]): string | undefined {
+  const counts: Record<string, number> = {}
+  for (const p of group) {
+    if (p.setting) counts[p.setting.toLowerCase()] = (counts[p.setting.toLowerCase()] || 0) + 1
+  }
+  const best = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]
+  return best ? best[0] : undefined
+}
+
 function multiSignalCluster(
   scores: PhotoScore[],
   dateLookup?: Map<string, Date>,
@@ -299,8 +313,15 @@ function multiSignalCluster(
     const curDate = dateLookup.get(photo.photoId)?.getTime() ?? 0
     const gapMin = Math.abs(curDate - prevDate) / 60_000
 
-    const sceneMatch = current.some(m => m.scene === photo.scene || m.setting === photo.setting)
-    const shouldGroup = (gapMin <= 60 || (gapMin <= 180 && sceneMatch)) && current.length < maxGroup
+    const hasSameSetting = current.some(m => settingsMatch(m, photo))
+    const dominantSetting = groupDominantSetting(current)
+    const photoSetting = photo.setting?.toLowerCase()
+    const settingConflict = dominantSetting && photoSetting && dominantSetting !== photoSetting
+
+    const shouldGroup =
+      !settingConflict &&
+      current.length < maxGroup &&
+      (hasSameSetting || (gapMin <= 30 && current.some(m => m.scene === photo.scene)))
 
     if (shouldGroup) {
       current.push(photo)
@@ -442,25 +463,26 @@ export function buildPageGroups(
     merged.push(group.slice(0, mid), group.slice(mid))
   }
 
-  // Build final PageGroup objects
+  // Build final PageGroup objects with eventId from dominant setting
   const result: PageGroup[] = [...heroGroups]
   let groupIdx = 0
   for (const group of merged) {
-    const dominantScene = group.reduce((acc, p) => {
-      acc[p.scene] = (acc[p.scene] || 0) + 1
-      return acc
-    }, {} as Record<string, number>)
-    const theme = Object.entries(dominantScene).sort((a, b) => b[1] - a[1])[0]?.[0] ?? ''
-
-    // Use setting tags for a more descriptive theme when available
     const settingCounts: Record<string, number> = {}
     for (const p of group) {
       if (p.setting) settingCounts[p.setting] = (settingCounts[p.setting] || 0) + 1
     }
     const dominantSetting = Object.entries(settingCounts).sort((a, b) => b[1] - a[1])[0]?.[0]
-    const groupTheme = dominantSetting || theme
 
-    result.push(buildGroupMeta(`group-${++groupIdx}`, group, groupTheme))
+    const dominantScene = group.reduce((acc, p) => {
+      acc[p.scene] = (acc[p.scene] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    const sceneFallback = Object.entries(dominantScene).sort((a, b) => b[1] - a[1])[0]?.[0] ?? ''
+
+    const groupTheme = dominantSetting || sceneFallback
+    const pg = buildGroupMeta(`group-${++groupIdx}`, group, groupTheme)
+    pg.eventId = dominantSetting?.toLowerCase()
+    result.push(pg)
   }
 
   // Sort chronologically by earliest photo date when available

@@ -300,6 +300,7 @@ export interface PageGroup {
   bestPhotoId: string
   bestPhotoQuality: number
   theme: string
+  eventId?: string
 }
 
 // ─── AI Spread Skeleton Spec (raw AI output) ───────────────────────
