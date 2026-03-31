@@ -1311,7 +1311,7 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     minPhotos: 3,
     maxPhotos: 3,
     acceptsQuote: true,
-    quotePosition: 'right-top',
+    quotePosition: 'right-center',
     cannotRepeatWithin: 5,
     bestForMood: ['romantic', 'serene', 'nostalgic', 'tender'],
     bestForScene: ['portrait', 'landscape_scenic', 'outdoor', 'detail'],

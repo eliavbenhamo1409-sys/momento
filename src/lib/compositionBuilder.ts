@@ -157,7 +157,7 @@ export function buildSpreadDesign(
       quoteElement.fontWeight = style.typography.captionWeight ?? 300
       quoteElement.italic = true
       quoteElement.fontSize = 26
-      quoteElement.letterSpacing = 0.5
+      quoteElement.letterSpacing = '0.5px'
       quoteElement.lineHeight = 1.8
     }
 
