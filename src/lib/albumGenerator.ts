@@ -96,17 +96,23 @@ export async function generateAlbum(
 
   // Extract EXIF dates for chronological grouping
   const dateLookup = new Map<string, Date>()
-  for (const photo of photos) {
+  for (let idx = 0; idx < photos.length; idx++) {
+    const photo = photos[idx]
     if (photo.file) {
       try {
         const d = await extractPhotoDate(photo.file)
         dateLookup.set(photo.id, d)
-      } catch { /* skip */ }
+      } catch {
+        dateLookup.set(photo.id, new Date(photo.file.lastModified))
+      }
+    } else {
+      dateLookup.set(photo.id, new Date(idx))
     }
   }
-  if (dateLookup.size > 0) {
-    console.log(`[אלבום חכם] חולצו תאריכים מ-${dateLookup.size}/${photos.length} תמונות`)
-    onProgress(0, 3, `חולצו תאריכים מ-${dateLookup.size} תמונות...`)
+  const exifCount = [...dateLookup.values()].filter(d => d.getTime() > 1000).length
+  if (exifCount > 0) {
+    console.log(`[אלבום חכם] חולצו תאריכים מ-${exifCount}/${photos.length} תמונות`)
+    onProgress(0, 3, `חולצו תאריכים מ-${exifCount} תמונות...`)
   }
 
   const batches = batchArray(photos, BATCH_SIZE)

@@ -20,6 +20,7 @@ import {
 } from './EditorCanvas'
 import { useEditorStore } from '../../store/editorStore'
 import { DEFAULT_STYLE, getTexturePattern } from './editorDefaults'
+import { getTemplate } from '../../lib/layoutGrammar'
 
 const NOOP_SELECT_PHOTO: (id: string | null) => void = () => {}
 const NOOP_SELECT_TEXT: (idx: number | null) => void = () => {}
@@ -512,6 +513,7 @@ function LegacyPageElements({
 
   const adj = variant?.adjustments
   const gapPx = adj?.gapOverride ?? style.spacing.photoGapPx
+  const margin = style.spacing.pageMarginPercent
   const photos = side === 'left' ? spread.leftPhotos : spread.rightPhotos
 
   const overlaySide = spread.templateId ? OVERLAY_TEMPLATES[spread.templateId] : undefined
@@ -528,11 +530,77 @@ function LegacyPageElements({
     )
   }
 
+  const template = spread.templateId ? getTemplate(spread.templateId) : undefined
+  const pageSlots = template?.slots.filter((s) => s.page === side) ?? []
+
+  if (template && pageSlots.length > 0 && photos.length > 0) {
+    const gapPercent = gapPx * 0.2
+    return (
+      <div className="w-full h-full relative z-[1]" style={{ padding: `${margin}%` }}>
+        <div className="w-full h-full relative">
+          {pageSlots.map((slot, i) => {
+            const src = photos[i]
+            const photoId = `${spread.id}-${side}-${i}`
+            const isSelected = selectedPhotoId === photoId
+
+            if (!src) {
+              if (i < photos.length) {
+                return (
+                  <div
+                    key={photoId}
+                    className="absolute"
+                    style={{
+                      left: `${slot.x + gapPercent / 2}%`,
+                      top: `${slot.y + gapPercent / 2}%`,
+                      width: `${slot.width - gapPercent}%`,
+                      height: `${slot.height - gapPercent}%`,
+                    }}
+                  >
+                    <EmptySlot spreadId={spread.id} side={side} index={i} className="w-full h-full" />
+                  </div>
+                )
+              }
+              return null
+            }
+
+            const slotData = slotDataByUrl.get(src) as EnrichedSlotData | undefined
+            const frame = slotData?.frame ?? style.frame
+
+            return (
+              <div
+                key={photoId}
+                className="absolute [&>*]:!w-full [&>*]:!h-full"
+                style={{
+                  left: `${slot.x + gapPercent / 2}%`,
+                  top: `${slot.y + gapPercent / 2}%`,
+                  width: `${slot.width - gapPercent}%`,
+                  height: `${slot.height - gapPercent}%`,
+                }}
+              >
+                <MemoLegacyPhotoSlot
+                  src={src}
+                  photoId={photoId}
+                  isSelected={isSelected}
+                  onToggleSelect={handleToggleSelect}
+                  objectPosition={slotData?.objectPosition}
+                  transform={slotData?.transform}
+                  frame={frame}
+                  variant={variant}
+                  slotImportance={slotData?.importance}
+                />
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    )
+  }
+
   if (side === 'left') {
     return (
       <div
         className="w-full h-full flex flex-col relative z-[1]"
-        style={{ padding: `${style.spacing.pageMarginPercent}%`, gap: gapPx }}
+        style={{ padding: `${margin}%`, gap: gapPx }}
       >
         {photos.map((src, i) => {
           const photoId = `${spread.id}-left-${i}`
@@ -564,7 +632,7 @@ function LegacyPageElements({
   return (
     <div
       className="w-full h-full grid grid-cols-2 relative z-[1]"
-      style={{ padding: `${style.spacing.pageMarginPercent}%`, gap: gapPx }}
+      style={{ padding: `${margin}%`, gap: gapPx }}
     >
       {photos.map((src, i) => {
         const photoId = `${spread.id}-right-${i}`

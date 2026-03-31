@@ -275,45 +275,41 @@ function multiSignalCluster(
   scores: PhotoScore[],
   dateLookup?: Map<string, Date>,
   maxGroup = 6,
-  affinityThreshold = 0.45,
 ): PhotoScore[][] {
-  const unassigned = new Set(scores.map((_, i) => i))
-  const groups: PhotoScore[][] = []
-
-  while (unassigned.size > 0) {
-    const seedIdx = unassigned.values().next().value!
-    unassigned.delete(seedIdx)
-    const group: PhotoScore[] = [scores[seedIdx]]
-
-    // Try to grow the group with highest-affinity unassigned photos
-    let changed = true
-    while (changed && group.length < maxGroup) {
-      changed = false
-      let bestIdx = -1
-      let bestAff = affinityThreshold
-
-      for (const idx of unassigned) {
-        // Average affinity to all current group members
-        let totalAff = 0
-        for (const member of group) {
-          totalAff += photoAffinity(member, scores[idx], dateLookup)
-        }
-        const avg = totalAff / group.length
-        if (avg > bestAff) {
-          bestAff = avg
-          bestIdx = idx
-        }
-      }
-
-      if (bestIdx >= 0) {
-        group.push(scores[bestIdx])
-        unassigned.delete(bestIdx)
-        changed = true
-      }
+  if (!dateLookup || dateLookup.size === 0) {
+    const groups: PhotoScore[][] = []
+    for (let i = 0; i < scores.length; i += maxGroup) {
+      groups.push(scores.slice(i, i + maxGroup))
     }
-
-    groups.push(group)
+    return groups
   }
+
+  const sorted = [...scores].sort((a, b) => {
+    const dA = dateLookup.get(a.photoId)?.getTime() ?? 0
+    const dB = dateLookup.get(b.photoId)?.getTime() ?? 0
+    return dA - dB
+  })
+
+  const groups: PhotoScore[][] = []
+  let current: PhotoScore[] = [sorted[0]]
+
+  for (let i = 1; i < sorted.length; i++) {
+    const photo = sorted[i]
+    const prevDate = dateLookup.get(current[current.length - 1].photoId)?.getTime() ?? 0
+    const curDate = dateLookup.get(photo.photoId)?.getTime() ?? 0
+    const gapMin = Math.abs(curDate - prevDate) / 60_000
+
+    const sceneMatch = current.some(m => m.scene === photo.scene || m.setting === photo.setting)
+    const shouldGroup = (gapMin <= 60 || (gapMin <= 180 && sceneMatch)) && current.length < maxGroup
+
+    if (shouldGroup) {
+      current.push(photo)
+    } else {
+      groups.push(current)
+      current = [photo]
+    }
+  }
+  if (current.length > 0) groups.push(current)
 
   return groups
 }
@@ -335,11 +331,28 @@ export function buildPageGroups(
   const MAX_GROUP = 6
   const MIN_GROUP = 2
 
-  // Multi-signal clustering
-  const rawGroups = multiSignalCluster(scores, dateLookup, MAX_GROUP)
+  const chronoScores = dateLookup && dateLookup.size > 0
+    ? [...scores].sort((a, b) => {
+        const dA = dateLookup.get(a.photoId)?.getTime() ?? 0
+        const dB = dateLookup.get(b.photoId)?.getTime() ?? 0
+        return dA - dB
+      })
+    : scores
 
-  // Sort each group internally by quality (best first)
-  for (const g of rawGroups) g.sort((a, b) => b.overallQuality - a.overallQuality)
+  const rawGroups = multiSignalCluster(chronoScores, dateLookup, MAX_GROUP)
+
+  // Sort each group internally by date (chronological order within a spread)
+  if (dateLookup && dateLookup.size > 0) {
+    for (const g of rawGroups) {
+      g.sort((a, b) => {
+        const dA = dateLookup.get(a.photoId)?.getTime() ?? 0
+        const dB = dateLookup.get(b.photoId)?.getTime() ?? 0
+        return dA - dB
+      })
+    }
+  } else {
+    for (const g of rawGroups) g.sort((a, b) => b.overallQuality - a.overallQuality)
+  }
 
   // Extract hero photos into standalone 1-photo groups for full-page treatment
   const heroGroups: PageGroup[] = []
