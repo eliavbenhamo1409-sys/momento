@@ -148,16 +148,9 @@ function scoreTemplateForGroup(
   const realSlotCount = slots.length
   const emptySlots = realSlotCount - total
 
-  let slotFitScore: number
-  if (emptySlots === 0) {
-    slotFitScore = 0.4
-  } else if (emptySlots === 1) {
-    slotFitScore = -0.15
-  } else if (emptySlots > 1) {
-    return -1
-  } else {
-    slotFitScore = 0
-  }
+  if (emptySlots > 0) return -1
+
+  const slotFitScore = emptySlots === 0 ? 0.4 : 0
 
   // Diversity: reward templates not used recently
   let diversityBonus = 0
@@ -201,8 +194,7 @@ export function pickBestTemplate(
     .filter((t) => {
       if (extremeBudgetExhausted && EXTREME_ORIENTATION_TEMPLATES.has(t.id)) return false
       const slotCount = t.slots.filter((s) => !s.id.endsWith('-mirror')).length
-      const shortage = slotCount - effectiveMax
-      return effectiveMax >= t.minPhotos && shortage <= 1
+      return effectiveMax >= t.minPhotos && slotCount <= effectiveMax
     })
     .filter((t) => isTemplateAllowedAtPosition(t.id, position, previousTemplateIds))
 

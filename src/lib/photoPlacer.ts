@@ -308,18 +308,23 @@ export function placePhotosInSpreads(
     const assignments = matchPhotosToSlots(template.slots, planScores, photoUrlMap, globalUsed)
     const slotDataArr = assignments.map(cropToSlotData)
 
+    const assignedSlotIds = new Set(assignments.map(a => a.slotId))
     const leftSlots = template.slots.filter((s) => s.page === 'left')
     const rightSlots = template.slots.filter((s) => s.page === 'right')
 
-    const leftPhotos: (string | null)[] = leftSlots.map((s) => {
-      const a = assignments.find((a) => a.slotId === s.id)
-      return a?.photoUrl ?? null
-    })
+    const leftPhotos: (string | null)[] = leftSlots
+      .filter(s => assignedSlotIds.has(s.id))
+      .map((s) => {
+        const a = assignments.find((a) => a.slotId === s.id)
+        return a?.photoUrl ?? null
+      })
 
-    const rightPhotos: (string | null)[] = rightSlots.map((s) => {
-      const a = assignments.find((a) => a.slotId === s.id)
-      return a?.photoUrl ?? null
-    })
+    const rightPhotos: (string | null)[] = rightSlots
+      .filter(s => assignedSlotIds.has(s.id))
+      .map((s) => {
+        const a = assignments.find((a) => a.slotId === s.id)
+        return a?.photoUrl ?? null
+      })
 
     const hasLeft = leftPhotos.some(p => p !== null)
     const hasRight = rightPhotos.some(p => p !== null)
@@ -329,11 +334,12 @@ export function placePhotosInSpreads(
       if (fallback.id !== template.id) {
         const fbAssignments = matchPhotosToSlots(fallback.slots, planScores, photoUrlMap)
         const fbSlotData = fbAssignments.map(cropToSlotData)
-        const fbLeft = fallback.slots.filter(s => s.page === 'left').map(s => {
+        const fbAssignedIds = new Set(fbAssignments.map(a => a.slotId))
+        const fbLeft = fallback.slots.filter(s => s.page === 'left' && fbAssignedIds.has(s.id)).map(s => {
           const a = fbAssignments.find(a => a.slotId === s.id)
           return a?.photoUrl ?? null
         })
-        const fbRight = fallback.slots.filter(s => s.page === 'right').map(s => {
+        const fbRight = fallback.slots.filter(s => s.page === 'right' && fbAssignedIds.has(s.id)).map(s => {
           const a = fbAssignments.find(a => a.slotId === s.id)
           return a?.photoUrl ?? null
         })

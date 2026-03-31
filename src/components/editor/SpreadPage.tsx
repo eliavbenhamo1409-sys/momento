@@ -531,7 +531,8 @@ function LegacyPageElements({
   }
 
   const template = spread.templateId ? getTemplate(spread.templateId) : undefined
-  const pageSlots = template?.slots.filter((s) => s.page === side) ?? []
+  const allPageSlots = template?.slots.filter((s) => s.page === side) ?? []
+  const pageSlots = allPageSlots.slice(0, photos.length)
 
   if (template && pageSlots.length > 0 && photos.length > 0) {
     const gapPercent = gapPx * 0.2
@@ -543,25 +544,7 @@ function LegacyPageElements({
             const photoId = `${spread.id}-${side}-${i}`
             const isSelected = selectedPhotoId === photoId
 
-            if (!src) {
-              if (i < photos.length) {
-                return (
-                  <div
-                    key={photoId}
-                    className="absolute"
-                    style={{
-                      left: `${slot.x + gapPercent / 2}%`,
-                      top: `${slot.y + gapPercent / 2}%`,
-                      width: `${slot.width - gapPercent}%`,
-                      height: `${slot.height - gapPercent}%`,
-                    }}
-                  >
-                    <EmptySlot spreadId={spread.id} side={side} index={i} className="w-full h-full" />
-                  </div>
-                )
-              }
-              return null
-            }
+            if (!src) return null
 
             const slotData = slotDataByUrl.get(src) as EnrichedSlotData | undefined
             const frame = slotData?.frame ?? style.frame
