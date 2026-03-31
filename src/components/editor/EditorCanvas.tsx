@@ -1892,7 +1892,7 @@ export default function EditorCanvas() {
 
       {/* Cover material selector — stopPropagation so canvas bg-click / deselect does not steal taps */}
       <div
-        className="flex justify-center mt-4 mb-2 sm:mb-6 relative z-30"
+        className="flex justify-center mt-2 mb-1 sm:mb-4 relative z-30"
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >

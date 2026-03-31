@@ -1,4 +1,6 @@
-import { motion, LayoutGroup } from 'motion/react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'motion/react'
+import Icon from '../shared/Icon'
 import type { CoverMaterial } from '../../types'
 
 const MATERIALS: Record<CoverMaterial, {
@@ -7,8 +9,11 @@ const MATERIALS: Record<CoverMaterial, {
   edgeLight: string
   spineTint: string
   label: string
+  /** Solid base — blocks dot-grid showing through */
+  solid: string
 }> = {
   linen: {
+    solid: '#e4dcd0',
     bg: 'linear-gradient(145deg, #e8e0d4 0%, #d9d0c2 40%, #cec4b4 100%)',
     texture: `url("data:image/svg+xml,%3Csvg width='6' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0zm2 2h1v1H2zm4 0h1v1H4zm-2 2h1v1H2zm2 2h1v1H4zM0 4h1v1H0z' fill='%23000' fill-opacity='.03'/%3E%3C/svg%3E")`,
     edgeLight: 'rgba(255,255,255,0.35)',
@@ -16,6 +21,7 @@ const MATERIALS: Record<CoverMaterial, {
     label: 'פשתן',
   },
   white: {
+    solid: '#f2f0ec',
     bg: 'linear-gradient(145deg, #faf9f7 0%, #f3f1ed 40%, #edeae4 100%)',
     texture: `url("data:image/svg+xml,%3Csvg width='4' height='4' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0zm2 2h1v1H2z' fill='%23000' fill-opacity='.015'/%3E%3C/svg%3E")`,
     edgeLight: 'rgba(255,255,255,0.6)',
@@ -23,7 +29,8 @@ const MATERIALS: Record<CoverMaterial, {
     label: 'לבן',
   },
   'light-brown': {
-    bg: 'linear-gradient(145deg, #d4c4a8 0%, #c8b697 40%, #bfad8d 100%)',
+    solid: '#c9b89a',
+    bg: 'linear-gradient(145deg, #d4c4a8 0%, #c8b697 40%, #a89472 100%)',
     texture: `url("data:image/svg+xml,%3Csvg width='8' height='8' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0h1v1H0zm4 2h1v1H4zm-2 4h1v1H2zm4 2h1v1H4z' fill='%23000' fill-opacity='.04'/%3E%3C/svg%3E")`,
     edgeLight: 'rgba(255,255,255,0.25)',
     spineTint: 'rgba(0,0,0,0.07)',
@@ -38,15 +45,18 @@ export function BookCoverFrame({ material }: { material: CoverMaterial | undefin
 
   return (
     <motion.div
+      key={material ?? DEFAULT_MATERIAL}
       className="absolute pointer-events-none select-none"
-      initial={false}
+      initial={{ opacity: 0.92 }}
       animate={{ opacity: 1 }}
+      transition={{ duration: 0.25 }}
       style={{
-        inset: '-10px -12px -10px -12px',
+        /* Larger visible “board” around the spread */
+        inset: '-16px -20px -16px -20px',
         zIndex: -1,
-        borderRadius: 6,
-        background: m.bg,
-        backgroundImage: m.texture,
+        borderRadius: 8,
+        backgroundColor: m.solid,
+        backgroundImage: `${m.texture}, ${m.bg}`,
         boxShadow: [
           '0 2px 8px rgba(0,0,0,0.10)',
           '0 8px 24px rgba(0,0,0,0.08)',
@@ -86,18 +96,16 @@ export function BookCoverFrame({ material }: { material: CoverMaterial | undefin
         }}
       />
 
-      {/* Left cover subtle edge (book board thickness illusion) */}
       <div
-        className="absolute top-1 bottom-1 left-0 rounded-l-[5px]"
+        className="absolute top-1 bottom-1 left-0 rounded-l-[7px]"
         style={{
           width: 3,
           background: `linear-gradient(to right, rgba(0,0,0,0.08), transparent)`,
         }}
       />
 
-      {/* Right cover subtle edge */}
       <div
-        className="absolute top-1 bottom-1 right-0 rounded-r-[5px]"
+        className="absolute top-1 bottom-1 right-0 rounded-r-[7px]"
         style={{
           width: 3,
           background: `linear-gradient(to left, rgba(0,0,0,0.08), transparent)`,
@@ -116,87 +124,115 @@ export function CoverMaterialPicker({
 }) {
   const materials: CoverMaterial[] = ['linen', 'white', 'light-brown']
   const safeValue = value && materials.includes(value) ? value : DEFAULT_MATERIAL
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+
+  const close = useCallback(() => setOpen(false), [])
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (e: MouseEvent) => {
+      const el = rootRef.current
+      if (el && !el.contains(e.target as Node)) close()
+    }
+    document.addEventListener('mousedown', onDoc, true)
+    return () => document.removeEventListener('mousedown', onDoc, true)
+  }, [open, close])
+
+  const current = MATERIALS[safeValue]
 
   return (
-    <motion.div
+    <div
+      ref={rootRef}
       dir="rtl"
-      role="radiogroup"
-      aria-label="בחירת חומר כריכה"
-      className="relative z-30 flex flex-col items-center gap-3 pointer-events-auto"
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      className="relative z-30 pointer-events-auto"
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <span
-        className="text-[11px] font-semibold tracking-wide text-deep-brown/45 uppercase"
-        style={{ fontFamily: 'var(--font-family-headline)' }}
-      >
-        כריכה
-      </span>
-
-      <LayoutGroup>
-      <div
-        className="flex items-stretch gap-1 p-1 rounded-2xl border border-black/[0.06] shadow-[0_4px_24px_rgba(45,40,35,0.07),inset_0_1px_0_rgba(255,255,255,0.85)]"
+      <motion.button
+        type="button"
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        aria-label={`כריכה: ${current.label}`}
+        className="flex items-center gap-2 h-8 ps-2 pe-1.5 rounded-full border border-black/[0.08] shadow-[0_1px_4px_rgba(45,40,35,0.06)] transition-shadow hover:shadow-[0_2px_8px_rgba(45,40,35,0.08)]"
         style={{
-          background: 'linear-gradient(160deg, rgba(255,255,255,0.92) 0%, rgba(250,247,242,0.88) 100%)',
-          backdropFilter: 'blur(14px)',
-          WebkitBackdropFilter: 'blur(14px)',
+          backgroundColor: '#faf8f5',
+          minWidth: '7.5rem',
         }}
+        whileTap={{ scale: 0.98 }}
+        onClick={() => setOpen((o) => !o)}
       >
-        {materials.map((mat) => {
-          const info = MATERIALS[mat]
-          const isActive = mat === safeValue
-          return (
-            <motion.button
-              key={mat}
-              type="button"
-              role="radio"
-              aria-checked={isActive}
-              aria-label={info.label}
-              onClick={(e) => {
-                e.stopPropagation()
-                onChange(mat)
-              }}
-              className={[
-                'relative flex flex-col items-center justify-center gap-1.5 min-w-[4.5rem] sm:min-w-[5.25rem] py-2.5 px-2 rounded-xl transition-colors duration-200',
-                isActive
-                  ? 'bg-white/95 shadow-[0_2px_12px_rgba(90,80,70,0.08)] ring-1 ring-sage/35'
-                  : 'bg-transparent hover:bg-white/50 text-deep-brown/55',
-              ].join(' ')}
-              whileHover={{ scale: isActive ? 1 : 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-            >
-              <span
-                className="block size-9 sm:size-10 rounded-xl shrink-0 ring-1 ring-black/[0.06]"
-                style={{
-                  background: info.bg,
-                  backgroundImage: info.texture,
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.45), 0 2px 6px rgba(0,0,0,0.06)',
-                }}
-              />
-              <span
-                className={`text-[11px] sm:text-xs font-semibold leading-tight text-center ${
-                  isActive ? 'text-deep-brown' : 'text-deep-brown/50'
-                }`}
-                style={{ fontFamily: 'var(--font-family-body)' }}
-              >
-                {info.label}
-              </span>
-              {isActive && (
-                <motion.span
-                  layoutId="cover-material-pill"
-                  className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 h-0.5 w-6 rounded-full bg-sage/80"
-                  transition={{ type: 'spring', stiffness: 380, damping: 32 }}
-                />
-              )}
-            </motion.button>
-          )
-        })}
-      </div>
-      </LayoutGroup>
-    </motion.div>
+        <span
+          className="size-5 rounded-md shrink-0 ring-1 ring-black/[0.06]"
+          style={{
+            backgroundColor: current.solid,
+            backgroundImage: `${current.texture}, ${current.bg}`,
+          }}
+        />
+        <span
+          className="flex-1 text-right text-[11px] font-semibold text-deep-brown/80 truncate"
+          style={{ fontFamily: 'var(--font-family-headline)' }}
+        >
+          {current.label}
+        </span>
+        <Icon
+          name="expand_more"
+          size={18}
+          className={`text-deep-brown/45 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`}
+        />
+      </motion.button>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            role="listbox"
+            aria-label="חומר כריכה"
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+            className="absolute end-0 top-[calc(100%+6px)] min-w-full py-1 rounded-xl border border-black/[0.08] shadow-[0_8px_28px_rgba(45,40,35,0.12)] overflow-hidden"
+            style={{ backgroundColor: '#faf8f5' }}
+          >
+            {materials.map((mat) => {
+              const info = MATERIALS[mat]
+              const active = mat === safeValue
+              return (
+                <button
+                  key={mat}
+                  type="button"
+                  role="option"
+                  aria-selected={active}
+                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 text-right transition-colors ${
+                    active ? 'bg-sage/12' : 'hover:bg-black/[0.04]'
+                  }`}
+                  onClick={() => {
+                    onChange(mat)
+                    close()
+                  }}
+                >
+                  <span
+                    className="size-5 rounded-md shrink-0 ring-1 ring-black/[0.06]"
+                    style={{
+                      backgroundColor: info.solid,
+                      backgroundImage: `${info.texture}, ${info.bg}`,
+                    }}
+                  />
+                  <span
+                    className="text-[11px] font-semibold text-deep-brown/85"
+                    style={{ fontFamily: 'var(--font-family-body)' }}
+                  >
+                    {info.label}
+                  </span>
+                  {active && (
+                    <Icon name="check" size={16} className="text-sage ms-auto shrink-0" />
+                  )}
+                </button>
+              )
+            })}
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   )
 }
