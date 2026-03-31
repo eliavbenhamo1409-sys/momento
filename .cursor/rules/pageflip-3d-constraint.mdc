@@ -20,11 +20,22 @@ When flipping a page, ONE photo from the destination page would appear "dressed 
 
 ---
 
-## FIVE mandatory constraints
+## SIX mandatory constraints
 
-### 1. Deselect before flipping
+### 1. Deselect before flipping (arrows AND swipe)
 
-`flipNext` and `flipPrev` MUST call `deselectAll()` first, then defer the actual flip to the next animation frame. This guarantees React commits the DOM change (`overflow: visible` → `hidden`) before page-flip renders its first frame.
+`flipNext` and `flipPrev` MUST call `deselectAll()` first, then defer the actual flip to the next animation frame. **Additionally**, `onChangeState` MUST be wired to call `deselectAll()` when the state becomes `"flipping"`. This catches swipe-initiated flips that bypass `flipNext`/`flipPrev`.
+
+```tsx
+// ✅ onChangeState catches swipe/touch-initiated flips
+const onChangeState = useCallback((e: { data: string }) => {
+  if (e.data === 'flipping') {
+    deselectAll()
+  }
+}, [deselectAll])
+```
+
+This guarantees React commits the DOM change (`overflow: visible` → `hidden`) before page-flip renders its first frame, regardless of how the flip was initiated.
 
 ```tsx
 // ✅ CORRECT — DOM is clean before flip starts
@@ -123,6 +134,7 @@ The outer ref div MUST remain bare — `react-pageflip` overwrites its `style.cs
 | Pass interaction state as props to SpreadPage | Breaks `flipPages` memoization → `updateFromHtml()` |
 | Use `style={{}}` on HTMLFlipBook | New object every render → breaks `React.memo` |
 | Call `flipNext()`/`flipPrev()` without `deselectAll()` first | `overflow: visible` on selected photo leaks across pages |
+| Remove `onChangeState` → `deselectAll` handler | Swipe-initiated flips bypass `flipNext`/`flipPrev`, so photos leak |
 | Remove `overflow: hidden` from `.stf__item` CSS | Last line of defense against content leaking between pages |
 | Remove `transform-style: flat !important` from `.stf__item` | Children participate in 3D context → compositor conflicts |
 | Add any transform to the outer ref div of SpreadPage | Conflicts with page-flip's inline `cssText` |

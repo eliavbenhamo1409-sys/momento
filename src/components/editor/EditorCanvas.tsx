@@ -1700,14 +1700,16 @@ export default function EditorCanvas() {
   }, [spread?.id, spread?.templateId])
 
   const onFlip = useCallback((e: { data: number }) => {
-    // Defer state update to next frame so React DOM changes (selection ring
-    // removal, overflow toggles) happen AFTER page-flip's drawFrame has hidden
-    // the old pages. Changing React state during the same rAF as the flip
-    // completion causes GPU compositor artifacts on the rotating page.
     requestAnimationFrame(() => {
       setCurrentSpread(Math.floor(e.data / 2))
     })
   }, [setCurrentSpread])
+
+  const onChangeState = useCallback((e: { data: string }) => {
+    if (e.data === 'flipping') {
+      deselectAll()
+    }
+  }, [deselectAll])
 
   const flipNext = useCallback(() => {
     deselectAll()
@@ -1851,6 +1853,7 @@ export default function EditorCanvas() {
             mobileScrollSupport={true}
             swipeDistance={30}
             onFlip={onFlip}
+            onChangeState={onChangeState}
             className="album-flipbook"
             style={flipBookStyle}
           >
