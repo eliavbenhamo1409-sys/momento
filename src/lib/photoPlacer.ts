@@ -432,11 +432,76 @@ export function placePhotosInSpreads(
   })
 }
 
-// ─── Empty Page Validation ──────────────────────────────────────────
+// ─── Empty / Sparse Page Validation ─────────────────────────────────
+
+const SPARSE_COVERAGE_THRESHOLD = 30
+
+function computePageCoverage(
+  template: LayoutTemplate | undefined,
+  side: 'left' | 'right',
+  filledSlotIds: Set<string>,
+): number {
+  if (!template) return 100
+  const pageSlots = template.slots.filter(s => s.page === side)
+  if (pageSlots.length === 0) return 0
+  const filledArea = pageSlots
+    .filter(s => filledSlotIds.has(s.id))
+    .reduce((sum, s) => sum + (s.width / 100) * (s.height / 100) * 100, 0)
+  return filledArea
+}
+
+function getSpreadSceneInfo(
+  spread: EditorSpread,
+  allScores: Map<string, PhotoScore>,
+): { scene?: string; setting?: string } {
+  const allUrls = [
+    ...spread.leftPhotos.filter(Boolean),
+    ...spread.rightPhotos.filter(Boolean),
+  ] as string[]
+
+  const spreadScores: PhotoScore[] = []
+  for (const url of allUrls) {
+    for (const [id, score] of allScores) {
+      if (url.includes(id) || id === url) { spreadScores.push(score); break }
+    }
+  }
+
+  if (spreadScores.length === 0) return { setting: spread.theme }
+
+  const sceneCounts: Record<string, number> = {}
+  for (const s of spreadScores) sceneCounts[s.scene] = (sceneCounts[s.scene] || 0) + 1
+  const scene = Object.entries(sceneCounts).sort(([, a], [, b]) => b - a)[0]?.[0]
+  return { scene, setting: spread.theme }
+}
+
+function buildFillForSide(
+  side: 'left' | 'right',
+  scene?: string,
+  setting?: string,
+): EmptyPageFill {
+  const quote = generateContextualQuote(scene, setting)
+  const sceneBg = getSceneBackground(scene, setting)
+  if (sceneBg) {
+    return {
+      type: 'ai-background',
+      side,
+      prompt: sceneBg.prompt,
+      gradient: sceneBg.gradient,
+      text: quote.text,
+    }
+  }
+  return {
+    type: 'quote',
+    side,
+    text: quote.text,
+    gradient: 'linear-gradient(180deg, #FAF8F5 0%, #F0EDE8 100%)',
+  }
+}
 
 /**
- * Post-placement pass: detect spreads with one completely empty side
+ * Post-placement pass: detect spreads with empty OR sparse sides
  * and tag them with a fill strategy (AI background, quote, or gradient).
+ * "Sparse" = filled photo slots cover less than 30% of the page area.
  */
 export function validateAndFillEmptyPages(
   spreads: EditorSpread[],
@@ -446,57 +511,24 @@ export function validateAndFillEmptyPages(
     const template = getTemplate(spread.templateId)
     if (template?.spanning) continue
 
-    const leftHas = spread.leftPhotos.some(p => p !== null)
-    const rightHas = spread.rightPhotos.some(p => p !== null)
+    const filledSlotIds = new Set(
+      (spread.slots ?? [])
+        .filter(s => s.photoUrl)
+        .map(s => s.slotId),
+    )
 
-    if (leftHas && rightHas) continue
-    if (!leftHas && !rightHas) continue
+    const leftCoverage = computePageCoverage(template, 'left', filledSlotIds)
+    const rightCoverage = computePageCoverage(template, 'right', filledSlotIds)
 
-    const emptySide: 'left' | 'right' = leftHas ? 'right' : 'left'
+    const leftSparse = leftCoverage < SPARSE_COVERAGE_THRESHOLD
+    const rightSparse = rightCoverage < SPARSE_COVERAGE_THRESHOLD
 
-    const photoIds = [
-      ...spread.leftPhotos.filter(Boolean),
-      ...spread.rightPhotos.filter(Boolean),
-    ] as string[]
-    const spreadScores = photoIds
-      .map(url => {
-        for (const [id, score] of allScores) {
-          if (url.includes(id) || id === url) return score
-        }
-        return undefined
-      })
-      .filter((s): s is PhotoScore => !!s)
+    if (!leftSparse && !rightSparse) continue
+    if (leftSparse && rightSparse) continue
 
-    const dominantScene = spreadScores.length > 0
-      ? spreadScores.reduce((acc, s) => {
-          acc[s.scene] = (acc[s.scene] || 0) + 1
-          return acc
-        }, {} as Record<string, number>)
-      : {}
-    const scene = Object.entries(dominantScene).sort(([, a], [, b]) => b - a)[0]?.[0]
-    const setting = spread.theme
-
-    const sceneBg = getSceneBackground(scene, setting)
-
-    let fill: EmptyPageFill
-    if (sceneBg) {
-      fill = {
-        type: 'ai-background',
-        side: emptySide,
-        prompt: sceneBg.prompt,
-        gradient: sceneBg.gradient,
-      }
-    } else {
-      const quote = generateContextualQuote(scene, setting)
-      fill = {
-        type: 'quote',
-        side: emptySide,
-        text: quote.text,
-        gradient: 'linear-gradient(180deg, #FAF8F5 0%, #F0EDE8 100%)',
-      }
-    }
-
-    spread.emptyPageFill = fill
+    const sparseSide: 'left' | 'right' = leftSparse ? 'left' : 'right'
+    const { scene, setting } = getSpreadSceneInfo(spread, allScores)
+    spread.emptyPageFill = buildFillForSide(sparseSide, scene, setting)
   }
 }
 

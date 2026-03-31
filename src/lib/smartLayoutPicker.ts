@@ -199,13 +199,18 @@ export function pickBestTemplate(
   position: number,
   totalSpreads: number,
 ): LayoutTemplate {
+  const photoCount = group.photoIds.length
+
   if (position === 0) return getTemplate('cover-hero')!
-  if (position === totalSpreads - 1) return getTemplate('closing')!
+  if (position === totalSpreads - 1) {
+    const closing = getTemplate('closing')!
+    const closingSlots = closing.slots.filter(s => !s.id.endsWith('-mirror')).length
+    if (photoCount >= closingSlots) return closing
+  }
 
   const extremeUsedCount = previousTemplateIds.filter((id) => EXTREME_ORIENTATION_TEMPLATES.has(id)).length
   const extremeBudgetExhausted = extremeUsedCount >= MAX_EXTREME_PAGES
 
-  const photoCount = group.photoIds.length
   const portraitRatio = group.orientationMix.portrait / photoCount
   const effectiveMax = portraitRatio >= 0.6
     ? Math.min(photoCount, 4)
@@ -221,7 +226,16 @@ export function pickBestTemplate(
     .filter((t) => isTemplateAllowedAtPosition(t.id, position, previousTemplateIds))
 
   if (candidates.length === 0) {
-    return getFallbackTemplate(position, totalSpreads)
+    const fallback = getFallbackTemplate(position, totalSpreads)
+    const fallbackSlots = fallback.slots.filter(s => !s.id.endsWith('-mirror')).length
+    if (fallbackSlots <= photoCount) return fallback
+    const safeMatch = LAYOUT_TEMPLATES.find(t =>
+      t.category !== 'cover' && t.category !== 'closing' &&
+      t.slots.filter(s => !s.id.endsWith('-mirror')).length <= photoCount &&
+      photoCount >= t.minPhotos &&
+      !t.spanning,
+    )
+    return safeMatch ?? getTemplate('editorial-cinematic')!
   }
 
   let bestTemplate = candidates[0]
@@ -297,7 +311,13 @@ export function buildSmartSpreadPlans(
 
     let template: LayoutTemplate
     if (isLastSpread && i > 0) {
-      template = getTemplate('closing')!
+      const closingTemplate = getTemplate('closing')!
+      const closingSlotCount = closingTemplate.slots.filter(s => !s.id.endsWith('-mirror')).length
+      if (group.photoIds.length >= closingSlotCount) {
+        template = closingTemplate
+      } else {
+        template = pickBestTemplate(group, scores, previousTemplateIds, i, effectiveSpreads)
+      }
     } else {
       template = pickBestTemplate(group, scores, previousTemplateIds, i, effectiveSpreads)
     }

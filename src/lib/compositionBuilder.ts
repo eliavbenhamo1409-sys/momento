@@ -101,15 +101,24 @@ export function buildSpreadDesign(
 
   if (spread.emptyPageFill) {
     const fill = spread.emptyPageFill
-    if (fill.type === 'quote' && fill.text) {
+    if ((fill.type === 'quote' || fill.type === 'ai-background') && fill.text) {
+      const existingOnSide = elements.filter(
+        el => el.type === 'photo' && (el as PhotoElement).page === fill.side,
+      ) as PhotoElement[]
+      const maxBottom = existingOnSide.reduce(
+        (max, el) => Math.max(max, el.y + el.height), 0,
+      )
+      const quoteY = maxBottom > 5 ? maxBottom + 5 : 35
+      const availHeight = Math.max(20, 95 - quoteY)
+
       const fillQuote: QuoteElement = {
         type: 'quote',
         text: fill.text,
         page: fill.side,
         x: 10,
-        y: 30,
+        y: quoteY,
         width: 80,
-        height: 40,
+        height: Math.min(availHeight, 40),
         fontFamily: style.typography.quoteFont,
         fontWeight: style.typography.quoteWeight,
         fontSize: 22,
@@ -122,6 +131,8 @@ export function buildSpreadDesign(
         quoteMarks: style.decorative.quoteMarks,
       }
       elements.push(fillQuote)
+    } else if (fill.type === 'quote' && !fill.text) {
+      // no-op: no text available
     }
   }
 
