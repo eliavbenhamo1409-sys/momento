@@ -342,7 +342,7 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     id: 'text-heavy',
     name: 'חלוקת פרקים',
     category: 'text',
-    minPhotos: 1,
+    minPhotos: 2,
     maxPhotos: 2,
     acceptsQuote: true,
     quotePosition: 'left-bottom',
@@ -364,7 +364,7 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     id: 'closing',
     name: 'סיום',
     category: 'closing',
-    minPhotos: 1,
+    minPhotos: 2,
     maxPhotos: 4,
     acceptsQuote: true,
     quotePosition: 'right-center',
@@ -699,10 +699,10 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
   // ── 24. Grid 4+3 (7 photos) ─────────────────────────────────────
   {
     id: 'grid-4-3',
-    name: 'רשת 4+3',
+    name: 'רשת 4+4',
     category: 'grid',
     minPhotos: 7,
-    maxPhotos: 7,
+    maxPhotos: 8,
     acceptsQuote: false,
     cannotRepeatWithin: 4,
     bestForMood: ['joyful', 'energetic', 'nostalgic'],
@@ -715,6 +715,7 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       slot('r-tl', 'right', 0, 0, 50, 50, { importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('r-tr', 'right', 50, 0, 50, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('r-bl', 'right', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-br', 'right', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
     ],
   },
 
@@ -877,14 +878,14 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     bestForMood: ['dramatic', 'romantic', 'tender', 'serene'],
     bestForScene: ['portrait', 'outdoor', 'indoor'],
     slots: [
-      slot('portrait-full', 'left', 5, 5, 90, 90, {
+      slot('portrait-full', 'left', 0, 0, 100, 100, {
         importance: 'hero', minQuality: 6, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
       }),
-      slot('right-main', 'right', 10, 5, 80, 55, {
-        importance: 'primary', minQuality: 4, accepts: ['any'],
+      slot('right-main', 'right', 0, 0, 100, 55, {
+        importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('right-accent', 'right', 20, 65, 60, 30, {
-        importance: 'accent', minQuality: 3, accepts: ['any'],
+      slot('right-accent', 'right', 0, 55, 100, 45, {
+        importance: 'accent', minQuality: 3, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
     ],
   },
@@ -960,7 +961,7 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       slot('right-feature', 'right', 0, 0, 65, 65, {
         importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('right-bottom-left', 'right', 0, 65, 65, 35, {
+      slot('right-bottom', 'right', 0, 65, 100, 35, {
         importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
       slot('right-side', 'right', 65, 0, 35, 65, {
@@ -988,7 +989,7 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       slot('right-large', 'right', 0, 0, 100, 60, {
         importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('right-small', 'right', 25, 60, 75, 40, {
+      slot('right-small', 'right', 0, 60, 100, 40, {
         importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
     ],
@@ -1032,8 +1033,8 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     id: 'photo-over-photo',
     name: 'תמונה על תמונה',
     category: 'hero',
-    minPhotos: 3,
-    maxPhotos: 4,
+    minPhotos: 4,
+    maxPhotos: 5,
     acceptsQuote: true,
     quotePosition: 'right-center',
     cannotRepeatWithin: 4,
@@ -1052,6 +1053,9 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       slot('right-bottom-left', 'right', 0, 55, 50, 45, {
         importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
+      slot('right-bottom-right', 'right', 50, 55, 50, 45, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
     ],
   },
 
@@ -1060,8 +1064,8 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     id: 'photo-over-photo-right',
     name: 'תמונה על תמונה ימין',
     category: 'hero',
-    minPhotos: 3,
-    maxPhotos: 4,
+    minPhotos: 4,
+    maxPhotos: 5,
     acceptsQuote: false,
     cannotRepeatWithin: 4,
     bestForMood: ['romantic', 'dramatic', 'serene', 'tender'],
@@ -1071,6 +1075,9 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
         importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
       slot('left-bottom-left', 'left', 0, 55, 50, 45, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('left-bottom-right', 'left', 50, 55, 50, 45, {
         importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
       slot('bg-photo', 'right', 0, 0, 100, 100, {
@@ -1138,8 +1145,8 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     bestForScene: ['portrait', 'outdoor', 'landscape_scenic'],
     slots: [
       slot('l-tall', 'left', 0, 0, 45, 100, { importance: 'hero', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
-      slot('l-wide', 'left', 45, 0, 55, 55, { importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
-      slot('r-main', 'right', 10, 10, 80, 80, { importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-wide', 'left', 45, 0, 55, 100, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-main', 'right', 0, 0, 100, 100, { importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
     ],
   },
 
@@ -1155,10 +1162,10 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     bestForMood: ['dramatic', 'energetic', 'joyful'],
     bestForScene: ['outdoor', 'group', 'action', 'portrait'],
     slots: [
-      slot('l-hero', 'left', 0, 0, 65, 65, { importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('l-bottom', 'left', 0, 65, 65, 35, { importance: 'accent', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+      slot('l-hero', 'left', 0, 0, 100, 60, { importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bottom', 'left', 0, 60, 100, 40, { importance: 'accent', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
       slot('r-top', 'right', 0, 0, 100, 45, { importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
-      slot('r-bottom', 'right', 15, 45, 70, 55, { importance: 'secondary', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom', 'right', 0, 45, 100, 55, { importance: 'secondary', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
     ],
   },
 

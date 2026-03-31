@@ -231,8 +231,6 @@ export function buildSmartSpreadPlans(
   const mutableGroups = groups.map((g) => ({ ...g, photoIds: [...g.photoIds] }))
 
   // Ensure the closing spread (last) has enough photos to fill both pages.
-  // The closing template has 3 slots (1 left hero + 2 right).
-  // If the last group is too small, borrow photos from the previous group.
   const lastIdx = Math.min(mutableGroups.length, totalSpreads) - 1
   if (lastIdx > 0) {
     const lastGroup = mutableGroups[lastIdx]
@@ -260,13 +258,27 @@ export function buildSmartSpreadPlans(
         }
       }
 
-      console.log(`[אלבום חכם] עמוד סיום: הושלם ל-${lastGroup.photoIds.length} תמונות (הושאלו מעמודים קודמים)`)
+      // If the last group still has < 2 photos, merge it into the previous group
+      if (lastGroup.photoIds.length < 2 && lastIdx > 0) {
+        const prevGroup = mutableGroups[lastIdx - 1]
+        prevGroup.photoIds.push(...lastGroup.photoIds)
+        mutableGroups.splice(lastIdx, 1)
+      }
     }
   }
 
-  for (let i = 0; i < mutableGroups.length && i < totalSpreads; i++) {
+  const effectiveSpreads = Math.min(mutableGroups.length, totalSpreads)
+
+  for (let i = 0; i < effectiveSpreads; i++) {
     const group = mutableGroups[i]
-    const template = pickBestTemplate(group, scores, previousTemplateIds, i, totalSpreads)
+    const isLastSpread = i === effectiveSpreads - 1
+
+    let template: LayoutTemplate
+    if (isLastSpread && i > 0) {
+      template = getTemplate('closing')!
+    } else {
+      template = pickBestTemplate(group, scores, previousTemplateIds, i, effectiveSpreads)
+    }
 
     previousTemplateIds.push(template.id)
 

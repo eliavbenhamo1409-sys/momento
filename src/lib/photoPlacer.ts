@@ -329,7 +329,26 @@ export function placePhotosInSpreads(
     const hasLeft = leftPhotos.some(p => p !== null)
     const hasRight = rightPhotos.some(p => p !== null)
 
-    if ((!hasLeft || !hasRight) && !template.spanning && planScores.length >= 2) {
+    if ((!hasLeft || !hasRight) && !template.spanning) {
+      // 1-photo spread: duplicate onto both pages as a cinematic duo
+      if (planScores.length === 1) {
+        const singleUrl = photoUrlMap.get(planScores[0].photoId) ?? ''
+        const crop = computeCrop(planScores[0], { id: 'forced', page: 'left', x: 0, y: 0, width: 100, height: 100, importance: 'hero', accepts: ['any'], safeZone: { top: 0, bottom: 0, left: 0, right: 0 } })
+        const pos = crop ? `${Math.round(crop.focusX * 100)}% ${Math.round(crop.focusY * 100)}%` : '50% 35%'
+        return {
+          id: `spread-${idx}-${Date.now().toString(36)}`,
+          templateId: 'editorial-cinematic',
+          leftPhotos: [singleUrl],
+          rightPhotos: [singleUrl],
+          quote: plan.quote,
+          slots: [
+            { slotId: 'l-main', photoUrl: singleUrl, objectFit: 'cover', objectPosition: pos, transform: '' },
+            { slotId: 'r-main', photoUrl: singleUrl, objectFit: 'cover', objectPosition: pos, transform: '' },
+          ],
+          theme: plan.theme,
+        }
+      }
+
       const fallback = getFallbackTemplate(idx, totalSpreads)
       if (fallback.id !== template.id) {
         const fbAssignments = matchPhotosToSlots(fallback.slots, planScores, photoUrlMap)

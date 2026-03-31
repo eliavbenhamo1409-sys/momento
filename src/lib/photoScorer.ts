@@ -471,6 +471,39 @@ export function buildPageGroups(
     merged.push(group.slice(0, mid), group.slice(mid))
   }
 
+  // Final sweep: eliminate any remaining 1-photo groups by merging into neighbours
+  let swept = true
+  while (swept) {
+    swept = false
+    for (let i = 0; i < merged.length; i++) {
+      if (merged[i].length !== 1) continue
+      swept = true
+      const singleton = merged.splice(i, 1)[0]
+      const singleSetting = groupDominantSetting(singleton)
+
+      let bestTarget = -1
+      let bestScore = -Infinity
+      for (let t = 0; t < merged.length; t++) {
+        if (merged[t].length >= MAX_GROUP) continue
+        const tSetting = groupDominantSetting(merged[t])
+        let score = -merged[t].length
+        if (singleSetting && tSetting === singleSetting) score += 100
+        const dist = Math.abs(t - Math.min(i, merged.length - 1))
+        if (dist <= 1) score += 10
+        if (score > bestScore) { bestScore = score; bestTarget = t }
+      }
+      if (bestTarget >= 0) {
+        merged[bestTarget].push(...singleton)
+      } else if (merged.length > 0) {
+        const nearest = Math.min(i, merged.length - 1)
+        merged[nearest].push(...singleton)
+      } else {
+        merged.push(singleton)
+      }
+      break
+    }
+  }
+
   // Build final PageGroup objects with eventId from dominant setting
   const result: PageGroup[] = [...heroGroups]
   let groupIdx = 0
