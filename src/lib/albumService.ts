@@ -1,4 +1,5 @@
 import { supabase, getPublicUrl } from './supabase'
+import { mergeAlbumConfig } from '../store/albumStore'
 import type { EditorSpread } from '../types'
 import type { AlbumConfig } from '../types'
 
@@ -128,7 +129,8 @@ export async function loadAlbum(albumId: string): Promise<AlbumRow | null> {
     if (error.code === 'PGRST116') return null
     throw error
   }
-  return data as AlbumRow
+  const row = data as AlbumRow
+  return { ...row, config: mergeAlbumConfig(row.config) }
 }
 
 export async function listUserAlbums(userId: string): Promise<AlbumRow[]> {
@@ -139,7 +141,10 @@ export async function listUserAlbums(userId: string): Promise<AlbumRow[]> {
     .order('updated_at', { ascending: false })
 
   if (error) throw error
-  return (data ?? []) as AlbumRow[]
+  return ((data ?? []) as AlbumRow[]).map((row) => ({
+    ...row,
+    config: mergeAlbumConfig(row.config),
+  }))
 }
 
 export async function deleteAlbum(albumId: string): Promise<void> {

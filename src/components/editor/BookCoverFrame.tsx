@@ -31,8 +31,10 @@ const MATERIALS: Record<CoverMaterial, {
   },
 }
 
-export function BookCoverFrame({ material }: { material: CoverMaterial }) {
-  const m = MATERIALS[material]
+const DEFAULT_MATERIAL: CoverMaterial = 'linen'
+
+export function BookCoverFrame({ material }: { material: CoverMaterial | undefined }) {
+  const m = MATERIALS[material ?? DEFAULT_MATERIAL] ?? MATERIALS[DEFAULT_MATERIAL]
 
   return (
     <motion.div
@@ -109,10 +111,11 @@ export function CoverMaterialPicker({
   value,
   onChange,
 }: {
-  value: CoverMaterial
+  value: CoverMaterial | undefined
   onChange: (m: CoverMaterial) => void
 }) {
   const materials: CoverMaterial[] = ['linen', 'white', 'light-brown']
+  const safeValue = value && materials.includes(value) ? value : DEFAULT_MATERIAL
 
   return (
     <motion.div
@@ -125,7 +128,7 @@ export function CoverMaterialPicker({
       <div className="flex items-center gap-1.5">
         {materials.map((mat) => {
           const info = MATERIALS[mat]
-          const isActive = mat === value
+          const isActive = mat === safeValue
           return (
             <motion.button
               key={mat}

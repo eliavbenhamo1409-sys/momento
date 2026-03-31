@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Photo, AlbumConfig, PhotoScore, CuratedPhotoSet } from '../types'
+import type { Photo, AlbumConfig, PhotoScore, CuratedPhotoSet, CoverMaterial } from '../types'
 
 export interface VibeReference {
   id: string
@@ -49,6 +49,23 @@ const defaultConfig: AlbumConfig = {
   designFamily: null,
   vibeText: '',
   backgroundMode: 'white',
+}
+
+/** Merge DB/partial config with defaults so new fields never break load (e.g. older rows without coverMaterial). */
+export function mergeAlbumConfig(raw: unknown): AlbumConfig {
+  if (!raw || typeof raw !== 'object') return { ...defaultConfig }
+  const r = raw as Partial<AlbumConfig>
+  const validMaterials: CoverMaterial[] = ['linen', 'white', 'light-brown']
+  const cm = r.coverMaterial
+  return {
+    ...defaultConfig,
+    ...r,
+    people: Array.isArray(r.people) ? r.people : [...defaultConfig.people],
+    backgroundMode: r.backgroundMode === 'ai-generated' ? 'ai-generated' : defaultConfig.backgroundMode,
+    coverMaterial: validMaterials.includes(cm as CoverMaterial)
+      ? (cm as CoverMaterial)
+      : defaultConfig.coverMaterial,
+  }
 }
 
 export const useAlbumStore = create<AlbumState>((set) => ({
