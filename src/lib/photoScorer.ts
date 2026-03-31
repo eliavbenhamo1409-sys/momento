@@ -289,7 +289,12 @@ function multiSignalCluster(
       sameDay &&
       !settingConflict &&
       current.length < maxGroup &&
-      (hasSameSetting || (gapMin <= 30 && current.some(m => m.scene === photo.scene)))
+      gapMin <= 240 &&
+      (
+        gapMin <= 30
+          ? (hasSameSetting || current.some(m => m.scene === photo.scene))
+          : (hasSameSetting && current.some(m => m.scene === photo.scene))
+      )
 
     if (shouldGroup) {
       current.push(photo)

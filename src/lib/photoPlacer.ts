@@ -7,6 +7,7 @@ import type {
   FinalSlotData,
   SlotDefinition,
   EditorSpread,
+  EmptyPageFill,
   SpreadDesign,
   PhotoElement,
   SpreadSequenceSlot,
@@ -21,6 +22,7 @@ import {
   LAYOUT_TEMPLATES,
   isTemplateAllowedAtPosition,
 } from './layoutGrammar'
+import { getSceneBackground, generateContextualQuote } from './conceptPicker'
 
 // ─── Orientation matching score ─────────────────────────────────────
 
@@ -428,6 +430,74 @@ export function placePhotosInSpreads(
       theme: plan.theme,
     }
   })
+}
+
+// ─── Empty Page Validation ──────────────────────────────────────────
+
+/**
+ * Post-placement pass: detect spreads with one completely empty side
+ * and tag them with a fill strategy (AI background, quote, or gradient).
+ */
+export function validateAndFillEmptyPages(
+  spreads: EditorSpread[],
+  allScores: Map<string, PhotoScore>,
+): void {
+  for (const spread of spreads) {
+    const template = getTemplate(spread.templateId)
+    if (template?.spanning) continue
+
+    const leftHas = spread.leftPhotos.some(p => p !== null)
+    const rightHas = spread.rightPhotos.some(p => p !== null)
+
+    if (leftHas && rightHas) continue
+    if (!leftHas && !rightHas) continue
+
+    const emptySide: 'left' | 'right' = leftHas ? 'right' : 'left'
+
+    const photoIds = [
+      ...spread.leftPhotos.filter(Boolean),
+      ...spread.rightPhotos.filter(Boolean),
+    ] as string[]
+    const spreadScores = photoIds
+      .map(url => {
+        for (const [id, score] of allScores) {
+          if (url.includes(id) || id === url) return score
+        }
+        return undefined
+      })
+      .filter((s): s is PhotoScore => !!s)
+
+    const dominantScene = spreadScores.length > 0
+      ? spreadScores.reduce((acc, s) => {
+          acc[s.scene] = (acc[s.scene] || 0) + 1
+          return acc
+        }, {} as Record<string, number>)
+      : {}
+    const scene = Object.entries(dominantScene).sort(([, a], [, b]) => b - a)[0]?.[0]
+    const setting = spread.theme
+
+    const sceneBg = getSceneBackground(scene, setting)
+
+    let fill: EmptyPageFill
+    if (sceneBg) {
+      fill = {
+        type: 'ai-background',
+        side: emptySide,
+        prompt: sceneBg.prompt,
+        gradient: sceneBg.gradient,
+      }
+    } else {
+      const quote = generateContextualQuote(scene, setting)
+      fill = {
+        type: 'quote',
+        side: emptySide,
+        text: quote.text,
+        gradient: 'linear-gradient(180deg, #FAF8F5 0%, #F0EDE8 100%)',
+      }
+    }
+
+    spread.emptyPageFill = fill
+  }
 }
 
 /**

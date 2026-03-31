@@ -547,6 +547,7 @@ function buildVibePrompt(
   pageIndex: number,
   totalPages: number,
   hasReferences: boolean,
+  sceneHint?: string,
 ): string {
   const variation = PAGE_VARIATION_SEEDS[pageIndex % PAGE_VARIATION_SEEDS.length]
   const position = pageIndex === 0
@@ -568,10 +569,15 @@ The references are the ground truth — follow them faithfully.`
     ? `The overall vibe requested by the client: "${vibeText}"`
     : ''
 
+  const sceneInstruction = sceneHint
+    ? `Scene context for this specific page: "${sceneHint}" — subtly incorporate this atmosphere into the background texture and color palette.`
+    : ''
+
   return `Create a beautiful, artistic background image for a premium photo album page.
 
 ${vibeInstruction}
 ${referenceInstruction}
+${sceneInstruction}
 
 This is page ${pageIndex + 1} of ${totalPages}. ${position}
 
@@ -664,6 +670,7 @@ export async function generateSpreadBackgrounds(
   vibeText?: string,
   onPageDone?: (done: number, total: number) => void,
   referenceDataUrls?: string[],
+  sceneHints?: (string | undefined)[],
 ): Promise<(string | null)[]> {
   const totalPages = _packs.length
   const results: (string | null)[] = new Array(totalPages).fill(null)
@@ -682,7 +689,7 @@ export async function generateSpreadBackgrounds(
     const batchPromises: Promise<string | null>[] = []
 
     for (let i = b; i < batchEnd; i++) {
-      const prompt = buildVibePrompt(effectiveVibe, i, totalPages, hasRefs)
+      const prompt = buildVibePrompt(effectiveVibe, i, totalPages, hasRefs, sceneHints?.[i])
       batchPromises.push(generateSingleBackground(prompt, refs))
     }
 

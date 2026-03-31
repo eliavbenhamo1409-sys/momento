@@ -23,6 +23,15 @@ export interface EditorSpread {
   resolvedStyle?: ResolvedSpreadStyle
   design?: SpreadDesign
   moodConcept?: MoodConceptId
+  emptyPageFill?: EmptyPageFill
+}
+
+export interface EmptyPageFill {
+  type: 'ai-background' | 'quote' | 'gradient'
+  side: 'left' | 'right'
+  prompt?: string
+  text?: string
+  gradient?: string
 }
 
 // ─── Spread Composition (absolute-positioned rendering) ──────────────

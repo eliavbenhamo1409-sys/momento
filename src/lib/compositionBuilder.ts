@@ -99,6 +99,32 @@ export function buildSpreadDesign(
     buildLegacyPhotoElements(spread, margin, style, elements)
   }
 
+  if (spread.emptyPageFill) {
+    const fill = spread.emptyPageFill
+    if (fill.type === 'quote' && fill.text) {
+      const fillQuote: QuoteElement = {
+        type: 'quote',
+        text: fill.text,
+        page: fill.side,
+        x: 10,
+        y: 30,
+        width: 80,
+        height: 40,
+        fontFamily: style.typography.quoteFont,
+        fontWeight: style.typography.quoteWeight,
+        fontSize: 22,
+        italic: style.typography.quoteItalic,
+        color: style.palette.text,
+        align: 'center',
+        letterSpacing: style.typography.quoteLetterSpacing,
+        lineHeight: 1.6,
+        zIndex: 10,
+        quoteMarks: style.decorative.quoteMarks,
+      }
+      elements.push(fillQuote)
+    }
+  }
+
   if (spread.quote) {
     const quotePlacement = adj.quotePlacement
       ?? family.layoutBehavior.preferredQuotePlacement[0]
@@ -150,9 +176,17 @@ export function buildSpreadDesign(
     }
   }
 
-  const background = isWhiteBg
+  let background = isWhiteBg
     ? buildWhiteBackground()
     : buildBackground(spread, style, aiOverrides, family, role, moodPack, generatedBgUrl)
+
+  if (spread.emptyPageFill?.gradient && spread.emptyPageFill.type === 'gradient') {
+    background = {
+      ...background,
+      gradientWash: spread.emptyPageFill.gradient,
+      gradientWashOpacity: 0.6,
+    }
+  }
 
   return { elements, background }
 }

@@ -14,6 +14,7 @@ import { analyzePhotoBatch, analyzePhotoBatchGemini, generateSpreadBackgrounds }
 import { curatePhotos, buildPageGroups } from './photoScorer'
 import {
   placePhotosInSpreads,
+  validateAndFillEmptyPages,
   computeSmartFacePosition,
   computeFaceCropSeverity,
   isFaceVisibleAfterPosition,
@@ -248,6 +249,19 @@ export async function generateAlbum(
 
   const spreads = placePhotosInSpreads(spreadPlans, scoreMap, photoMap, spreadCount)
 
+  // ── Stage 4.1: Empty Page Validation ──
+  validateAndFillEmptyPages(spreads, scoreMap)
+
+  const filledCount = spreads.filter(s => s.emptyPageFill).length
+  if (filledCount > 0) {
+    console.log(`[אלבום חכם] ── שלב 4.1: מילוי עמודים ריקים — ${filledCount} עמודים טופלו ──`)
+    for (const spread of spreads) {
+      if (spread.emptyPageFill) {
+        console.log(`  עמוד ${spread.id}: צד ${spread.emptyPageFill.side} ← ${spread.emptyPageFill.type}`)
+      }
+    }
+  }
+
   console.log('[אלבום חכם] ── שלב 4: שיבוץ תמונות בתבניות ──')
   for (const spread of spreads) {
     const slotInfo = (spread.slots ?? []).map((s) => `${s.slotId}→${s.objectPosition || '50% 50%'}`).join(', ')
@@ -293,6 +307,10 @@ export async function generateAlbum(
     onProgress(4, 86, `מייצר ${spreads.length} רקעים מקוריים עם AI — כל עמוד ייחודי...`)
 
     try {
+      const sceneHints = spreads.map(s =>
+        s.emptyPageFill?.type === 'ai-background' ? s.emptyPageFill.prompt : undefined,
+      )
+
       generatedBackgrounds = await generateSpreadBackgrounds(
         moodPacksForBg,
         vibeText,
@@ -301,6 +319,7 @@ export async function generateAlbum(
           onProgress(4, pct, `נוצר רקע ${done}/${total}...`)
         },
         referenceDataUrls,
+        sceneHints,
       )
       const generatedCount = generatedBackgrounds.filter(Boolean).length
       onProgress(4, 90, `נוצרו ${generatedCount} רקעים ייחודיים לכל העמודים`)

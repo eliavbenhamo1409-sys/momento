@@ -165,7 +165,29 @@ function scoreTemplateForGroup(
   })
   if (!recentCategories.includes(template.category)) diversityBonus += 0.15
 
-  return fitScore + orientationBonus + heroBonus + photoCountMatch + slotFitScore + diversityBonus
+  const symmetry = computeSymmetryScore(template)
+
+  return fitScore + orientationBonus + heroBonus + photoCountMatch + slotFitScore + diversityBonus + symmetry * 0.3
+}
+
+function computeSymmetryScore(template: LayoutTemplate): number {
+  if (template.spanning) return 0.85
+
+  const leftSlots = template.slots.filter(s => s.page === 'left')
+  const rightSlots = template.slots.filter(s => s.page === 'right')
+  const leftArea = leftSlots.reduce((sum, s) => sum + s.width * s.height, 0)
+  const rightArea = rightSlots.reduce((sum, s) => sum + s.width * s.height, 0)
+  const maxArea = Math.max(leftArea, rightArea, 1)
+
+  if (Math.abs(leftArea - rightArea) / maxArea < 0.15) return 1.0
+
+  const lightArea = Math.min(leftArea, rightArea)
+  const pageArea = 100 * 100
+  const whitespace = (pageArea - lightArea) / pageArea * 100
+
+  if (whitespace >= 40) return 0.85
+  if (whitespace >= 25) return 0.5
+  return 0.2
 }
 
 // ─── Main picker ─────────────────────────────────────────────────────

@@ -51,8 +51,7 @@ function PageBackground({
       <>
         {bg.generatedBgUrl && (
           <div
-            className="absolute z-0 pointer-events-none overflow-hidden rounded-md"
-            style={{ inset: '3%' }}
+            className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
           >
             <div
               className="absolute inset-y-0"

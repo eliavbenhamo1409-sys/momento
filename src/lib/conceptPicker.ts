@@ -258,3 +258,254 @@ export function assignMoodConcepts(
 
   return assignments
 }
+
+// ─── Scene-to-Background Mapping ──────────────────────────────────────
+
+interface SceneBackgroundConfig {
+  prompt: string
+  gradient: string
+  palette: string
+}
+
+const SCENE_BACKGROUNDS: Record<string, SceneBackgroundConfig> = {
+  'ski': {
+    prompt: 'snowy mountain peaks, soft morning light, alpine landscape, powder snow, crisp winter air',
+    gradient: 'linear-gradient(180deg, #E8F0FE 0%, #B8D4F0 50%, #D6E8F7 100%)',
+    palette: 'cool-whites',
+  },
+  'snow': {
+    prompt: 'gentle snowfall over pine forest, soft diffused light, winter wonderland',
+    gradient: 'linear-gradient(180deg, #EDF2F7 0%, #C5D5E4 50%, #E2ECF4 100%)',
+    palette: 'cool-whites',
+  },
+  'beach': {
+    prompt: 'calm ocean waves meeting golden sand, warm sunset tones, gentle foam',
+    gradient: 'linear-gradient(180deg, #FDF5E6 0%, #F5E6D3 50%, #87CEEB 100%)',
+    palette: 'warm-sand',
+  },
+  'ocean': {
+    prompt: 'deep blue ocean water, soft horizon line, scattered clouds, serene atmosphere',
+    gradient: 'linear-gradient(180deg, #E0F0FF 0%, #A8D8EA 50%, #7EC8E3 100%)',
+    palette: 'ocean-blue',
+  },
+  'wedding': {
+    prompt: 'soft floral arrangement with blush pink and ivory petals, bokeh lights, romantic ambiance',
+    gradient: 'linear-gradient(180deg, #FFF5F5 0%, #F5E6D3 50%, #FDECEA 100%)',
+    palette: 'blush',
+  },
+  'ceremony': {
+    prompt: 'elegant venue interior with warm ambient lighting, soft drapery, floral accents',
+    gradient: 'linear-gradient(180deg, #FFF8F0 0%, #F5E6D3 50%, #EDE0D4 100%)',
+    palette: 'blush',
+  },
+  'city': {
+    prompt: 'urban skyline silhouette at twilight, city lights bokeh, soft purple-blue tones',
+    gradient: 'linear-gradient(180deg, #2C3E50 0%, #4A6741 50%, #34495E 100%)',
+    palette: 'urban-dark',
+  },
+  'urban': {
+    prompt: 'modern architecture with glass reflections, golden hour light on buildings',
+    gradient: 'linear-gradient(180deg, #F5F0EB 0%, #D4C5B2 50%, #E8DDD0 100%)',
+    palette: 'urban-warm',
+  },
+  'nature': {
+    prompt: 'lush green valley with morning mist, mountain trail, dappled sunlight through trees',
+    gradient: 'linear-gradient(180deg, #E8F5E9 0%, #A5D6A7 50%, #C8E6C9 100%)',
+    palette: 'forest',
+  },
+  'hiking': {
+    prompt: 'panoramic mountain vista with rolling hills, wildflowers, soft golden light',
+    gradient: 'linear-gradient(180deg, #F1F8E9 0%, #AED581 50%, #DCEDC8 100%)',
+    palette: 'forest',
+  },
+  'restaurant': {
+    prompt: 'warm candlelit table setting, soft bokeh, wine glasses, intimate dining atmosphere',
+    gradient: 'linear-gradient(180deg, #FFF3E0 0%, #E8C9A0 50%, #F5E0C3 100%)',
+    palette: 'warm-amber',
+  },
+  'food': {
+    prompt: 'rustic wooden table with artisan ingredients, warm natural light, culinary still life',
+    gradient: 'linear-gradient(180deg, #EFEBE9 0%, #D7CCC8 50%, #E8DDD0 100%)',
+    palette: 'warm-amber',
+  },
+  'garden': {
+    prompt: 'blooming flower garden with soft pastel colors, morning dew, gentle sunlight',
+    gradient: 'linear-gradient(180deg, #F1F8E9 0%, #E8F5E9 50%, #DCEDC8 100%)',
+    palette: 'garden-green',
+  },
+  'sunset': {
+    prompt: 'dramatic golden hour sky with warm orange and pink clouds, silhouetted horizon',
+    gradient: 'linear-gradient(180deg, #FFE0B2 0%, #FFAB91 50%, #FFD54F 100%)',
+    palette: 'golden',
+  },
+  'forest': {
+    prompt: 'dense forest canopy with light filtering through leaves, moss-covered ground, serene mood',
+    gradient: 'linear-gradient(180deg, #E8F5E9 0%, #81C784 50%, #C8E6C9 100%)',
+    palette: 'forest',
+  },
+}
+
+const SETTING_KEYWORD_MAP: [string[], string][] = [
+  [['ski', 'skiing', 'slopes', 'snowboard'], 'ski'],
+  [['snow', 'winter', 'snowy', 'ice'], 'snow'],
+  [['beach', 'shore', 'sand', 'coast', 'seaside'], 'beach'],
+  [['ocean', 'sea', 'waves', 'marine'], 'ocean'],
+  [['wedding', 'bride', 'groom', 'bridal'], 'wedding'],
+  [['ceremony', 'altar', 'chapel', 'vows'], 'ceremony'],
+  [['city', 'downtown', 'metropolitan', 'skyline'], 'city'],
+  [['urban', 'street', 'building', 'architecture'], 'urban'],
+  [['nature', 'outdoor', 'countryside', 'valley'], 'nature'],
+  [['hiking', 'trail', 'mountain', 'trek', 'hike'], 'hiking'],
+  [['restaurant', 'dining', 'cafe', 'bistro'], 'restaurant'],
+  [['food', 'cooking', 'kitchen', 'meal'], 'food'],
+  [['garden', 'flowers', 'bloom', 'botanical'], 'garden'],
+  [['sunset', 'sunrise', 'golden hour', 'dusk', 'dawn'], 'sunset'],
+  [['forest', 'woods', 'jungle', 'trees'], 'forest'],
+]
+
+export function getSceneBackground(
+  scene?: string,
+  setting?: string,
+): SceneBackgroundConfig | null {
+  const combined = `${scene ?? ''} ${setting ?? ''}`.toLowerCase()
+  if (!combined.trim()) return null
+
+  for (const [keywords, key] of SETTING_KEYWORD_MAP) {
+    if (keywords.some(kw => combined.includes(kw))) {
+      return SCENE_BACKGROUNDS[key] ?? null
+    }
+  }
+
+  return null
+}
+
+// ─── Contextual Text Templates ────────────────────────────────────────
+
+const SCENE_TEXT_TEMPLATES: Record<string, string[]> = {
+  'wedding': [
+    'To Love and To Cherish',
+    'The Beginning of Forever',
+    'Two Hearts, One Story',
+  ],
+  'ceremony': [
+    'A Moment We\'ll Never Forget',
+    'Sealed with a Promise',
+    'Where Forever Began',
+  ],
+  'proposal': [
+    'The Best Day of Our Lives',
+    'She Said Yes',
+    'Where Forever Began',
+  ],
+  'ski': [
+    'Chasing Snow',
+    'Mountain Memories',
+    'On Top of the World',
+  ],
+  'snow': [
+    'A Winter Tale',
+    'Snowbound Hearts',
+    'Frozen in Time',
+  ],
+  'beach': [
+    'Salt, Sand & Sun',
+    'Seaside Memories',
+    'Tides of Joy',
+  ],
+  'ocean': [
+    'Beyond the Horizon',
+    'Where the Ocean Meets the Sky',
+    'Waves of Wonder',
+  ],
+  'travel': [
+    'Adventures Together',
+    'Exploring the World, Side by Side',
+    'Wanderlust',
+  ],
+  'city': [
+    'City Lights',
+    'Urban Stories',
+    'Concrete & Dreams',
+  ],
+  'nature': [
+    'Into the Wild',
+    'Nature\'s Canvas',
+    'Breathe It In',
+  ],
+  'hiking': [
+    'The Path Less Traveled',
+    'Summit Bound',
+    'Every Step Together',
+  ],
+  'birthday': [
+    'Another Year of Amazing',
+    'Celebrate You',
+    'Making Wishes',
+  ],
+  'baby': [
+    'Hello, Little One',
+    'The Tiniest Adventure',
+    'A New Chapter Begins',
+  ],
+  'food': [
+    'A Feast to Remember',
+    'Savoring the Moment',
+    'Gathered Around the Table',
+  ],
+  'garden': [
+    'In Full Bloom',
+    'Where Beauty Grows',
+    'Petals & Sunshine',
+  ],
+  'sunset': [
+    'Golden Hour',
+    'Chasing the Light',
+    'Painted Skies',
+  ],
+  'forest': [
+    'Among the Trees',
+    'Whispers of the Forest',
+    'Rooted Together',
+  ],
+}
+
+const GENERIC_QUOTES = [
+  'Moments Worth Keeping',
+  'A Story in Every Frame',
+  'Forever Captured',
+  'These Are the Days',
+  'The Beauty of Now',
+]
+
+export interface ContextualQuote {
+  text: string
+  style: 'hero-title' | 'accent-quote'
+}
+
+export function generateContextualQuote(
+  scene?: string,
+  setting?: string,
+  position: 'opening' | 'mid' | 'closing' = 'mid',
+): ContextualQuote {
+  const combined = `${scene ?? ''} ${setting ?? ''}`.toLowerCase()
+
+  let templates: string[] | undefined
+  for (const [keywords, key] of SETTING_KEYWORD_MAP) {
+    if (keywords.some(kw => combined.includes(kw))) {
+      templates = SCENE_TEXT_TEMPLATES[key]
+      break
+    }
+  }
+
+  if (!templates) {
+    templates = GENERIC_QUOTES
+  }
+
+  const seed = combined.split('').reduce((h, c) => ((h << 5) - h + c.charCodeAt(0)) | 0, 0)
+  const text = templates[Math.abs(seed) % templates.length]
+
+  return {
+    text,
+    style: position === 'opening' ? 'hero-title' : 'accent-quote',
+  }
+}
