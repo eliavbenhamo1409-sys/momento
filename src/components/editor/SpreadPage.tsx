@@ -532,7 +532,7 @@ function LegacyPageElements({
 
   const template = spread.templateId ? getTemplate(spread.templateId) : undefined
   const allPageSlots = template?.slots.filter((s) => s.page === side) ?? []
-  const pageSlots = allPageSlots.slice(0, photos.length)
+  const pageSlots = allPageSlots
 
   if (template && pageSlots.length > 0 && photos.length > 0) {
     const gapPercent = gapPx * 0.2

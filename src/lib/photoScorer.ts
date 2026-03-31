@@ -268,9 +268,17 @@ function multiSignalCluster(
 
   for (let i = 1; i < sorted.length; i++) {
     const photo = sorted[i]
-    const prevDate = dateLookup.get(current[current.length - 1].photoId)?.getTime() ?? 0
-    const curDate = dateLookup.get(photo.photoId)?.getTime() ?? 0
+    const prevDateObj = dateLookup.get(current[current.length - 1].photoId)
+    const curDateObj = dateLookup.get(photo.photoId)
+    const prevDate = prevDateObj?.getTime() ?? 0
+    const curDate = curDateObj?.getTime() ?? 0
     const gapMin = Math.abs(curDate - prevDate) / 60_000
+
+    // Different calendar day = hard break (user rule: same date only)
+    const sameDay = prevDateObj && curDateObj &&
+      prevDateObj.getFullYear() === curDateObj.getFullYear() &&
+      prevDateObj.getMonth() === curDateObj.getMonth() &&
+      prevDateObj.getDate() === curDateObj.getDate()
 
     const hasSameSetting = current.some(m => settingsMatch(m, photo))
     const dominantSetting = groupDominantSetting(current)
@@ -278,6 +286,7 @@ function multiSignalCluster(
     const settingConflict = dominantSetting && photoSetting && dominantSetting !== photoSetting
 
     const shouldGroup =
+      sameDay &&
       !settingConflict &&
       current.length < maxGroup &&
       (hasSameSetting || (gapMin <= 30 && current.some(m => m.scene === photo.scene)))

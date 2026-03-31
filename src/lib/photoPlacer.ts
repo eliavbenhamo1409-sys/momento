@@ -261,6 +261,30 @@ function matchPhotosToSlots(
     }
   }
 
+  // Relaxed sweep: fill any remaining empty slots ignoring severity/orientation vetos
+  const finalAssignedSlots = new Set(assignments.map((a) => a.slotId))
+  const unfilledSlots = sortedSlots.filter((s) => !finalAssignedSlots.has(s.id))
+  const unusedPhotos = sortedPhotos.filter(
+    (p) => !usedPhotos.has(p.photoId) && !globalUsed?.has(p.photoId),
+  )
+
+  for (const slot of unfilledSlots) {
+    if (unusedPhotos.length === 0) break
+    const photo = unusedPhotos.shift()!
+    usedPhotos.add(photo.photoId)
+    globalUsed?.add(photo.photoId)
+    const crop = computeCrop(photo, slot)
+    assignments.push({
+      spreadIndex: 0,
+      slotId: slot.id,
+      photoId: photo.photoId,
+      photoUrl: photoUrlMap.get(photo.photoId) ?? '',
+      needsCrop: crop !== null,
+      cropSuggestion: crop,
+      fitMode: crop ? 'custom' : 'cover',
+    })
+  }
+
   return assignments
 }
 
@@ -308,19 +332,16 @@ export function placePhotosInSpreads(
     const assignments = matchPhotosToSlots(template.slots, planScores, photoUrlMap, globalUsed)
     const slotDataArr = assignments.map(cropToSlotData)
 
-    const assignedSlotIds = new Set(assignments.map(a => a.slotId))
     const leftSlots = template.slots.filter((s) => s.page === 'left')
     const rightSlots = template.slots.filter((s) => s.page === 'right')
 
     const leftPhotos: (string | null)[] = leftSlots
-      .filter(s => assignedSlotIds.has(s.id))
       .map((s) => {
         const a = assignments.find((a) => a.slotId === s.id)
         return a?.photoUrl ?? null
       })
 
     const rightPhotos: (string | null)[] = rightSlots
-      .filter(s => assignedSlotIds.has(s.id))
       .map((s) => {
         const a = assignments.find((a) => a.slotId === s.id)
         return a?.photoUrl ?? null
@@ -353,12 +374,11 @@ export function placePhotosInSpreads(
       if (fallback.id !== template.id) {
         const fbAssignments = matchPhotosToSlots(fallback.slots, planScores, photoUrlMap)
         const fbSlotData = fbAssignments.map(cropToSlotData)
-        const fbAssignedIds = new Set(fbAssignments.map(a => a.slotId))
-        const fbLeft = fallback.slots.filter(s => s.page === 'left' && fbAssignedIds.has(s.id)).map(s => {
+        const fbLeft = fallback.slots.filter(s => s.page === 'left').map(s => {
           const a = fbAssignments.find(a => a.slotId === s.id)
           return a?.photoUrl ?? null
         })
-        const fbRight = fallback.slots.filter(s => s.page === 'right' && fbAssignedIds.has(s.id)).map(s => {
+        const fbRight = fallback.slots.filter(s => s.page === 'right').map(s => {
           const a = fbAssignments.find(a => a.slotId === s.id)
           return a?.photoUrl ?? null
         })
@@ -372,6 +392,28 @@ export function placePhotosInSpreads(
             slots: fbSlotData,
             theme: plan.theme,
           }
+        }
+      }
+    }
+
+    // Last resort: if one page is still empty, force a simple 50/50 split
+    const finalHasLeft = leftPhotos.some(p => p !== null)
+    const finalHasRight = rightPhotos.some(p => p !== null)
+
+    if ((!finalHasLeft || !finalHasRight) && !template.spanning && planScores.length >= 2) {
+      const allUrls = planScores.map(s => photoUrlMap.get(s.photoId)).filter(Boolean) as string[]
+      const mid = Math.ceil(allUrls.length / 2)
+      const forcedLeft = allUrls.slice(0, mid)
+      const forcedRight = allUrls.slice(mid)
+      if (forcedLeft.length > 0 && forcedRight.length > 0) {
+        return {
+          id: `spread-${idx}-${Date.now().toString(36)}`,
+          templateId: 'editorial-cinematic',
+          leftPhotos: forcedLeft,
+          rightPhotos: forcedRight,
+          quote: plan.quote,
+          slots: slotDataArr,
+          theme: plan.theme,
         }
       }
     }
