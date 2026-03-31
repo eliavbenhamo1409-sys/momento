@@ -176,6 +176,7 @@ export interface PhotoScore {
   isCloseup: boolean
   isGroupShot: boolean
 
+  recommendedDisplay: PhotoOrientation
   similarityCluster?: string
   description: string
   setting?: string

@@ -77,7 +77,7 @@ function scoreTemplateForGroup(
 
   let fitScore = 0
   for (let i = 0; i < usedSlots.length && i < groupPhotos.length; i++) {
-    fitScore += orientationFitScore(usedSlots[i], groupPhotos[i].orientation)
+    fitScore += orientationFitScore(usedSlots[i], groupPhotos[i].recommendedDisplay ?? groupPhotos[i].orientation)
   }
   fitScore /= Math.max(usedSlots.length, 1)
 
@@ -112,9 +112,10 @@ function scoreTemplateForGroup(
   if (group.bestPhotoQuality >= 8) {
     const bestPhoto = scores.get(group.bestPhotoId)
     if (bestPhoto) {
-      if (bestPhoto.orientation === 'landscape' && tid === 'full-spread') heroBonus += 0.5
-      if (bestPhoto.orientation === 'portrait' && (tid === 'single-portrait' || tid === 'full-spread')) heroBonus += 0.5
-      if (bestPhoto.orientation === 'portrait' && PORTRAIT_TEMPLATES.includes(tid)) heroBonus += 0.4
+      const bestDisplay = bestPhoto.recommendedDisplay ?? bestPhoto.orientation
+      if (bestDisplay === 'landscape' && tid === 'full-spread') heroBonus += 0.5
+      if (bestDisplay === 'portrait' && (tid === 'single-portrait' || tid === 'full-spread')) heroBonus += 0.5
+      if (bestDisplay === 'portrait' && PORTRAIT_TEMPLATES.includes(tid)) heroBonus += 0.4
       const heroSlot = template.slots.find((s) => s.importance === 'hero')
       if (heroSlot) heroBonus += 0.1
       if (group.bestPhotoQuality >= 9) heroBonus += 0.15

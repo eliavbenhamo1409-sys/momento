@@ -760,6 +760,7 @@ function createDefaultScore(
     isHeroCandidate: false,
     isCloseup: false,
     isGroupShot: false,
+    recommendedDisplay: 'square',
     description: '',
   }
 }

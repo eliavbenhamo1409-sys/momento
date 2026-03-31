@@ -108,7 +108,7 @@ export async function buildOrientationSpreadPlans(
     const score = scoreMap.get(p.id)
     return {
       id: p.id,
-      orientation: score?.orientation ?? detectOrientation(p.width, p.height),
+      orientation: score?.recommendedDisplay ?? score?.orientation ?? detectOrientation(p.width, p.height),
       quality: score?.overallQuality ?? 5,
       date: dateLookup.get(p.id) ?? new Date(0),
     }

@@ -202,7 +202,7 @@ export function curatePhotos(
 
 function buildOrientationMix(photos: PhotoScore[]): PageGroup['orientationMix'] {
   const mix = { landscape: 0, portrait: 0, square: 0 }
-  for (const p of photos) mix[p.orientation]++
+  for (const p of photos) mix[p.recommendedDisplay ?? p.orientation]++
   return mix
 }
 

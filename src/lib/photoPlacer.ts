@@ -99,7 +99,8 @@ function computeCrop(
 
   const slotAspect = slot.width / slot.height
   const photoAspect = photo.aspectRatio
-  const orientationMatch = slot.accepts.includes(photo.orientation) || slot.accepts.includes('any')
+  const displayOrientation = photo.recommendedDisplay ?? photo.orientation
+  const orientationMatch = slot.accepts.includes(displayOrientation) || slot.accepts.includes('any')
   if (orientationMatch && Math.abs(slotAspect - photoAspect) < 0.3) {
     return null
   }
@@ -164,7 +165,7 @@ function matchPhotosToSlots(
     for (const photo of sortedPhotos) {
       if (usedPhotos.has(photo.photoId) || globalUsed?.has(photo.photoId)) continue
 
-      const oScore = orientationMatchScore(slot.accepts, photo.orientation)
+      const oScore = orientationMatchScore(slot.accepts, photo.recommendedDisplay ?? photo.orientation)
       const iScore = importanceMatchScore(slot.importance, photo.overallQuality)
       const fSafe = isFaceSafe(photo.facesRegion, slot.safeZone)
       const fPenalty = fSafe ? 0 : -0.3
@@ -448,7 +449,7 @@ export function placePhotosInDesigns(
       for (const photo of sortedPhotos) {
         if (globalUsed.has(photo.photoId)) continue
 
-        const oScore = slotAcceptsOrientation(slotAccepts, photo.orientation)
+        const oScore = slotAcceptsOrientation(slotAccepts, photo.recommendedDisplay ?? photo.orientation)
         const thresholds = { hero: 7, primary: 5, secondary: 3, accent: 1 }
         const threshold = thresholds[slot.importance] ?? 3
         const iScore = photo.overallQuality >= threshold ? 1.0 : photo.overallQuality >= threshold - 2 ? 0.6 : 0.3

@@ -39,6 +39,7 @@ For EACH image (numbered starting from 1), return a JSON object with these EXACT
 - is_hero_candidate: boolean (works well as a large/full-page photo?)
 - is_closeup: boolean
 - is_group_shot: boolean (3+ people)
+- recommended_display: one of: "square", "landscape", "portrait" — How this photo should be displayed in the album. IMPORTANT: default to "square" for the vast majority of photos. Only use "landscape" for photos with a truly wide scenic composition that would lose significant impact if cropped to square (e.g. wide panorama, expansive beach sunset with horizon). Only use "portrait" for photos with a tall vertical composition where important content would be cut off in square crop (e.g. full-body standing portrait, tall building). When in doubt, always choose "square".
 - description: one sentence in Hebrew describing the photo
 - setting: a short English tag for the specific setting/location (e.g. "ski resort", "beach sunset", "restaurant dinner", "park picnic", "city street", "home living room", "wedding ceremony", "pool party"). Be specific — two photos at the same place should get the same tag.
 
@@ -109,6 +110,7 @@ export async function analyzePhotoBatch(
       is_hero_candidate: boolean
       is_closeup: boolean
       is_group_shot: boolean
+      recommended_display?: string
       description: string
       setting?: string
     }>
@@ -120,6 +122,11 @@ export async function analyzePhotoBatch(
       orientation: detectOrientation(photo.width, photo.height),
       aspectRatio: photo.width / photo.height,
     }
+
+    const validDisplays = ['square', 'landscape', 'portrait'] as const
+    const recDisplay = validDisplays.includes(raw.recommended_display as typeof validDisplays[number])
+      ? (raw.recommended_display as PhotoScore['recommendedDisplay'])
+      : 'square'
 
     return {
       photoId: photo.id,
@@ -140,6 +147,7 @@ export async function analyzePhotoBatch(
       isHeroCandidate: raw.is_hero_candidate ?? false,
       isCloseup: raw.is_closeup ?? false,
       isGroupShot: raw.is_group_shot ?? false,
+      recommendedDisplay: recDisplay,
       description: raw.description ?? '',
       setting: raw.setting ?? undefined,
     }
@@ -205,6 +213,7 @@ export async function analyzePhotoBatchGemini(
       is_hero_candidate: boolean
       is_closeup: boolean
       is_group_shot: boolean
+      recommended_display?: string
       description: string
       setting?: string
     }>
@@ -216,6 +225,11 @@ export async function analyzePhotoBatchGemini(
       orientation: detectOrientation(photo.width, photo.height),
       aspectRatio: photo.width / photo.height,
     }
+
+    const validDisplays = ['square', 'landscape', 'portrait'] as const
+    const recDisplay = validDisplays.includes(raw.recommended_display as typeof validDisplays[number])
+      ? (raw.recommended_display as PhotoScore['recommendedDisplay'])
+      : 'square'
 
     return {
       photoId: photo.id,
@@ -236,6 +250,7 @@ export async function analyzePhotoBatchGemini(
       isHeroCandidate: raw.is_hero_candidate ?? false,
       isCloseup: raw.is_closeup ?? false,
       isGroupShot: raw.is_group_shot ?? false,
+      recommendedDisplay: recDisplay,
       description: raw.description ?? '',
       setting: raw.setting ?? undefined,
     }
