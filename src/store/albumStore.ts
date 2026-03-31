@@ -45,6 +45,7 @@ const defaultConfig: AlbumConfig = {
   pages: 30,
   size: '30x30',
   coverType: 'hard',
+  coverMaterial: 'linen',
   designFamily: null,
   vibeText: '',
   backgroundMode: 'white',

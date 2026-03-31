@@ -3,9 +3,11 @@ import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import HTMLFlipBook from 'react-pageflip'
 import { useEditorStore } from '../../store/editorStore'
+import { useAlbumStore } from '../../store/albumStore'
 import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 import SpreadPage from './SpreadPage'
+import { BookCoverFrame, CoverMaterialPicker } from './BookCoverFrame'
 import { DEFAULT_FRAME, DEFAULT_STYLE, getTexturePattern } from './editorDefaults'
 import type {
   EditorSpread,
@@ -1621,6 +1623,9 @@ export default function EditorCanvas() {
     movePhotoToEmptySlot: s.movePhotoToEmptySlot,
   })))
 
+  const coverMaterial = useAlbumStore((s) => s.config.coverMaterial)
+  const setCoverMaterial = useAlbumStore((s) => s.setConfigField)
+
   const spread: EditorSpread | undefined = spreads[currentSpreadIndex] ?? spreads[0]
   const spreadCount = spreads.length
   const canPrev = currentSpreadIndex > 0
@@ -1829,6 +1834,8 @@ export default function EditorCanvas() {
           }}
           onClick={(e) => e.stopPropagation()}
         >
+          <BookCoverFrame material={coverMaterial} />
+
           <HTMLFlipBook
             ref={bookRef}
             width={550}
@@ -1880,6 +1887,14 @@ export default function EditorCanvas() {
           direction="next"
           disabled={!canNext}
           onClick={flipNext}
+        />
+      </div>
+
+      {/* Cover material selector */}
+      <div className="flex justify-center mt-3">
+        <CoverMaterialPicker
+          value={coverMaterial}
+          onChange={(m) => setCoverMaterial('coverMaterial', m)}
         />
       </div>
     </div>

@@ -666,6 +666,8 @@ export interface QuestionOption {
   icon?: string
 }
 
+export type CoverMaterial = 'linen' | 'white' | 'light-brown'
+
 export interface AlbumConfig {
   type: string | null
   style: string | null
@@ -675,6 +677,7 @@ export interface AlbumConfig {
   pages: number
   size: string
   coverType: string
+  coverMaterial: CoverMaterial
   designFamily: string | null
   vibeText: string
   backgroundMode: 'white' | 'ai-generated'
