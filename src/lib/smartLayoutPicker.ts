@@ -52,7 +52,18 @@ const MIXED_TEMPLATES = [
   'editorial-grid-duo', 'editorial-hero-mosaic', 'editorial-stagger-3',
   'editorial-magazine', 'editorial-cinematic',
   'mini-collage-12', 'mini-collage-9',
+  'hero-caption-left', 'hero-caption-right', 'hero-trio-bottom',
+  'story-spread', 'editorial-asymmetric', 'mosaic-hero-accent', 'cinematic-caption',
 ]
+
+const CAPTION_TEMPLATES = new Set([
+  'hero-caption-left', 'hero-caption-right', 'cinematic-caption', 'story-spread',
+])
+
+const STORY_TEMPLATES = new Set([
+  'story-spread', 'hero-caption-left', 'hero-caption-right',
+  'cinematic-caption', 'editorial-cinematic',
+])
 
 const EXTREME_ORIENTATION_TEMPLATES = new Set([
   'portrait-duo', 'portrait-trio', 'portrait-grid-4',
@@ -175,7 +186,14 @@ function scoreTemplateForGroup(
     collageBonus = isCollageTemplate ? 1.5 : -0.3
   }
 
-  return fitScore + orientationBonus + heroBonus + photoCountMatch + slotFitScore + diversityBonus + symmetry * 0.3 + collageBonus
+  // Caption/story bonus: high-quality hero groups prefer templates with text zones
+  let captionBonus = 0
+  if (group.bestPhotoQuality >= 8) {
+    if (CAPTION_TEMPLATES.has(tid)) captionBonus += 0.6
+    if (STORY_TEMPLATES.has(tid)) captionBonus += 0.3
+  }
+
+  return fitScore + orientationBonus + heroBonus + photoCountMatch + slotFitScore + diversityBonus + symmetry * 0.3 + collageBonus + captionBonus
 }
 
 function computeSymmetryScore(template: LayoutTemplate): number {

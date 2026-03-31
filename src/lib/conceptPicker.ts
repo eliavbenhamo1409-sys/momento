@@ -509,3 +509,106 @@ export function generateContextualQuote(
     style: position === 'opening' ? 'hero-title' : 'accent-quote',
   }
 }
+
+// ── Hero Caption Generation ──────────────────────────────────────────
+
+const HERO_CAPTION_MAP: Record<string, { script: string[]; serif: string[] }> = {
+  romantic: {
+    script: ['Forever Yours', 'A Love Like This', 'You & Me', 'Always Together', 'My Whole Heart'],
+    serif: ['Love Story', 'Two Hearts', 'The Story of Us'],
+  },
+  portrait: {
+    script: ['A Beautiful Moment', 'Just You', 'Captured in Time'],
+    serif: ['Portrait of a Day', 'In This Moment', 'Timeless'],
+  },
+  landscape_scenic: {
+    script: ['Where the Sky Meets the Earth', 'Wide Open Spaces', 'The View from Here'],
+    serif: ['Horizons', 'Into the Wild', 'A World Away'],
+  },
+  wedding: {
+    script: ['The Moment We Said Yes', 'To Love and to Cherish', 'Our Forever Begins'],
+    serif: ['The Wedding Day', 'Married at Last', 'I Do'],
+  },
+  food: {
+    script: ['Gathered with Love', 'A Taste of Joy'],
+    serif: ['Around the Table', 'The Feast'],
+  },
+  outdoor: {
+    script: ['Under Open Skies', 'Chasing the Light', 'The Great Outdoors'],
+    serif: ['Adventures Await', 'Into the Wild'],
+  },
+  travel: {
+    script: ['Wanderlust', 'Adventures Together', 'Far from Home'],
+    serif: ['The Journey', 'Exploring New Horizons'],
+  },
+  baby: {
+    script: ['Hello, Little One', 'The Tiniest Adventure', 'Our New Beginning'],
+    serif: ['A New Chapter', 'Welcome to the World'],
+  },
+  group: {
+    script: ['All Together Now', 'Our Favorite People'],
+    serif: ['The Crew', 'Friends & Family'],
+  },
+  indoor: {
+    script: ['At Home with You', 'Quiet Moments'],
+    serif: ['Home Sweet Home', 'Inside Stories'],
+  },
+}
+
+const FALLBACK_CAPTIONS = {
+  script: ['Moments to Remember', 'A Beautiful Day', 'Written in the Stars', 'Live, Love, Laugh'],
+  serif: ['Memories', 'The Album', 'Chapter One'],
+}
+
+export function generateHeroCaption(
+  scene?: string,
+  setting?: string,
+  emotion?: string,
+): { text: string; font: 'script' | 'serif' } {
+  const key = scene?.toLowerCase() ?? setting?.toLowerCase() ?? ''
+  const fontType: 'script' | 'serif' = (emotion === 'dramatic' || emotion === 'formal') ? 'serif' : 'script'
+
+  const matchedEntry = Object.entries(HERO_CAPTION_MAP).find(([k]) => key.includes(k))
+  const pool = matchedEntry ? matchedEntry[1][fontType] : FALLBACK_CAPTIONS[fontType]
+
+  const seed = (key + (emotion ?? '')).split('').reduce((a, c) => a + c.charCodeAt(0), 0)
+  const text = pool[Math.abs(seed) % pool.length]
+
+  return { text, font: fontType }
+}
+
+// ── Smart AI Background Decisions ────────────────────────────────────
+
+export function shouldGenerateBackground(
+  spread: {
+    leftPhotos: (string | null)[]
+    rightPhotos: (string | null)[]
+    templateId?: string
+    emptyPageFill?: { type: string }
+  },
+  scoreMap: Map<string, { overallQuality: number; scene?: string; setting?: string }>,
+  sequenceSlot?: { role?: string },
+  urlToIdMap?: Map<string, string>,
+): string | null {
+  if (spread.emptyPageFill) return null
+
+  const role = sequenceSlot?.role
+  if (role !== 'hero' && role !== 'opening' && role !== 'breathing') return null
+
+  const allUrls = [...spread.leftPhotos, ...spread.rightPhotos].filter((u): u is string => u != null)
+  if (allUrls.length > 5) return null
+
+  const scores = allUrls
+    .map(url => {
+      const photoId = urlToIdMap?.get(url) ?? url
+      return scoreMap.get(photoId)
+    })
+    .filter(Boolean) as Array<{ overallQuality: number; scene?: string; setting?: string }>
+  const best = scores.sort((a, b) => b.overallQuality - a.overallQuality)[0]
+  if (!best || best.overallQuality < 8) return null
+
+  const bg = getSceneBackground(best.scene, best.setting)
+  if (!bg) return null
+
+  return bg.prompt
+}

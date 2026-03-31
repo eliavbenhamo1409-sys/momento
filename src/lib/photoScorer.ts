@@ -359,14 +359,17 @@ export function buildPageGroups(
     )
     if (heroPhoto && group.length >= 3) {
       const rest = group.filter((p) => p.photoId !== heroPhoto.photoId)
-      const companion = rest.reduce((best, p) =>
-        p.overallQuality > best.overallQuality ? p : best, rest[0])
+      const maxCompanions = Math.min(3, rest.length)
+      const companions = rest
+        .sort((a, b) => b.overallQuality - a.overallQuality)
+        .slice(0, maxCompanions)
+      const companionIds = new Set(companions.map(c => c.photoId))
       heroGroups.push(buildGroupMeta(
         `hero-${heroPhoto.photoId}`,
-        [heroPhoto, companion],
+        [heroPhoto, ...companions],
         'hero',
       ))
-      const remaining = rest.filter((p) => p.photoId !== companion.photoId)
+      const remaining = rest.filter((p) => !companionIds.has(p.photoId))
       if (remaining.length > 0) normalGroups.push(remaining)
     } else {
       normalGroups.push(group)

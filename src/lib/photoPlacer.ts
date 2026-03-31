@@ -453,6 +453,7 @@ function computePageCoverage(
 function getSpreadSceneInfo(
   spread: EditorSpread,
   allScores: Map<string, PhotoScore>,
+  urlToIdMap?: Map<string, string>,
 ): { scene?: string; setting?: string } {
   const allUrls = [
     ...spread.leftPhotos.filter(Boolean),
@@ -461,6 +462,11 @@ function getSpreadSceneInfo(
 
   const spreadScores: PhotoScore[] = []
   for (const url of allUrls) {
+    const photoId = urlToIdMap?.get(url)
+    if (photoId) {
+      const score = allScores.get(photoId)
+      if (score) { spreadScores.push(score); continue }
+    }
     for (const [id, score] of allScores) {
       if (url.includes(id) || id === url) { spreadScores.push(score); break }
     }
@@ -506,6 +512,7 @@ function buildFillForSide(
 export function validateAndFillEmptyPages(
   spreads: EditorSpread[],
   allScores: Map<string, PhotoScore>,
+  urlToIdMap?: Map<string, string>,
 ): void {
   for (const spread of spreads) {
     const template = getTemplate(spread.templateId)
@@ -527,7 +534,7 @@ export function validateAndFillEmptyPages(
     if (leftSparse && rightSparse) continue
 
     const sparseSide: 'left' | 'right' = leftSparse ? 'left' : 'right'
-    const { scene, setting } = getSpreadSceneInfo(spread, allScores)
+    const { scene, setting } = getSpreadSceneInfo(spread, allScores, urlToIdMap)
     spread.emptyPageFill = buildFillForSide(sparseSide, scene, setting)
   }
 }

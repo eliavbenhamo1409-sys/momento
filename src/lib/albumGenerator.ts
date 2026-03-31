@@ -26,7 +26,7 @@ import { getDesignFamily } from './designFamilies'
 import { planAlbumSequence } from './rhythmOrchestrator'
 import { resolveAlbumVisuals } from './resolveSpreadVisuals'
 import { buildAlbumCompositions, buildSpreadDesign } from './compositionBuilder'
-import { assignMoodConcepts } from './conceptPicker'
+import { assignMoodConcepts, generateHeroCaption, shouldGenerateBackground } from './conceptPicker'
 
 export type ProgressCallback = (
   stage: number,
@@ -222,6 +222,10 @@ export async function generateAlbum(
 
   const scoreMap = new Map(allScores.map((s) => [s.photoId, s]))
   const photoMap = new Map(photos.map((p) => [p.id, p]))
+  const urlToIdMap = new Map<string, string>()
+  for (const [id, photo] of photoMap) {
+    urlToIdMap.set(photo.fullUrl, id)
+  }
 
   await sleep(700)
   onProgress(2, 68, 'בוחר תבנית מתאימה לכל עמוד...')
@@ -250,7 +254,7 @@ export async function generateAlbum(
   const spreads = placePhotosInSpreads(spreadPlans, scoreMap, photoMap, spreadCount)
 
   // ── Stage 4.1: Empty Page Validation ──
-  validateAndFillEmptyPages(spreads, scoreMap)
+  validateAndFillEmptyPages(spreads, scoreMap, urlToIdMap)
 
   const filledCount = spreads.filter(s => s.emptyPageFill).length
   if (filledCount > 0) {
@@ -266,6 +270,28 @@ export async function generateAlbum(
   for (const spread of spreads) {
     const slotInfo = (spread.slots ?? []).map((s) => `${s.slotId}→${s.objectPosition || '50% 50%'}`).join(', ')
     console.log(`  עמוד ${spread.id}: תבנית="${spread.templateId}" | חריצים=[${slotInfo}]`)
+  }
+
+  // ── Stage 4.2: Hero Caption Population ──
+  let captionCount = 0
+  for (let i = 0; i < spreads.length; i++) {
+    const seq = sequencePlan[i]
+    if (!seq?.isQuoteSpread && seq?.role !== 'hero') continue
+    if (spreads[i].quote) continue
+
+    const allUrls = [...spreads[i].leftPhotos, ...spreads[i].rightPhotos].filter((u): u is string => u != null)
+    const scores = allUrls
+      .map(url => scoreMap.get(urlToIdMap.get(url) ?? ''))
+      .filter(Boolean) as PhotoScore[]
+    const best = scores.sort((a, b) => b.overallQuality - a.overallQuality)[0]
+    if (!best || best.overallQuality < 7) continue
+
+    const caption = generateHeroCaption(best.scene, best.setting, best.emotion)
+    spreads[i].quote = caption.text
+    captionCount++
+  }
+  if (captionCount > 0) {
+    console.log(`[אלבום חכם] ── שלב 4.2: כיתובים — ${captionCount} כיתובים נוצרו ──`)
   }
 
   await sleep(700)
@@ -307,9 +333,11 @@ export async function generateAlbum(
     onProgress(4, 86, `מייצר ${spreads.length} רקעים מקוריים עם AI — כל עמוד ייחודי...`)
 
     try {
-      const sceneHints = spreads.map(s =>
-        s.emptyPageFill?.type === 'ai-background' ? s.emptyPageFill.prompt : undefined,
-      )
+      const sceneHints = spreads.map((s, idx) => {
+        if (s.emptyPageFill?.type === 'ai-background') return s.emptyPageFill.prompt
+        const hint = shouldGenerateBackground(s, scoreMap, sequencePlan[idx], urlToIdMap)
+        return hint ?? undefined
+      })
 
       generatedBackgrounds = await generateSpreadBackgrounds(
         moodPacksForBg,

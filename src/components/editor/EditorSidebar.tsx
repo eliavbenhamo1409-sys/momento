@@ -197,6 +197,17 @@ export default function EditorSidebar() {
     setShowMargins(false)
   }, [])
 
+  const sidebarMode = useEditorStore((s) => s.sidebarMode)
+
+  useEffect(() => {
+    if (sidebarMode === 'ai') {
+      closeAll()
+      setShowAIBg(true)
+      setActiveTool('ai')
+      useEditorStore.setState({ sidebarMode: 'page' })
+    }
+  }, [sidebarMode, closeAll])
+
   useEffect(() => {
     const handler = () => {
       closeAll()
@@ -264,7 +275,7 @@ export default function EditorSidebar() {
         />
         <ToolBtn
           icon="text_fields"
-          label="טקסט"
+          label="הוסף טקסט"
           active={activeTool === 'text' || showTextPanel}
           onClick={() => {
             setShowLayoutPicker(false)

@@ -96,6 +96,8 @@ export function planAlbumSequence(
     const role = resolveRole(innerIndex, rhythm, composition, hasHeroCandidates)
     const isBreathing = role === 'breathing'
     const isQuote = shouldPlaceQuote(i, rhythm.quoteEveryN, plan)
+      || role === 'hero'
+      || role === 'breathing'
 
     plan.push({
       index: i,

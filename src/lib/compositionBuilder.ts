@@ -137,6 +137,9 @@ export function buildSpreadDesign(
   }
 
   if (spread.quote) {
+    const isCaptionTemplate = template && template.acceptsQuote && (
+      template.id.includes('caption') || template.id === 'story-spread'
+    )
     const quotePlacement = adj.quotePlacement
       ?? family.layoutBehavior.preferredQuotePlacement[0]
       ?? 'center'
@@ -148,6 +151,16 @@ export function buildSpreadDesign(
       style,
       aiOverrides,
     )
+
+    if (isCaptionTemplate) {
+      quoteElement.fontFamily = style.typography.captionFont ?? style.typography.quoteFont
+      quoteElement.fontWeight = style.typography.captionWeight ?? 300
+      quoteElement.italic = true
+      quoteElement.fontSize = 26
+      quoteElement.letterSpacing = 0.5
+      quoteElement.lineHeight = 1.8
+    }
+
     elements.push(quoteElement)
   }
 
@@ -191,7 +204,7 @@ export function buildSpreadDesign(
     ? buildWhiteBackground()
     : buildBackground(spread, style, aiOverrides, family, role, moodPack, generatedBgUrl)
 
-  if (spread.emptyPageFill?.gradient && spread.emptyPageFill.type === 'gradient') {
+  if (spread.emptyPageFill?.gradient) {
     background = {
       ...background,
       gradientWash: spread.emptyPageFill.gradient,

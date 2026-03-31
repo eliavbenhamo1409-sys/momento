@@ -43,7 +43,7 @@ function PageBackground({
   side: 'left' | 'right'
   heroPhotoSrc?: string | null
 }) {
-  const offsetLeft = side === 'left' ? '-100%' : '0'
+  const offsetLeft = side === 'left' ? '0' : '-100%'
 
   if (design) {
     const bg = design.background

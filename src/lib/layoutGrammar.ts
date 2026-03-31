@@ -1241,6 +1241,148 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       slot('r-main', 'right', 5, 5, 90, 90, { importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
     ],
   },
+
+  // ── 46. Hero + Caption Left ────────────────────────────────────────
+  {
+    id: 'hero-caption-left',
+    name: 'גיבור + כיתוב שמאל',
+    category: 'hero',
+    minPhotos: 3,
+    maxPhotos: 4,
+    acceptsQuote: true,
+    quotePosition: 'left-bottom',
+    cannotRepeatWithin: 4,
+    bestForMood: ['romantic', 'dramatic', 'serene', 'tender', 'nostalgic'],
+    bestForScene: ['portrait', 'landscape_scenic', 'outdoor'],
+    slots: [
+      slot('l-hero', 'left', 0, 0, 100, 72, { importance: 'hero', minQuality: 7, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-top', 'right', 0, 0, 100, 50, { importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom-l', 'right', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom-r', 'right', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 47. Hero + Caption Right ───────────────────────────────────────
+  {
+    id: 'hero-caption-right',
+    name: 'גיבור + כיתוב ימין',
+    category: 'hero',
+    minPhotos: 3,
+    maxPhotos: 4,
+    acceptsQuote: true,
+    quotePosition: 'right-bottom',
+    cannotRepeatWithin: 4,
+    bestForMood: ['romantic', 'dramatic', 'serene', 'tender', 'nostalgic'],
+    bestForScene: ['portrait', 'landscape_scenic', 'outdoor'],
+    slots: [
+      slot('l-top', 'left', 0, 0, 100, 50, { importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bottom-l', 'left', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bottom-r', 'left', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-hero', 'right', 0, 0, 100, 72, { importance: 'hero', minQuality: 7, accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 48. Hero Trio Bottom (spanning hero + 3 companions) ────────────
+  {
+    id: 'hero-trio-bottom',
+    name: 'גיבור + שלישייה',
+    category: 'hero',
+    minPhotos: 4,
+    maxPhotos: 4,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'energetic', 'dramatic', 'nostalgic'],
+    bestForScene: ['outdoor', 'group', 'landscape_scenic', 'action'],
+    spanning: true,
+    spanningSlotIds: ['top-hero'],
+    slots: [
+      slot('top-hero', 'left', 0, 0, 100, 62, { importance: 'hero', minQuality: 7, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+      slot('bottom-1', 'left', 0, 65, 50, 35, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('bottom-2', 'right', 0, 65, 50, 35, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('bottom-3', 'right', 50, 65, 50, 35, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 49. Story Spread (hero + text zone + companions) ───────────────
+  {
+    id: 'story-spread',
+    name: 'עמוד סיפור',
+    category: 'text',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: true,
+    quotePosition: 'right-top',
+    cannotRepeatWithin: 5,
+    bestForMood: ['romantic', 'serene', 'nostalgic', 'tender'],
+    bestForScene: ['portrait', 'landscape_scenic', 'outdoor', 'detail'],
+    slots: [
+      slot('l-hero', 'left', 0, 0, 100, 100, { importance: 'hero', minQuality: 7, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom-l', 'right', 0, 55, 50, 45, { importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom-r', 'right', 50, 55, 50, 45, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 50. Editorial Asymmetric ───────────────────────────────────────
+  {
+    id: 'editorial-asymmetric',
+    name: 'אדיטוריאל א-סימטרי',
+    category: 'balanced',
+    minPhotos: 4,
+    maxPhotos: 4,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['dramatic', 'energetic', 'joyful', 'nostalgic'],
+    bestForScene: ['outdoor', 'portrait', 'indoor', 'group'],
+    slots: [
+      slot('l-hero', 'left', 0, 0, 70, 100, { importance: 'hero', minQuality: 6, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+      slot('l-accent', 'left', 70, 60, 30, 40, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-top', 'right', 0, 0, 100, 55, { importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom', 'right', 0, 55, 50, 45, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 51. Mosaic Hero Accent (hero + strip + grid) ───────────────────
+  {
+    id: 'mosaic-hero-accent',
+    name: 'פסיפס גיבור',
+    category: 'mosaic',
+    minPhotos: 7,
+    maxPhotos: 7,
+    acceptsQuote: false,
+    cannotRepeatWithin: 5,
+    bestForMood: ['joyful', 'energetic', 'nostalgic'],
+    bestForScene: ['group', 'outdoor', 'indoor', 'detail', 'food'],
+    slots: [
+      slot('l-hero', 'left', 0, 0, 65, 65, { importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bottom', 'left', 0, 65, 65, 35, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-strip', 'left', 65, 0, 35, 100, { importance: 'secondary', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-tl', 'right', 0, 0, 50, 50, { importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-tr', 'right', 50, 0, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bl', 'right', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-br', 'right', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 52. Cinematic Caption (spanning hero + companion + text) ───────
+  {
+    id: 'cinematic-caption',
+    name: 'קולנועי + כיתוב',
+    category: 'hero',
+    minPhotos: 2,
+    maxPhotos: 3,
+    acceptsQuote: true,
+    quotePosition: 'right-bottom',
+    cannotRepeatWithin: 4,
+    bestForMood: ['dramatic', 'romantic', 'serene', 'nostalgic', 'tender'],
+    bestForScene: ['landscape_scenic', 'portrait', 'outdoor'],
+    spanning: true,
+    spanningSlotIds: ['top-hero'],
+    slots: [
+      slot('top-hero', 'left', 0, 0, 100, 58, { importance: 'hero', minQuality: 7, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+      slot('bottom-left', 'left', 0, 62, 50, 38, { importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('bottom-right-photo', 'right', 50, 62, 50, 38, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
 ]
 
 // ─── Template Lookup ────────────────────────────────────────────────
