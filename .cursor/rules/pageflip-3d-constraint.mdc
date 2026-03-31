@@ -20,19 +20,22 @@ When flipping a page, ONE photo from the destination page would appear "dressed 
 
 ---
 
-## SIX mandatory constraints
+## SEVEN mandatory constraints
 
 ### 1. Deselect before flipping (arrows AND swipe)
 
 `flipNext` and `flipPrev` MUST call `deselectAll()` first, then defer the actual flip to the next animation frame. **Additionally**, `onChangeState` MUST be wired to call `deselectAll()` when the state becomes `"flipping"`. This catches swipe-initiated flips that bypass `flipNext`/`flipPrev`.
 
 ```tsx
-// ✅ onChangeState catches swipe/touch-initiated flips
-const onChangeState = useCallback((e: { data: string }) => {
-  if (e.data === 'flipping') {
-    deselectAll()
+const onChangeState = useCallback((e: { data: string; object: { getCurrentPageIndex: () => number } }) => {
+  if (e.data === 'flipping') deselectAll()
+  if (e.data === 'read') {
+    requestAnimationFrame(() => {
+      const page = e.object.getCurrentPageIndex()
+      setCurrentSpread(Math.floor(page / 2))
+    })
   }
-}, [deselectAll])
+}, [deselectAll, setCurrentSpread])
 ```
 
 This guarantees React commits the DOM change (`overflow: visible` → `hidden`) before page-flip renders its first frame, regardless of how the flip was initiated.
@@ -83,7 +86,11 @@ const flipPages = useMemo(() => spreads.flatMap((s, i) => [
 
 `SpreadPage` accepts ONLY `spread`, `side`, and `spreadIndex` as props. All interaction state (`selectedPhotoId`, `isCurrent`, `swapPhase`, etc.) is read via `useEditorStore()` hooks inside the component. This keeps the `flipPages` memo stable.
 
-### 5. Memoize HTMLFlipBook's `style` prop
+### 5. No placeholder virtualization (`isNearby`)
+
+**Never** early-return a minimal “empty” page (background + `scaleX(-1)` shell only) for non-current / distant spreads. When `currentSpreadIndex` or any `isNearby`-style flag flips during a flip, swapping from placeholder → full tree looks exactly like a flash or “next page’s photo jumping forward.” **Every** `SpreadPage` must always render the same full subtree (`PageBackground`, `Legacy` / `Absolute` elements, etc.).
+
+### 6. Memoize HTMLFlipBook's `style` prop
 
 Use a stable reference: `const flipBookStyle = useMemo(() => ({}), [])`. A literal `style={{}}` creates a new object every render, which bypasses `React.memo` and triggers unnecessary `updateFromHtml()`.
 
@@ -99,7 +106,7 @@ Use a stable reference: `const flipBookStyle = useMemo(() => ({}), [])`. A liter
 }
 ```
 
-- `transform-style: flat !important` — Prevents children (inner content wrapper) from participating in the parent's 3D context. Without this, nested transforms create compositor layer conflicts during the rotateY flip.
+- `transform-style: flat !important` — Prevents page content from participating in the parent's 3D stacking in a way that causes compositor glitches during `rotateY` flip.
 - `overflow: hidden` — Hard clip boundary. Even if a photo somehow has `overflow: visible`, content cannot escape the page rectangle.
 - `background-color: #fff` — Ensures opaque pages; prevents destination page content from showing through transparent areas.
 
@@ -107,23 +114,13 @@ Use a stable reference: `const flipBookStyle = useMemo(() => ({}), [])`. A liter
 
 ---
 
-## SpreadPage inner wrapper structure
+## SpreadPage + EditorCanvas mirror layout (f135345 / 3e93e18 line)
 
-```tsx
-<div ref={ref} data-density="hard">        {/* ← .stf__item — bare, no styles */}
-  <div dir="rtl" style={{                   {/* ← inner wrapper — all visual styles */}
-    backgroundColor: bgColor,
-    width: '100%', height: '100%',
-    position: 'relative',
-    overflow: 'hidden',
-  }}>
-    <PageBackground ... />
-    <AbsolutePageElements ... />
-  </div>
-</div>
-```
+**EditorCanvas** — the `div` that wraps `<HTMLFlipBook>` uses `transform: scaleX(-1)` (with opacity transition as needed) so the book matches RTL reading order at the viewport level.
 
-The outer ref div MUST remain bare — `react-pageflip` overwrites its `style.cssText` every frame via `drawHard()` / `simpleDraw()`. Do **not** put `scaleX(-1)` on that outer node. Do **not** wrap `<HTMLFlipBook>` in an extra `scaleX(-1)` either: mirroring the whole flipbook fights the library’s 3D `transform` and causes reversed Hebrew text and inverted drag. Use `dir="rtl"` on the inner page wrapper for RTL instead of stacking horizontal mirrors.
+**SpreadPage** — **one** root node: `ref` + `data-density="hard"` + `dir="rtl"` + page chrome (`backgroundColor`, `width`/`height`, `position: relative`, `overflow: hidden`) + **`transform: 'scaleX(-1)'` on that same node**. `PageBackground`, ornaments, and `Absolute` / `Legacy` content are **direct children** — no extra inner wrapper used only to hold the mirror.
+
+The page-flip runtime applies its own `transform` on `.stf__item` during the flip; the product’s validated layout keeps RTL via the **pairing** of editor-level mirror + per-page mirror (same approach as the commits that removed the `isNearby` placeholder regression).
 
 ---
 
@@ -132,14 +129,12 @@ The outer ref div MUST remain bare — `react-pageflip` overwrites its `style.cs
 | Action | Why it breaks |
 |--------|--------------|
 | Call `setCurrentSpread` from `onFlip` | Store / `isCurrent` updates mid-flip → wrong layer or “jumping” content |
-| Wrap the flipbook in `scaleX(-1)` | Compositor + RTL conflicts; ref page transform fights parent mirror |
-| Add `scaleX(-1)` to SpreadPage’s outer ref div | Library overwrites transform — mirror disappears mid-flip |
-| Add `backfaceVisibility: hidden` to inner wrapper | GPU glitch with `scaleX(-1)` mirror |
+| Add `isNearby` (or similar) placeholder branch — empty page vs full content | **Core flash bug:** subtree swap when index changes mid-flip |
+| Add `backfaceVisibility: hidden` to SpreadPage root | GPU glitch with `scaleX(-1)` mirror |
 | Pass interaction state as props to SpreadPage | Breaks `flipPages` memoization → `updateFromHtml()` |
 | Use `style={{}}` on HTMLFlipBook | New object every render → breaks `React.memo` |
 | Call `flipNext()`/`flipPrev()` without `deselectAll()` first | `overflow: visible` on selected photo leaks across pages |
-| Remove `onChangeState` → `deselectAll` handler | Swipe-initiated flips bypass `flipNext`/`flipPrev`, so photos leak |
+| Remove `onChangeState` → `deselectAll` / `read` handlers | Swipe flips skip deselect; store drifts from book |
 | Remove `overflow: hidden` from `.stf__item` CSS | Last line of defense against content leaking between pages |
-| Remove `transform-style: flat !important` from `.stf__item` | Children participate in 3D context → compositor conflicts |
-| Add any transform to the outer ref div of SpreadPage | Conflicts with page-flip's inline `cssText` |
+| Remove `transform-style: flat !important` from `.stf__item` | Compositor conflicts during flip |
 | Add `AnimatePresence` or exit animations to page content | Ghost elements persist during flip, causing visual artifacts |

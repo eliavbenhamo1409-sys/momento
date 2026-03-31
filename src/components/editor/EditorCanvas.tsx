@@ -1823,6 +1823,7 @@ export default function EditorCanvas() {
         <div
           className="relative flex-1 min-w-0 w-full max-w-[min(84vw,68rem)] aspect-[2/1] max-h-[min(75vh,600px)] md:max-h-[min(68vh,600px)]"
           style={{
+            transform: 'scaleX(-1)',
             opacity: isTransitioning ? 0.5 : 1,
             transition: 'opacity 0.2s ease-out',
           }}
