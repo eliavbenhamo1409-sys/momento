@@ -90,30 +90,50 @@ function isFaceSafe(
 
 // ─── Crop suggestion computation ────────────────────────────────────
 
+/**
+ * Compute smart default vertical position when cropping.
+ * When a photo is taller than the slot (vertical crop), we bias toward
+ * the upper portion because faces/heads are almost always at the top.
+ * This prevents the common "head cut off" problem.
+ */
+function computeSmartDefaultY(photoAspect: number, slotW: number, slotH: number): number {
+  const slotAspect = slotW / slotH
+  if (photoAspect >= slotAspect) return 0.5
+
+  const visibleFraction = photoAspect / slotAspect
+  if (visibleFraction >= 0.85) return 0.45
+  if (visibleFraction >= 0.65) return 0.35
+  return 0.25
+}
+
 function computeCrop(
   photo: PhotoScore,
   slot: SlotDefinition,
 ): CropSuggestion | null {
+  const slotAspect = slot.width / slot.height
+  const photoAspect = photo.aspectRatio
+
   let focusX = 0.5
-  let focusY = 0.5
+  let focusY = computeSmartDefaultY(photoAspect, slot.width, slot.height)
 
   if (photo.hasFaces) {
     switch (photo.facesRegion) {
       case 'left': focusX = 0.30; break
       case 'right': focusX = 0.70; break
-      case 'top': focusY = 0.20; break
+      case 'top': focusY = 0.15; break
       case 'bottom': focusY = 0.75; break
-      case 'center': focusY = 0.25; break
-      case 'spread': focusY = 0.35; break
+      case 'center': focusY = 0.20; break
+      case 'spread': focusY = 0.30; break
     }
     return { focusX, focusY, scale: 1.0, reason: 'מיקוד על פנים' }
   }
 
-  const slotAspect = slot.width / slot.height
-  const photoAspect = photo.aspectRatio
-  const displayOrientation = photo.recommendedDisplay ?? photo.orientation
-  const orientationMatch = slot.accepts.includes(displayOrientation) || slot.accepts.includes('any')
-  if (orientationMatch && Math.abs(slotAspect - photoAspect) < 0.3) {
+  if (photo.peopleCount > 0 && photoAspect < slotAspect) {
+    focusY = Math.min(focusY, 0.30)
+    return { focusX, focusY, scale: 1.0, reason: 'הטיה לראש — אנשים בתמונה' }
+  }
+
+  if (Math.abs(slotAspect - photoAspect) < 0.15) {
     return null
   }
 
@@ -158,8 +178,10 @@ function matchPhotosToSlots(
       const displayOrientation = photo.recommendedDisplay ?? photo.orientation
       const oScore = orientationMatchScore(slot.accepts, displayOrientation, slot, photo.recommendedDisplay)
       if (oScore < 0) continue
-      const severity = photo.hasFaces
-        ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, photo.facesRegion)
+      const hasPeople = photo.hasFaces || photo.peopleCount > 0
+      const faceRegion = photo.hasFaces ? photo.facesRegion : (photo.peopleCount > 0 ? 'center' as const : 'none' as const)
+      const severity = hasPeople
+        ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, faceRegion)
         : 0
       if (severity > 0.4) continue
 
@@ -195,8 +217,10 @@ function matchPhotosToSlots(
     for (const photo of sortedPhotos) {
       if (usedPhotos.has(photo.photoId) || globalUsed?.has(photo.photoId)) continue
 
-      const severity = photo.hasFaces
-        ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, photo.facesRegion)
+      const hasPeople = photo.hasFaces || photo.peopleCount > 0
+      const faceRegion = photo.hasFaces ? photo.facesRegion : (photo.peopleCount > 0 ? 'center' as const : 'none' as const)
+      const severity = hasPeople
+        ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, faceRegion)
         : 0
       if (severity > 0.4) continue
 
@@ -390,39 +414,35 @@ export function computeSmartFacePosition(
   let yPct = 50
 
   if (isVerticalCrop) {
-    // Photo is more portrait than slot — top/bottom is cropped
-    const photoVisibleHeight = slotAspect / photoAspect
-    const overflowRatio = 1 - (1 / photoVisibleHeight)
-    // More overflow = need more aggressive positioning
-    const aggressiveness = Math.min(overflowRatio * 2, 1)
+    const visibleFraction = photoAspect / slotAspect
+    const croppedFraction = 1 - visibleFraction
+    const severe = croppedFraction > 0.3
 
     switch (facesRegion) {
-      case 'top': yPct = 10 + (1 - aggressiveness) * 10; break
-      case 'center': yPct = 20 + (1 - aggressiveness) * 15; break
-      case 'spread': yPct = 25 + (1 - aggressiveness) * 10; break
-      case 'bottom': yPct = 80 - (1 - aggressiveness) * 10; break
-      case 'left': xPct = 40; yPct = 30; break
-      case 'right': xPct = 60; yPct = 30; break
-      default: break
+      case 'top': yPct = severe ? 5 : 10; break
+      case 'center': yPct = severe ? 10 : 20; break
+      case 'spread': yPct = severe ? 15 : 25; break
+      case 'bottom': yPct = severe ? 85 : 75; break
+      case 'left': xPct = 35; yPct = severe ? 15 : 25; break
+      case 'right': xPct = 65; yPct = severe ? 15 : 25; break
+      default: yPct = severe ? 25 : 35; break
     }
   } else if (isHorizontalCrop) {
-    // Photo is more landscape than slot — left/right is cropped
     switch (facesRegion) {
-      case 'left': xPct = 25; break
-      case 'right': xPct = 75; break
-      case 'top': yPct = 20; break
-      case 'center': yPct = 35; break
-      case 'spread': yPct = 40; break
+      case 'left': xPct = 20; break
+      case 'right': xPct = 80; break
+      case 'top': yPct = 15; break
+      case 'center': yPct = 30; break
+      case 'spread': yPct = 35; break
       case 'bottom': yPct = 75; break
       default: break
     }
   } else {
-    // Minimal cropping — gentle adjustments
     switch (facesRegion) {
-      case 'top': yPct = 30; break
-      case 'center': yPct = 40; break
-      case 'left': xPct = 35; break
-      case 'right': xPct = 65; break
+      case 'top': yPct = 25; break
+      case 'center': yPct = 35; break
+      case 'left': xPct = 30; break
+      case 'right': xPct = 70; break
       case 'bottom': yPct = 65; break
       default: break
     }
@@ -495,8 +515,10 @@ export function placePhotosInDesigns(
       for (const photo of sortedPhotos) {
         if (globalUsed.has(photo.photoId)) continue
 
-        const severity = photo.hasFaces
-          ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, photo.facesRegion)
+        const hasPeople = photo.hasFaces || photo.peopleCount > 0
+        const faceRegion = photo.hasFaces ? photo.facesRegion : (photo.peopleCount > 0 ? 'center' as const : 'none' as const)
+        const severity = hasPeople
+          ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, faceRegion)
           : 0
         if (severity > 0.4) continue
 
@@ -521,13 +543,22 @@ export function placePhotosInDesigns(
         slot.photoUrl = url
 
         const photo = allScores.find((s) => s.photoId === bestPhotoId)
-        if (photo?.hasFaces && photo.facesRegion !== 'none') {
-          slot.objectPosition = computeSmartFacePosition(
-            photo.aspectRatio,
-            slot.width,
-            slot.height,
-            photo.facesRegion,
-          )
+        if (photo) {
+          if (photo.hasFaces && photo.facesRegion !== 'none') {
+            slot.objectPosition = computeSmartFacePosition(
+              photo.aspectRatio,
+              slot.width,
+              slot.height,
+              photo.facesRegion,
+            )
+          } else {
+            const smartY = computeSmartDefaultY(photo.aspectRatio, slot.width, slot.height)
+            if (photo.peopleCount > 0 && photo.aspectRatio < (slot.width / slot.height)) {
+              slot.objectPosition = `50% ${Math.round(Math.min(smartY, 0.30) * 100)}%`
+            } else if (smartY < 0.48) {
+              slot.objectPosition = `50% ${Math.round(smartY * 100)}%`
+            }
+          }
         }
 
         if (slot.page === 'left' || slot.page === 'full') leftPhotos.push(url)
