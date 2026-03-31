@@ -19,9 +19,13 @@ function orientationFitScore(
   slot: SlotDefinition,
   photoOrientation: 'landscape' | 'portrait' | 'square',
 ): number {
-  if (slot.accepts.includes(photoOrientation)) return 1.0
-
   const pref = slotPreference(slot)
+  const aspect = slot.width / slot.height
+
+  if (photoOrientation === 'square' && (aspect > 2.0 || aspect < 0.5)) return -0.8
+  if (photoOrientation === 'square' && (aspect > 1.5 || aspect < 0.67)) return 0.1
+
+  if (slot.accepts.includes(photoOrientation)) return 1.0
 
   if (photoOrientation === 'portrait' && pref === 'landscape') return -0.5
   if (photoOrientation === 'landscape' && pref === 'portrait') return -0.3
@@ -41,21 +45,22 @@ const PORTRAIT_TEMPLATES = [
   'single-portrait',
 ]
 const LANDSCAPE_TEMPLATES = [
-  'three-rows', 'full-spread',
+  'full-spread',
   'landscape-top-2sq', '2sq-top-landscape', 'two-landscapes-stacked',
 ]
 const MIXED_TEMPLATES = [
   'mixed-top-bottom', 'hero-top-grid-bottom', 'mosaic-5',
   'hero-left-grid-right', 'balanced-4', 'grid-2x2',
-  'grid-3x2', 'detail-grid', 'cross-diagonal',
+  'grid-3x2', 'detail-grid', 'cross-diagonal', 'three-rows',
 ]
 
 const EXTREME_ORIENTATION_TEMPLATES = new Set([
   'portrait-duo', 'portrait-trio', 'portrait-grid-4',
   'portrait-5', 'portrait-6',
-  'three-rows', 'single-portrait',
+  'single-portrait',
+  'two-landscapes-stacked', 'landscape-top-2sq', '2sq-top-landscape',
 ])
-const MAX_EXTREME_PAGES = 3
+const MAX_EXTREME_PAGES = 2
 
 function scoreTemplateForGroup(
   template: LayoutTemplate,

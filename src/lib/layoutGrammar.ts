@@ -101,23 +101,29 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
-  // ── 3. Hero Right + Stack Left ────────────────────────────────────
+  // ── 3. Hero Right + Grid Left ────────────────────────────────────
   {
     id: 'hero-right-stack-left',
     name: 'תמונה ראשית ימין + שתיים שמאל',
     category: 'hero',
     minPhotos: 3,
-    maxPhotos: 3,
+    maxPhotos: 5,
     acceptsQuote: false,
     cannotRepeatWithin: 3,
     bestForMood: ['energetic', 'joyful', 'dramatic'],
     bestForScene: ['action', 'group', 'outdoor'],
     slots: [
-      slot('left-top', 'left', 0, 0, 100, 50, {
-        importance: 'primary', minQuality: 5, accepts: ['landscape', 'any'],
+      slot('left-top-left', 'left', 0, 0, 50, 50, {
+        importance: 'primary', minQuality: 5, accepts: ['any'],
       }),
-      slot('left-bottom', 'left', 0, 50, 100, 50, {
-        importance: 'secondary', minQuality: 4, accepts: ['landscape', 'any'],
+      slot('left-top-right', 'left', 50, 0, 50, 50, {
+        importance: 'secondary', minQuality: 4, accepts: ['any'],
+      }),
+      slot('left-bottom-left', 'left', 0, 50, 50, 50, {
+        importance: 'secondary', minQuality: 4, accepts: ['any'],
+      }),
+      slot('left-bottom-right', 'left', 50, 50, 50, 50, {
+        importance: 'accent', minQuality: 3, accepts: ['any'],
       }),
       slot('right-hero', 'right', 0, 0, 100, 100, {
         importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: { ...SAFE_DEFAULT, left: 15 },
@@ -167,13 +173,13 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     bestForMood: ['joyful', 'energetic', 'nostalgic'],
     bestForScene: ['detail', 'food', 'indoor', 'outdoor'],
     slots: [
-      slot('left-hero', 'left', 0, 0, 100, 65, {
-        importance: 'hero', minQuality: 5, accepts: ['landscape', 'any'],
+      slot('left-hero', 'left', 0, 0, 100, 55, {
+        importance: 'hero', minQuality: 5, accepts: ['any'],
       }),
-      slot('left-accent-left', 'left', 0, 65, 50, 35, {
+      slot('left-accent-left', 'left', 0, 55, 50, 45, {
         importance: 'accent', minQuality: 3, accepts: ['any'],
       }),
-      slot('left-accent-right', 'left', 50, 65, 50, 35, {
+      slot('left-accent-right', 'left', 50, 55, 50, 45, {
         importance: 'accent', minQuality: 3, accepts: ['any'],
       }),
       slot('right-top-left', 'right', 0, 0, 50, 50, {
@@ -207,13 +213,13 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       slot('left-full', 'left', 0, 0, 100, 100, {
         importance: 'hero', minQuality: 7, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('right-top', 'right', 0, 0, 100, 50, {
+      slot('right-top', 'right', 0, 0, 100, 55, {
         importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('right-bottom-left', 'right', 0, 50, 50, 50, {
+      slot('right-bottom-left', 'right', 0, 55, 50, 45, {
         importance: 'accent', minQuality: 3, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('right-bottom-right', 'right', 50, 50, 50, 50, {
+      slot('right-bottom-right', 'right', 50, 55, 50, 45, {
         importance: 'accent', minQuality: 3, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
     ],
@@ -246,30 +252,33 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
-  // ── 8. Trio Left + Hero Right ─────────────────────────────────────
+  // ── 8. Grid Left + Hero Right ─────────────────────────────────────
   {
     id: 'trio-left-hero-right',
-    name: 'שלישיה + ראשית',
+    name: 'רשת + ראשית',
     category: 'balanced',
     minPhotos: 4,
-    maxPhotos: 4,
+    maxPhotos: 5,
     acceptsQuote: true,
     quotePosition: 'left-bottom',
     cannotRepeatWithin: 3,
     bestForMood: ['joyful', 'tender', 'energetic'],
     bestForScene: ['group', 'detail', 'indoor'],
     slots: [
-      slot('left-top', 'left', 0, 0, 100, 33, {
-        importance: 'secondary', accepts: ['landscape', 'any'],
+      slot('left-top-left', 'left', 0, 0, 50, 50, {
+        importance: 'secondary', accepts: ['any'],
       }),
-      slot('left-mid', 'left', 0, 33, 100, 34, {
-        importance: 'primary', minQuality: 5, accepts: ['landscape', 'any'],
+      slot('left-top-right', 'left', 50, 0, 50, 50, {
+        importance: 'primary', minQuality: 5, accepts: ['any'],
       }),
-      slot('left-bottom', 'left', 0, 67, 100, 33, {
-        importance: 'secondary', accepts: ['landscape', 'any'],
+      slot('left-bottom-left', 'left', 0, 50, 50, 50, {
+        importance: 'secondary', accepts: ['any'],
+      }),
+      slot('left-bottom-right', 'left', 50, 50, 50, 50, {
+        importance: 'accent', accepts: ['any'],
       }),
       slot('right-hero', 'right', 0, 0, 100, 100, {
-        importance: 'hero', minQuality: 6, accepts: ['portrait', 'any'],
+        importance: 'hero', minQuality: 6, accepts: ['any'],
       }),
     ],
   },
@@ -397,27 +406,36 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
-  // ── 14. Three Rows (spread divided into 3 horizontal strips) ───
+  // ── 14. Six Grid Spanning (2x3 grid across both pages) ───
   {
     id: 'three-rows',
-    name: 'שלושה פסים',
+    name: 'רשת שישייה',
     category: 'grid',
     minPhotos: 3,
-    maxPhotos: 3,
+    maxPhotos: 6,
     acceptsQuote: false,
     cannotRepeatWithin: 3,
     bestForMood: ['joyful', 'nostalgic', 'energetic'],
     bestForScene: ['outdoor', 'portrait', 'group', 'landscape_scenic'],
     spanning: true,
     slots: [
-      slot('row-top', 'left', 0, 0, 100, 33.33, {
-        importance: 'primary', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
-      }),
-      slot('row-mid', 'left', 0, 33.33, 100, 33.34, {
+      slot('tl', 'left', 0, 0, 50, 50, {
         importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('row-bot', 'left', 0, 66.67, 100, 33.33, {
-        importance: 'secondary', minQuality: 4, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      slot('tr', 'left', 50, 0, 50, 50, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('ml', 'left', 0, 50, 50, 50, {
+        importance: 'secondary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('mr', 'left', 50, 50, 50, 50, {
+        importance: 'secondary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bl', 'right', 0, 0, 50, 50, {
+        importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('br', 'right', 50, 0, 50, 50, {
+        importance: 'accent', minQuality: 3, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
     ],
   },
@@ -521,13 +539,13 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
-  // ── 19. Portrait Hero + Grid (1 large portrait + 2-3 smaller) ──
+  // ── 19. Portrait Hero + Grid (1 large portrait + 3-4 smaller) ──
   {
     id: 'portrait-hero-grid',
     name: 'אורכית ראשית + רשת',
     category: 'hero',
     minPhotos: 3,
-    maxPhotos: 4,
+    maxPhotos: 5,
     acceptsQuote: false,
     cannotRepeatWithin: 3,
     bestForMood: ['romantic', 'dramatic', 'tender', 'joyful'],
@@ -536,43 +554,49 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       slot('left-hero', 'left', 0, 0, 100, 100, {
         importance: 'hero', minQuality: 6, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
       }),
-      slot('right-top', 'right', 0, 0, 50, 50, {
+      slot('right-top-left', 'right', 0, 0, 50, 50, {
         importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
       slot('right-top-right', 'right', 50, 0, 50, 50, {
         importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('right-bottom', 'right', 0, 50, 100, 50, {
-        importance: 'accent', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      slot('right-bottom-left', 'right', 0, 50, 50, 50, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-bottom-right', 'right', 50, 50, 50, 50, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
     ],
   },
 
-  // ── 20. Mixed Top-Bottom (landscape top + portraits bottom) ────
+  // ── 20. Mixed Top-Bottom (hero top + squares bottom) ────
   {
     id: 'mixed-top-bottom',
-    name: 'רוחבית למעלה + אורכיות למטה',
+    name: 'ראשית למעלה + ריבועיות למטה',
     category: 'balanced',
     minPhotos: 3,
-    maxPhotos: 4,
+    maxPhotos: 5,
     acceptsQuote: false,
     cannotRepeatWithin: 3,
     bestForMood: ['joyful', 'romantic', 'nostalgic', 'energetic'],
     bestForScene: ['outdoor', 'landscape_scenic', 'group', 'portrait'],
     spanning: true,
-    spanningSlotIds: ['top-landscape'],
+    spanningSlotIds: ['top-hero'],
     slots: [
-      slot('top-landscape', 'left', 0, 0, 100, 40, {
-        importance: 'hero', minQuality: 5, accepts: ['landscape'], safeZone: SAFE_BLEED,
+      slot('top-hero', 'left', 0, 0, 100, 55, {
+        importance: 'hero', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
       }),
-      slot('bottom-left', 'left', 0, 40, 50, 60, {
-        importance: 'primary', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      slot('bottom-left', 'left', 0, 55, 50, 45, {
+        importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('bottom-left-right', 'left', 50, 40, 50, 60, {
-        importance: 'secondary', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      slot('bottom-left-right', 'left', 50, 55, 50, 45, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('bottom-right', 'right', 0, 40, 100, 60, {
-        importance: 'accent', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      slot('bottom-right-left', 'right', 0, 55, 50, 45, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-right-right', 'right', 50, 55, 50, 45, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
     ],
   },
@@ -682,9 +706,9 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       slot('l-tr', 'left', 50, 0, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('l-bl', 'left', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('l-br', 'left', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('r-top', 'right', 0, 0, 100, 33.33, { importance: 'hero', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
-      slot('r-mid', 'right', 0, 33.33, 100, 33.34, { importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
-      slot('r-bot', 'right', 0, 66.67, 100, 33.33, { importance: 'secondary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-tl', 'right', 0, 0, 50, 50, { importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-tr', 'right', 50, 0, 50, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bl', 'right', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
     ],
   },
 
@@ -723,9 +747,9 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     bestForMood: ['joyful', 'romantic', 'nostalgic'],
     bestForScene: ['outdoor', 'portrait', 'group'],
     slots: [
-      slot('l-hero', 'left', 0, 0, 100, 60, { importance: 'hero', minQuality: 6, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
-      slot('l-bl', 'left', 0, 60, 50, 40, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('l-br', 'left', 50, 60, 50, 40, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-hero', 'left', 0, 0, 100, 55, { importance: 'hero', minQuality: 6, accepts: ['landscape'], safeZone: SAFE_BLEED }),
+      slot('l-bl', 'left', 0, 55, 50, 45, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-br', 'left', 50, 55, 50, 45, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('r-tl', 'right', 0, 0, 50, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('r-tr', 'right', 50, 0, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('r-bl', 'right', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
@@ -736,19 +760,18 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
   // ── 27. Hero + 7 Grid (8 photos with hero) ──────────────────────
   {
     id: 'hero-plus-7',
-    name: 'ראשית + 7',
+    name: 'ראשית + 6',
     category: 'hero',
-    minPhotos: 8,
-    maxPhotos: 8,
+    minPhotos: 7,
+    maxPhotos: 7,
     acceptsQuote: false,
     cannotRepeatWithin: 5,
     bestForMood: ['joyful', 'energetic', 'nostalgic'],
     bestForScene: ['group', 'outdoor', 'detail', 'food'],
     slots: [
-      slot('l-hero', 'left', 0, 0, 100, 55, { importance: 'hero', minQuality: 6, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
-      slot('l-bl', 'left', 0, 55, 33.33, 45, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('l-bm', 'left', 33.33, 55, 33.34, 45, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
-      slot('l-br', 'left', 66.67, 55, 33.33, 45, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-hero', 'left', 0, 0, 100, 55, { importance: 'hero', minQuality: 6, accepts: ['landscape'], safeZone: SAFE_BLEED }),
+      slot('l-bl', 'left', 0, 55, 50, 45, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-br', 'left', 50, 55, 50, 45, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('r-tl', 'right', 0, 0, 50, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('r-tr', 'right', 50, 0, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
       slot('r-bl', 'right', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
@@ -771,7 +794,7 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     spanningSlotIds: ['top-wide'],
     slots: [
       slot('top-wide', 'left', 0, 0, 100, 55, {
-        importance: 'hero', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+        importance: 'hero', minQuality: 5, accepts: ['landscape'], safeZone: SAFE_BLEED,
       }),
       slot('bottom-left', 'left', 0, 55, 50, 45, {
         importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED,
@@ -803,15 +826,15 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
         importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
       slot('bottom-wide', 'left', 0, 45, 100, 55, {
-        importance: 'hero', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+        importance: 'hero', minQuality: 5, accepts: ['landscape'], safeZone: SAFE_BLEED,
       }),
     ],
   },
 
-  // ── 30. Cross Diagonal (small landscapes + tall rectangles) ────────
+  // ── 30. Cross Layout (2x2 balanced grid) ────────
   {
     id: 'cross-diagonal',
-    name: 'קרוס אלכסוני',
+    name: 'צולב מאוזן',
     category: 'balanced',
     minPhotos: 4,
     maxPhotos: 4,
@@ -820,17 +843,17 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     bestForMood: ['romantic', 'dramatic', 'energetic', 'nostalgic'],
     bestForScene: ['outdoor', 'portrait', 'group', 'landscape_scenic'],
     slots: [
-      slot('tl-landscape', 'left', 0, 0, 55, 42, {
-        importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      slot('left-top', 'left', 0, 0, 55, 55, {
+        importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('tr-tall', 'left', 55, 0, 45, 100, {
-        importance: 'hero', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      slot('left-bottom', 'left', 0, 55, 55, 45, {
+        importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('bl-tall', 'right', 0, 0, 45, 100, {
-        importance: 'hero', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      slot('right-top', 'right', 0, 0, 55, 45, {
+        importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
-      slot('br-landscape', 'right', 45, 58, 55, 42, {
-        importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      slot('right-bottom', 'right', 0, 45, 55, 55, {
+        importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED,
       }),
     ],
   },
@@ -861,17 +884,17 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     minPhotos: 2,
     maxPhotos: 2,
     acceptsQuote: false,
-    cannotRepeatWithin: 2,
+    cannotRepeatWithin: 4,
     bestForMood: ['serene', 'nostalgic', 'romantic', 'dramatic'],
-    bestForScene: ['landscape_scenic', 'outdoor', 'group'],
+    bestForScene: ['landscape_scenic', 'outdoor'],
     spanning: true,
     spanningSlotIds: ['top-landscape', 'bottom-landscape'],
     slots: [
       slot('top-landscape', 'left', 0, 0, 100, 48, {
-        importance: 'hero', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+        importance: 'hero', minQuality: 5, accepts: ['landscape'], safeZone: SAFE_BLEED,
       }),
       slot('bottom-landscape', 'left', 0, 52, 100, 48, {
-        importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+        importance: 'primary', accepts: ['landscape'], safeZone: SAFE_BLEED,
       }),
     ],
   },

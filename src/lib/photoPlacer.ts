@@ -24,10 +24,22 @@ import {
 
 // ─── Orientation matching score ─────────────────────────────────────
 
+function slotAspectRatio(slot: SlotDefinition): number {
+  return slot.width / slot.height
+}
+
 function orientationMatchScore(
   slotAccepts: SlotDefinition['accepts'],
   photoOrientation: PhotoScore['orientation'],
+  slot?: SlotDefinition,
+  recommendedDisplay?: PhotoOrientation,
 ): number {
+  const display = recommendedDisplay ?? photoOrientation
+  if (slot) {
+    const aspect = slotAspectRatio(slot)
+    if (display === 'square' && (aspect > 2.0 || aspect < 0.5)) return -0.5
+    if (display === 'square' && (aspect > 1.5 || aspect < 0.67)) return 0.15
+  }
   if (slotAccepts.includes('any')) return 0.8
   if (slotAccepts.includes(photoOrientation)) return 1.0
   return 0.2
@@ -144,7 +156,8 @@ function matchPhotosToSlots(
       if (usedPhotos.has(photo.photoId) || globalUsed?.has(photo.photoId)) continue
 
       const displayOrientation = photo.recommendedDisplay ?? photo.orientation
-      const oScore = orientationMatchScore(slot.accepts, displayOrientation)
+      const oScore = orientationMatchScore(slot.accepts, displayOrientation, slot, photo.recommendedDisplay)
+      if (oScore < 0) continue
       const severity = photo.hasFaces
         ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, photo.facesRegion)
         : 0
@@ -187,7 +200,8 @@ function matchPhotosToSlots(
         : 0
       if (severity > 0.4) continue
 
-      const oScore = orientationMatchScore(slot.accepts, photo.recommendedDisplay ?? photo.orientation)
+      const oScore = orientationMatchScore(slot.accepts, photo.recommendedDisplay ?? photo.orientation, slot, photo.recommendedDisplay)
+      if (oScore < 0) continue
       const iScore = importanceMatchScore(slot.importance, photo.overallQuality)
       const fSafe = isFaceSafe(photo.facesRegion, slot.safeZone)
       const fPenalty = fSafe ? 0 : -0.3
@@ -420,7 +434,16 @@ export function computeSmartFacePosition(
 function slotAcceptsOrientation(
   accepts: ('portrait' | 'landscape' | 'any')[],
   orientation: PhotoOrientation,
+  slotW?: number,
+  slotH?: number,
+  recommendedDisplay?: PhotoOrientation,
 ): number {
+  const display = recommendedDisplay ?? orientation
+  if (slotW && slotH) {
+    const aspect = slotW / slotH
+    if (display === 'square' && (aspect > 2.0 || aspect < 0.5)) return -0.5
+    if (display === 'square' && (aspect > 1.5 || aspect < 0.67)) return 0.15
+  }
   if (accepts.includes('any')) return 0.8
   if (accepts.includes(orientation as 'portrait' | 'landscape')) return 1.0
   return 0.3
@@ -477,7 +500,8 @@ export function placePhotosInDesigns(
           : 0
         if (severity > 0.4) continue
 
-        const oScore = slotAcceptsOrientation(slotAccepts, photo.recommendedDisplay ?? photo.orientation)
+        const oScore = slotAcceptsOrientation(slotAccepts, photo.recommendedDisplay ?? photo.orientation, slot.width, slot.height, photo.recommendedDisplay)
+        if (oScore < 0) continue
         const thresholds = { hero: 7, primary: 5, secondary: 3, accent: 1 }
         const threshold = thresholds[slot.importance] ?? 3
         const iScore = photo.overallQuality >= threshold ? 1.0 : photo.overallQuality >= threshold - 2 ? 0.6 : 0.3

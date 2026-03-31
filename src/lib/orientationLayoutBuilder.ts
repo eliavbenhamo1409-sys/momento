@@ -13,20 +13,20 @@ const TEMPLATES_BY_PATTERN: Record<string, string[]> = {
   '1-landscape': ['full-spread'],
   '1-square':    ['full-spread'],
 
-  '2-landscape': ['two-landscapes-stacked', 'panoramic'],
+  '2-landscape': ['panoramic', 'two-landscapes-stacked'],
   '2-portrait':  ['portrait-duo'],
-  '2-mixed':     ['portrait-duo', 'two-landscapes-stacked'],
-  '2-square':    ['portrait-duo'],
+  '2-mixed':     ['portrait-duo', 'panoramic'],
+  '2-square':    ['portrait-duo', 'panoramic'],
 
-  '3-landscape': ['landscape-top-2sq', '2sq-top-landscape', 'three-rows'],
+  '3-landscape': ['hero-right-stack-left', 'portrait-hero-grid', 'mixed-top-bottom'],
   '3-portrait':  ['portrait-trio', 'portrait-hero-grid'],
-  '3-mixed':     ['landscape-top-2sq', '2sq-top-landscape', 'mixed-top-bottom'],
-  '3-square':    ['landscape-top-2sq', '2sq-top-landscape'],
+  '3-mixed':     ['hero-right-stack-left', 'portrait-hero-grid', 'mixed-top-bottom'],
+  '3-square':    ['hero-right-stack-left', 'portrait-hero-grid', 'mixed-top-bottom'],
 
-  '4-landscape': ['grid-2x2', 'cross-diagonal'],
-  '4-portrait':  ['portrait-grid-4', 'cross-diagonal'],
+  '4-landscape': ['grid-2x2', 'cross-diagonal', 'balanced-4'],
+  '4-portrait':  ['portrait-grid-4', 'cross-diagonal', 'balanced-4'],
   '4-mixed':     ['cross-diagonal', 'grid-2x2', 'balanced-4'],
-  '4-square':    ['grid-2x2'],
+  '4-square':    ['grid-2x2', 'cross-diagonal', 'balanced-4'],
 }
 
 function classifyGroup(orientations: PhotoOrientation[]): string {

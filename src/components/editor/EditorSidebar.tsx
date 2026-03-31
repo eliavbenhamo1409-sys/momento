@@ -7,6 +7,7 @@ import Icon from '../shared/Icon'
 import LayoutPickerPanel from './LayoutPickerPanel'
 import TextInsertPanel from './TextInsertPanel'
 import AIBackgroundPanel from './AIBackgroundPanel'
+import MarginsPanel from './MarginsPanel'
 import type { PhotoElement, QuoteElement } from '../../types'
 
 type ToolId =
@@ -18,6 +19,7 @@ type ToolId =
   | 'add'
   | 'delete'
   | 'layers'
+  | 'margins'
 
 interface ToolBtnProps {
   icon: string
@@ -185,12 +187,14 @@ export default function EditorSidebar() {
   const [showTextPanel, setShowTextPanel] = useState(false)
   const [showAIBg, setShowAIBg] = useState(false)
   const [showLayers, setShowLayers] = useState(false)
+  const [showMargins, setShowMargins] = useState(false)
 
   const closeAll = useCallback(() => {
     setShowLayoutPicker(false)
     setShowTextPanel(false)
     setShowAIBg(false)
     setShowLayers(false)
+    setShowMargins(false)
   }, [])
 
   useEffect(() => {
@@ -276,8 +280,22 @@ export default function EditorSidebar() {
             setShowLayoutPicker(false)
             setShowTextPanel(false)
             setShowAIBg(false)
+            setShowMargins(false)
             setShowLayers((v) => !v)
             setActiveTool('layers')
+          }}
+        />
+        <ToolBtn
+          icon="padding"
+          label="שוליים"
+          active={activeTool === 'margins' || showMargins}
+          onClick={() => {
+            setShowLayoutPicker(false)
+            setShowTextPanel(false)
+            setShowAIBg(false)
+            setShowLayers(false)
+            setShowMargins((v) => !v)
+            setActiveTool('margins')
           }}
         />
 
@@ -350,6 +368,12 @@ export default function EditorSidebar() {
             <LayersPanel
               key="layers-panel"
               onClose={() => setShowLayers(false)}
+            />
+          )}
+          {showMargins && (
+            <MarginsPanel
+              key="margins-panel"
+              onClose={() => setShowMargins(false)}
             />
           )}
         </AnimatePresence>

@@ -516,8 +516,22 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
       else if (phase === 'pick-target') executeSwap(slotId)
     }, [])
 
+    const globalPhotoGapPx = useEditorStore((s) => s.globalPhotoGapPx)
+    const globalPageMarginPercent = useEditorStore((s) => s.globalPageMarginPercent)
+
     const design = spread.design
-    const style = spread.resolvedStyle ?? DEFAULT_STYLE
+    const baseStyle = spread.resolvedStyle ?? DEFAULT_STYLE
+    const style = useMemo<ResolvedSpreadStyle>(() => {
+      if (globalPhotoGapPx === null && globalPageMarginPercent === null) return baseStyle
+      return {
+        ...baseStyle,
+        spacing: {
+          ...baseStyle.spacing,
+          ...(globalPhotoGapPx !== null ? { photoGapPx: globalPhotoGapPx } : {}),
+          ...(globalPageMarginPercent !== null ? { pageMarginPercent: globalPageMarginPercent } : {}),
+        },
+      }
+    }, [baseStyle, globalPhotoGapPx, globalPageMarginPercent])
     const variant = spread.variant ?? null
     const useAbs = !!design && design.elements.length > 0
     const bgColor = useAbs ? design!.background.color : style.background.color

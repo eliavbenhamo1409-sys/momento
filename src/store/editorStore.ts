@@ -55,6 +55,11 @@ interface EditorState {
   swapPhase: SwapPhase
   swapSourceSlotId: string | null
 
+  globalPhotoGapPx: number | null
+  globalPageMarginPercent: number | null
+  setGlobalPhotoGap: (gap: number | null) => void
+  setGlobalPageMargin: (margin: number | null) => void
+
   setSpreads: (spreads: EditorSpread[]) => void
   setCurrentSpread: (index: number) => void
   selectPhoto: (id: string | null) => void
@@ -111,6 +116,11 @@ export const useEditorStore = create<EditorState>((set) => ({
   isGenerated: false,
   swapPhase: 'off' as SwapPhase,
   swapSourceSlotId: null,
+
+  globalPhotoGapPx: null,
+  globalPageMarginPercent: null,
+  setGlobalPhotoGap: (gap) => set({ globalPhotoGapPx: gap }),
+  setGlobalPageMargin: (margin) => set({ globalPageMarginPercent: margin }),
 
   setSpreads: (spreads) =>
     set({
