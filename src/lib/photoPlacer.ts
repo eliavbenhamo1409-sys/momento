@@ -334,6 +334,7 @@ export function buildFallbackSpreads(
       emotion: 'neutral', colorDominant: 'neutral',
       isHighlight: false, isCoverCandidate: false, isHeroCandidate: false,
       isCloseup: false, isGroupShot: false,
+      recommendedDisplay: 'square',
       description: '',
     })
   }
