@@ -518,6 +518,35 @@ export function buildPageGroups(
     }
   }
 
+  // Collage pass: merge low-quality groups into collage-sized super-groups (up to 12)
+  const COLLAGE_MAX = 12
+  const LOW_QUALITY_THRESHOLD = 6
+  if (merged.length + heroGroups.length > targetSpreads) {
+    let didMerge = true
+    while (didMerge) {
+      didMerge = false
+      for (let i = 0; i < merged.length; i++) {
+        const group = merged[i]
+        const avgQuality = group.reduce((s, p) => s + p.overallQuality, 0) / group.length
+        if (avgQuality >= LOW_QUALITY_THRESHOLD || group.length > MAX_GROUP) continue
+
+        for (let j = i + 1; j < merged.length; j++) {
+          const other = merged[j]
+          const otherAvg = other.reduce((s, p) => s + p.overallQuality, 0) / other.length
+          if (otherAvg >= LOW_QUALITY_THRESHOLD) continue
+          if (group.length + other.length > COLLAGE_MAX) continue
+
+          group.push(...other)
+          merged.splice(j, 1)
+          didMerge = true
+          break
+        }
+        if (didMerge) break
+      }
+      if (merged.length + heroGroups.length <= targetSpreads) break
+    }
+  }
+
   // Build final PageGroup objects with eventId from dominant setting
   const result: PageGroup[] = [...heroGroups]
   let groupIdx = 0

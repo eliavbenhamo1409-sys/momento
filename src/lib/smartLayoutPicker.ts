@@ -51,6 +51,7 @@ const MIXED_TEMPLATES = [
   'photo-over-photo', 'photo-over-photo-right',
   'editorial-grid-duo', 'editorial-hero-mosaic', 'editorial-stagger-3',
   'editorial-magazine', 'editorial-cinematic',
+  'mini-collage-12', 'mini-collage-9',
 ]
 
 const EXTREME_ORIENTATION_TEMPLATES = new Set([
@@ -167,7 +168,14 @@ function scoreTemplateForGroup(
 
   const symmetry = computeSymmetryScore(template)
 
-  return fitScore + orientationBonus + heroBonus + photoCountMatch + slotFitScore + diversityBonus + symmetry * 0.3
+  // Collage bonus: low-quality large groups strongly prefer collage/mosaic templates
+  let collageBonus = 0
+  if (total >= 7 && group.avgQuality < 6) {
+    const isCollageTemplate = tid.startsWith('mini-collage') || template.category === 'mosaic'
+    collageBonus = isCollageTemplate ? 1.5 : -0.3
+  }
+
+  return fitScore + orientationBonus + heroBonus + photoCountMatch + slotFitScore + diversityBonus + symmetry * 0.3 + collageBonus
 }
 
 function computeSymmetryScore(template: LayoutTemplate): number {

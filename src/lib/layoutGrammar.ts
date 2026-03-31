@@ -1169,7 +1169,62 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
-  // ── 43. Editorial: Cinematic Duo (2 photos, big breathing room) ───
+  // ── 43. Mini Collage (9-12 small photos across spread) ─────────────
+  {
+    id: 'mini-collage-12',
+    name: 'קולאז׳ מיני',
+    category: 'mosaic',
+    minPhotos: 9,
+    maxPhotos: 12,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'energetic', 'nostalgic', 'neutral'],
+    bestForScene: ['detail', 'food', 'indoor', 'outdoor', 'group', 'action'],
+    slots: [
+      // Left page: 2 columns x 3 rows
+      slot('l-tl', 'left', 0, 0, 50, 33, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-tr', 'left', 50, 0, 50, 33, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-ml', 'left', 0, 33, 50, 34, { importance: 'primary', minQuality: 3, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-mr', 'left', 50, 33, 50, 34, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bl', 'left', 0, 67, 50, 33, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-br', 'left', 50, 67, 50, 33, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      // Right page: 2 columns x 3 rows
+      slot('r-tl', 'right', 0, 0, 50, 33, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-tr', 'right', 50, 0, 50, 33, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-ml', 'right', 0, 33, 50, 34, { importance: 'primary', minQuality: 3, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-mr', 'right', 50, 33, 50, 34, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bl', 'right', 0, 67, 50, 33, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-br', 'right', 50, 67, 50, 33, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 44. Mini Collage 9 (3x3 mixed grid) ───────────────────────────
+  {
+    id: 'mini-collage-9',
+    name: 'קולאז׳ 9',
+    category: 'mosaic',
+    minPhotos: 7,
+    maxPhotos: 9,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'energetic', 'nostalgic', 'neutral'],
+    bestForScene: ['detail', 'food', 'indoor', 'outdoor', 'group', 'action'],
+    slots: [
+      // Left page: hero top + 2 bottom
+      slot('l-top', 'left', 0, 0, 100, 50, { importance: 'primary', minQuality: 3, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bl', 'left', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-br', 'left', 50, 50, 50, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      // Right page: 2x3 grid
+      slot('r-tl', 'right', 0, 0, 50, 33, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-tr', 'right', 50, 0, 50, 33, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-ml', 'right', 0, 33, 50, 34, { importance: 'primary', minQuality: 3, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-mr', 'right', 50, 33, 50, 34, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bl', 'right', 0, 67, 50, 33, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-br', 'right', 50, 67, 50, 33, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 45. Editorial: Cinematic Duo (2 photos, big breathing room) ───
   {
     id: 'editorial-cinematic',
     name: 'קולנועי',
