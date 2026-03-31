@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { motion } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import Icon from '../shared/Icon'
@@ -40,6 +40,8 @@ function SliderRow({
   unit: string
   onChange: (v: number) => void
 }) {
+  const pct = ((value - min) / (max - min)) * 100
+
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center gap-2">
@@ -52,27 +54,48 @@ function SliderRow({
         </span>
       </div>
 
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={step}
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full h-1 rounded-full appearance-none cursor-pointer accent-primary bg-surface-container-high"
-        style={{
-          background: `linear-gradient(to left, var(--color-primary) ${((value - min) / (max - min)) * 100}%, var(--color-surface-container-high) ${((value - min) / (max - min)) * 100}%)`,
-        }}
-      />
+      <div className="relative">
+        <input
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full h-1.5 rounded-full appearance-none cursor-pointer
+                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                     [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-deep-brown [&::-webkit-slider-thumb]:border-2
+                     [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer
+                     [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-150
+                     [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:active:scale-95"
+          style={{
+            background: `linear-gradient(to left, var(--color-primary) ${pct}%, rgba(0,0,0,0.06) ${pct}%)`,
+          }}
+        />
+        {presets.length > 0 && (
+          <div className="absolute top-0 left-0 right-0 h-1.5 pointer-events-none flex items-center">
+            {presets.map((p) => {
+              const pos = ((p.value - min) / (max - min)) * 100
+              return (
+                <div
+                  key={p.value}
+                  className="absolute w-0.5 h-2.5 rounded-full bg-black/10"
+                  style={{ right: `calc(${pos}% - 1px)` }}
+                />
+              )
+            })}
+          </div>
+        )}
+      </div>
 
       <div className="flex gap-1">
         {presets.map((p) => (
           <button
             key={p.value}
             onClick={() => onChange(p.value)}
-            className={`flex-1 text-[9px] font-semibold py-1 rounded-md transition-all duration-200 ${
+            className={`flex-1 text-[9px] font-semibold py-1.5 rounded-lg transition-all duration-200 ${
               value === p.value
-                ? 'bg-deep-brown text-white shadow-sm'
+                ? 'bg-deep-brown text-white shadow-sm scale-[1.02]'
                 : 'bg-surface-container-low/60 text-secondary/60 hover:bg-surface-container-high hover:text-on-surface'
             }`}
           >
@@ -90,23 +113,44 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
   const setGlobalPhotoGap = useEditorStore((s) => s.setGlobalPhotoGap)
   const setGlobalPageMargin = useEditorStore((s) => s.setGlobalPageMargin)
 
+  const initialGap = useRef(storeGap)
+  const initialMargin = useRef(storeMargin)
+
   const [gap, setGap] = useState(storeGap ?? 10)
   const [margin, setMargin] = useState(storeMargin ?? 6)
+  const [dirty, setDirty] = useState(false)
 
-  useEffect(() => {
+  const handleGapChange = useCallback((v: number) => {
+    setGap(v)
+    setDirty(true)
+    setGlobalPhotoGap(v)
+  }, [setGlobalPhotoGap])
+
+  const handleMarginChange = useCallback((v: number) => {
+    setMargin(v)
+    setDirty(true)
+    setGlobalPageMargin(v)
+  }, [setGlobalPageMargin])
+
+  const handleConfirm = useCallback(() => {
     setGlobalPhotoGap(gap)
-  }, [gap, setGlobalPhotoGap])
-
-  useEffect(() => {
     setGlobalPageMargin(margin)
-  }, [margin, setGlobalPageMargin])
+    onClose()
+  }, [gap, margin, setGlobalPhotoGap, setGlobalPageMargin, onClose])
 
   const handleReset = useCallback(() => {
     setGap(10)
     setMargin(6)
+    setDirty(true)
     setGlobalPhotoGap(null)
     setGlobalPageMargin(null)
   }, [setGlobalPhotoGap, setGlobalPageMargin])
+
+  const handleCancel = useCallback(() => {
+    setGlobalPhotoGap(initialGap.current)
+    setGlobalPageMargin(initialMargin.current)
+    onClose()
+  }, [setGlobalPhotoGap, setGlobalPageMargin, onClose])
 
   return (
     <motion.div
@@ -130,20 +174,12 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
             שוליים
           </h3>
         </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={handleReset}
-            className="text-[9px] font-semibold text-secondary/50 hover:text-on-surface px-2 py-1 rounded-md hover:bg-surface-container-high/70 transition-colors"
-          >
-            איפוס
-          </button>
-          <button
-            onClick={onClose}
-            className="w-6 h-6 rounded-full flex items-center justify-center text-secondary/50 hover:text-on-surface hover:bg-surface-container-high/70 transition-colors"
-          >
-            <Icon name="close" size={16} />
-          </button>
-        </div>
+        <button
+          onClick={handleCancel}
+          className="w-6 h-6 rounded-full flex items-center justify-center text-secondary/50 hover:text-on-surface hover:bg-surface-container-high/70 transition-colors"
+        >
+          <Icon name="close" size={16} />
+        </button>
       </div>
 
       <div className="flex flex-col gap-5">
@@ -152,11 +188,11 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
           icon="space_bar"
           value={gap}
           min={0}
-          max={40}
+          max={28}
           step={1}
           presets={GAP_PRESETS}
           unit="px"
-          onChange={setGap}
+          onChange={handleGapChange}
         />
 
         <div className="h-px bg-gradient-to-l from-transparent via-black/6 to-transparent" />
@@ -166,17 +202,39 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
           icon="crop_free"
           value={margin}
           min={0}
-          max={20}
+          max={16}
           step={0.5}
           presets={MARGIN_PRESETS}
           unit="%"
-          onChange={setMargin}
+          onChange={handleMarginChange}
         />
       </div>
 
-      <div className="mt-4 pt-3 border-t border-black/[0.04]">
+      <div className="mt-5 flex gap-2">
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={handleConfirm}
+          className="flex-1 py-2.5 rounded-xl bg-deep-brown text-white text-[12px] font-bold shadow-[0_4px_14px_rgba(47,46,43,0.25)] hover:shadow-[0_6px_20px_rgba(47,46,43,0.35)] transition-shadow"
+        >
+          <div className="flex items-center justify-center gap-1.5">
+            <Icon name="check" size={16} className="text-white" />
+            <span>אישור</span>
+          </div>
+        </motion.button>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.97 }}
+          onClick={handleReset}
+          className="px-3 py-2.5 rounded-xl bg-surface-container-low/80 text-secondary/70 text-[11px] font-semibold hover:bg-surface-container-high hover:text-on-surface transition-colors"
+        >
+          איפוס
+        </motion.button>
+      </div>
+
+      <div className="mt-3 pt-2 border-t border-black/[0.04]">
         <p className="text-[9px] text-secondary/40 leading-relaxed text-center">
-          השינויים חלים על כל עמודי האלבום
+          {dirty ? 'תצוגה מקדימה — לחצו אישור לשמירה' : 'השינויים חלים על כל עמודי האלבום'}
         </p>
       </div>
     </motion.div>

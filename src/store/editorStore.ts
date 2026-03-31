@@ -386,8 +386,8 @@ export const useEditorStore = create<EditorState>((set) => ({
       const tmpZ = (elA as PhotoElement).zIndex
       ;(elA as PhotoElement).zIndex = (elB as PhotoElement).zIndex
       ;(elB as PhotoElement).zIndex = tmpZ
-      elements[elementIndex] = elA
-      elements[swapIdx] = elB
+      elements[elementIndex] = elB
+      elements[swapIdx] = elA
 
       const spreads = [...s.spreads]
       spreads[idx] = { ...spread, design: { ...spread.design, elements } }
