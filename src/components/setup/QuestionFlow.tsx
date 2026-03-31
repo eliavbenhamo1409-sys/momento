@@ -58,7 +58,7 @@ export default function QuestionFlow() {
 
   const [isGenerating, setIsGenerating] = useState(false)
   const bgMode = config.backgroundMode || 'white'
-  const canProceed = bgMode === 'white' || vibeText.trim().length >= 3 || vibeReferences.length > 0
+  const canProceed = true
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
     const remaining = MAX_REFERENCES - vibeReferences.length
