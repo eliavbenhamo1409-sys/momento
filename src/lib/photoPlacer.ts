@@ -24,10 +24,6 @@ import {
 
 // ─── Orientation matching score ─────────────────────────────────────
 
-function slotAspectRatio(slot: SlotDefinition): number {
-  return slot.width / slot.height
-}
-
 function orientationMatchScore(
   slotAccepts: SlotDefinition['accepts'],
   photoOrientation: PhotoScore['orientation'],

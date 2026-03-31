@@ -227,47 +227,6 @@ function buildGroupMeta(groupId: string, photos: PhotoScore[], theme: string): P
 }
 
 /**
- * Multi-signal affinity between two photos.
- * Returns 0..1 where higher = more similar / should be grouped.
- */
-function photoAffinity(
-  a: PhotoScore,
-  b: PhotoScore,
-  dateLookup?: Map<string, Date>,
-): number {
-  let score = 0
-
-  // Time proximity: within 30 min → +0.4, within 2 hours → +0.2
-  if (dateLookup) {
-    const dA = dateLookup.get(a.photoId)
-    const dB = dateLookup.get(b.photoId)
-    if (dA && dB) {
-      const diffMin = Math.abs(dA.getTime() - dB.getTime()) / 60_000
-      if (diffMin <= 30) score += 0.4
-      else if (diffMin <= 120) score += 0.2
-    }
-  }
-
-  // Same setting tag (e.g. "ski resort" === "ski resort") → +0.35
-  if (a.setting && b.setting && a.setting.toLowerCase() === b.setting.toLowerCase()) {
-    score += 0.35
-  }
-
-  // Same scene type → +0.3
-  if (a.scene === b.scene) score += 0.3
-
-  // Same people count → +0.1
-  if (a.peopleCount === b.peopleCount) score += 0.1
-
-  // Description Jaccard similarity (0..~0.3 contribution)
-  const tokA = tokenize(a.description)
-  const tokB = tokenize(b.description)
-  score += jaccardSimilarity(tokA, tokB) * 0.3
-
-  return score
-}
-
-/**
  * Greedy agglomerative clustering using multi-signal affinity.
  * Returns array of photo groups.
  */
