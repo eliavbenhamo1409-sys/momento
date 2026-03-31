@@ -439,38 +439,23 @@ export function buildPageGroups(
     }
   }
 
-  // Reduce groups if too many for target spread count (prefer merging same-event groups)
+  // Reduce groups if too many for target spread count (merge adjacent neighbors only)
   if (merged.length + heroGroups.length > targetSpreads) {
     while (merged.length + heroGroups.length > targetSpreads && merged.length > 1) {
-      const smallest = merged.reduce((minI, g, i, arr) =>
-        g.length < arr[minI].length ? i : minI, 0)
-      const removed = merged.splice(smallest, 1)[0]
-      const removedSetting = groupDominantSetting(removed)
-
-      let bestTarget = -1
-      let bestScore = -Infinity
-      for (let t = 0; t < merged.length; t++) {
-        if (merged[t].length + removed.length > MAX_GROUP) continue
-        const tSetting = groupDominantSetting(merged[t])
-        let score = -merged[t].length
-        if (removedSetting && tSetting === removedSetting) score += 100
-        if (Math.abs(t - smallest) <= 1) score += 10
-        if (score > bestScore) { bestScore = score; bestTarget = t }
-      }
-
-      if (bestTarget >= 0) {
-        merged[bestTarget].push(...removed)
-      } else {
-        const target = merged.reduce((minI, g, i, arr) =>
-          g.length < arr[minI].length ? i : minI, 0)
-        merged[target].push(...removed)
-        if (merged[target].length > MAX_GROUP) {
-          const over = merged[target]
-          merged.splice(target, 1)
-          for (let i = 0; i < over.length; i += MAX_GROUP) {
-            merged.push(over.slice(i, i + MAX_GROUP))
-          }
+      let bestPair = -1
+      let bestPairSize = Infinity
+      for (let i = 0; i < merged.length - 1; i++) {
+        const combined = merged[i].length + merged[i + 1].length
+        if (combined <= MAX_GROUP && combined < bestPairSize) {
+          bestPairSize = combined
+          bestPair = i
         }
+      }
+      if (bestPair >= 0) {
+        merged[bestPair].push(...merged[bestPair + 1])
+        merged.splice(bestPair + 1, 1)
+      } else {
+        break
       }
     }
   }
@@ -485,7 +470,7 @@ export function buildPageGroups(
     merged.push(group.slice(0, mid), group.slice(mid))
   }
 
-  // Final sweep: eliminate any remaining 1-photo groups by merging into neighbours
+  // Final sweep: eliminate singletons by merging into adjacent neighbor only
   let swept = true
   while (swept) {
     swept = false
@@ -493,21 +478,20 @@ export function buildPageGroups(
       if (merged[i].length !== 1) continue
       swept = true
       const singleton = merged.splice(i, 1)[0]
-      const singleSetting = groupDominantSetting(singleton)
 
-      let bestTarget = -1
-      let bestScore = -Infinity
-      for (let t = 0; t < merged.length; t++) {
-        if (merged[t].length >= MAX_GROUP) continue
-        const tSetting = groupDominantSetting(merged[t])
-        let score = -merged[t].length
-        if (singleSetting && tSetting === singleSetting) score += 100
-        const dist = Math.abs(t - Math.min(i, merged.length - 1))
-        if (dist <= 1) score += 10
-        if (score > bestScore) { bestScore = score; bestTarget = t }
-      }
-      if (bestTarget >= 0) {
-        merged[bestTarget].push(...singleton)
+      const prev = i > 0 ? i - 1 : -1
+      const next = i < merged.length ? i : -1
+
+      const prevFits = prev >= 0 && merged[prev].length < MAX_GROUP
+      const nextFits = next >= 0 && merged[next].length < MAX_GROUP
+
+      if (prevFits && nextFits) {
+        const target = merged[prev].length <= merged[next].length ? prev : next
+        merged[target].push(...singleton)
+      } else if (prevFits) {
+        merged[prev].push(...singleton)
+      } else if (nextFits) {
+        merged[next].push(...singleton)
       } else if (merged.length > 0) {
         const nearest = Math.min(i, merged.length - 1)
         merged[nearest].push(...singleton)
@@ -518,30 +502,25 @@ export function buildPageGroups(
     }
   }
 
-  // Collage pass: merge low-quality groups into collage-sized super-groups (up to 12)
+  // Collage pass: merge adjacent low-quality groups into collage-sized super-groups
   const COLLAGE_MAX = 12
   const LOW_QUALITY_THRESHOLD = 6
   if (merged.length + heroGroups.length > targetSpreads) {
     let didMerge = true
     while (didMerge) {
       didMerge = false
-      for (let i = 0; i < merged.length; i++) {
+      for (let i = 0; i < merged.length - 1; i++) {
         const group = merged[i]
+        const next = merged[i + 1]
         const avgQuality = group.reduce((s, p) => s + p.overallQuality, 0) / group.length
-        if (avgQuality >= LOW_QUALITY_THRESHOLD || group.length > MAX_GROUP) continue
+        const nextAvg = next.reduce((s, p) => s + p.overallQuality, 0) / next.length
+        if (avgQuality >= LOW_QUALITY_THRESHOLD || nextAvg >= LOW_QUALITY_THRESHOLD) continue
+        if (group.length + next.length > COLLAGE_MAX) continue
 
-        for (let j = i + 1; j < merged.length; j++) {
-          const other = merged[j]
-          const otherAvg = other.reduce((s, p) => s + p.overallQuality, 0) / other.length
-          if (otherAvg >= LOW_QUALITY_THRESHOLD) continue
-          if (group.length + other.length > COLLAGE_MAX) continue
-
-          group.push(...other)
-          merged.splice(j, 1)
-          didMerge = true
-          break
-        }
-        if (didMerge) break
+        group.push(...next)
+        merged.splice(i + 1, 1)
+        didMerge = true
+        break
       }
       if (merged.length + heroGroups.length <= targetSpreads) break
     }
