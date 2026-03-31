@@ -41,13 +41,13 @@ const PORTRAIT_TEMPLATES = [
   'single-portrait',
 ]
 const LANDSCAPE_TEMPLATES = [
-  'three-rows', 'full-spread', 'grid-3x2', 'detail-grid',
+  'three-rows', 'full-spread',
   'landscape-top-2sq', '2sq-top-landscape', 'two-landscapes-stacked',
 ]
 const MIXED_TEMPLATES = [
   'mixed-top-bottom', 'hero-top-grid-bottom', 'mosaic-5',
   'hero-left-grid-right', 'balanced-4', 'grid-2x2',
-  'cross-diagonal',
+  'grid-3x2', 'detail-grid', 'cross-diagonal',
 ]
 
 const EXTREME_ORIENTATION_TEMPLATES = new Set([

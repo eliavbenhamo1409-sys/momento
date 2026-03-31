@@ -136,19 +136,36 @@ function matchPhotosToSlots(
   const heroPhotos = sortedPhotos.filter((p) => p.overallQuality >= 9)
   const heroSlots = sortedSlots.filter((s) => s.importance === 'hero' || s.importance === 'primary')
 
-  for (let i = 0; i < Math.min(heroPhotos.length, heroSlots.length); i++) {
-    const photo = heroPhotos[i]
-    const slot = heroSlots[i]
-    if (usedPhotos.has(photo.photoId) || globalUsed?.has(photo.photoId)) continue
+  for (const slot of heroSlots) {
+    let bestPhoto: PhotoScore | null = null
+    let bestScore = -Infinity
 
-    usedPhotos.add(photo.photoId)
-    globalUsed?.add(photo.photoId)
-    const crop = computeCrop(photo, slot)
+    for (const photo of heroPhotos) {
+      if (usedPhotos.has(photo.photoId) || globalUsed?.has(photo.photoId)) continue
+
+      const displayOrientation = photo.recommendedDisplay ?? photo.orientation
+      const oScore = orientationMatchScore(slot.accepts, displayOrientation)
+      const severity = photo.hasFaces
+        ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, photo.facesRegion)
+        : 0
+      if (severity > 0.4) continue
+
+      const totalScore = oScore * 0.3 + (photo.overallQuality / 10) * 0.7 - severity * 0.5
+      if (totalScore > bestScore) {
+        bestScore = totalScore
+        bestPhoto = photo
+      }
+    }
+
+    if (!bestPhoto) continue
+    usedPhotos.add(bestPhoto.photoId)
+    globalUsed?.add(bestPhoto.photoId)
+    const crop = computeCrop(bestPhoto, slot)
     assignments.push({
       spreadIndex: 0,
       slotId: slot.id,
-      photoId: photo.photoId,
-      photoUrl: photoUrlMap.get(photo.photoId) ?? '',
+      photoId: bestPhoto.photoId,
+      photoUrl: photoUrlMap.get(bestPhoto.photoId) ?? '',
       needsCrop: crop !== null,
       cropSuggestion: crop,
       fitMode: crop ? 'custom' : 'cover',
@@ -165,12 +182,17 @@ function matchPhotosToSlots(
     for (const photo of sortedPhotos) {
       if (usedPhotos.has(photo.photoId) || globalUsed?.has(photo.photoId)) continue
 
+      const severity = photo.hasFaces
+        ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, photo.facesRegion)
+        : 0
+      if (severity > 0.4) continue
+
       const oScore = orientationMatchScore(slot.accepts, photo.recommendedDisplay ?? photo.orientation)
       const iScore = importanceMatchScore(slot.importance, photo.overallQuality)
       const fSafe = isFaceSafe(photo.facesRegion, slot.safeZone)
       const fPenalty = fSafe ? 0 : -0.3
 
-      const totalScore = oScore * 0.4 + iScore * 0.4 + (photo.overallQuality / 10) * 0.2 + fPenalty
+      const totalScore = oScore * 0.4 + iScore * 0.4 + (photo.overallQuality / 10) * 0.2 + fPenalty - severity * 0.3
       const crop = computeCrop(photo, slot)
 
       if (totalScore > bestScore) {
@@ -449,11 +471,16 @@ export function placePhotosInDesigns(
       for (const photo of sortedPhotos) {
         if (globalUsed.has(photo.photoId)) continue
 
+        const severity = photo.hasFaces
+          ? computeFaceCropSeverity(photo.aspectRatio, slot.width, slot.height, photo.facesRegion)
+          : 0
+        if (severity > 0.4) continue
+
         const oScore = slotAcceptsOrientation(slotAccepts, photo.recommendedDisplay ?? photo.orientation)
         const thresholds = { hero: 7, primary: 5, secondary: 3, accent: 1 }
         const threshold = thresholds[slot.importance] ?? 3
         const iScore = photo.overallQuality >= threshold ? 1.0 : photo.overallQuality >= threshold - 2 ? 0.6 : 0.3
-        const totalScore = oScore * 0.4 + iScore * 0.4 + (photo.overallQuality / 10) * 0.2
+        const totalScore = oScore * 0.4 + iScore * 0.4 + (photo.overallQuality / 10) * 0.2 - severity * 0.3
 
         if (totalScore > bestScore) {
           bestScore = totalScore
@@ -674,6 +701,7 @@ export function findFaceSafeTemplate(
         return order[a.importance] - order[b.importance]
       })
 
+    let squareSlotBonus = 0
     for (const fp of facePhotos) {
       let bestSlotScore = 0
       for (const slot of slots) {
@@ -687,10 +715,12 @@ export function findFaceSafeTemplate(
         )
         const slotScore = (1 - severity) * 0.7 + (1 / (1 + aspectDiff)) * 0.3
         bestSlotScore = Math.max(bestSlotScore, slotScore)
+        if (slotAspect >= 0.7 && slotAspect <= 1.4) squareSlotBonus += 0.05
       }
       faceFitScore += bestSlotScore
     }
     faceFitScore /= Math.max(facePhotos.length, 1)
+    faceFitScore += Math.min(squareSlotBonus, 0.2)
 
     return { template, score: faceFitScore }
   })
