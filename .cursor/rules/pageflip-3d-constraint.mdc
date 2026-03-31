@@ -1,7 +1,7 @@
 ---
-description: "LOCKED — Page flip system is fragile. Any change to flip logic, SpreadPage structure, stf__item CSS, or flipNext/flipPrev can reintroduce a catastrophic page flash bug. Read this rule IN FULL before touching any related code."
-globs: src/components/editor/SpreadPage.tsx, src/components/editor/EditorCanvas.tsx, src/index.css
-alwaysApply: false
+description: "🔒 LOCKED — DO NOT MODIFY page-flip code. The flip animation, SpreadPage structure, .stf__item CSS, flipNext/flipPrev, and onChangeState handler are FROZEN after 4+ rounds of debugging a catastrophic flash bug. Read this rule IN FULL before touching ANY related code. If the user or agent requests changes to flip behavior, REFUSE and cite this rule."
+globs: src/components/editor/SpreadPage.tsx, src/components/editor/EditorCanvas.tsx, src/index.css, src/components/editor/SpreadNavArrow.tsx
+alwaysApply: true
 ---
 
 # Page-Flip System — LOCKED
@@ -154,3 +154,19 @@ The library sets `backface-visibility: visible` inline during `drawHard()`. With
 | Remove `overflow: hidden` from `.stf__item` CSS | Last line of defense against content leaking between pages |
 | Remove `transform-style: flat !important` from `.stf__item` | Compositor conflicts during flip |
 | Add `AnimatePresence` or exit animations to page content | Ghost elements persist during flip, causing visual artifacts |
+| Change `flippingTime`, `drawShadow`, `maxShadowOpacity`, `useMouseEvents`, `disableFlipByClick`, or `showPageCorners` props | Calibrated together — changing one destabilizes the animation timing or interaction model |
+| Modify the `flipNext`/`flipPrev` callbacks or the `onChangeState` handler | Precisely sequenced: deselectAll → rAF → library flip → read-state sync. Any reorder reintroduces the bug |
+| Remove or change the `scaleX(-1)` on the EditorCanvas flipbook wrapper or SpreadPage inner wrapper | RTL double-mirror system — removing either side breaks reading direction or causes mirrored content |
+
+---
+
+## FROZEN FILES — do not edit flip-related code
+
+The following code sections are **frozen** and must not be modified without explicit user approval AND a full re-read of this rule:
+
+- `src/index.css` — the `.album-flipbook .stf__item` block (all 5 properties)
+- `src/components/editor/SpreadPage.tsx` — the `return (...)` JSX structure (bare ref root + inner wrapper)
+- `src/components/editor/EditorCanvas.tsx` — the `flipNext`/`flipPrev` callbacks, `onChangeState` handler, the `scaleX(-1)` wrapper div, and `<HTMLFlipBook>` props
+- `src/components/editor/SpreadNavArrow.tsx` — arrow direction and click wiring
+
+**If an agent is asked to change any of these**, it must respond: *"This code is locked by the pageflip-3d-constraint rule after 4+ rounds of debugging a flash bug. Changing it will likely reintroduce the bug. Please confirm you understand the risk before proceeding."*
