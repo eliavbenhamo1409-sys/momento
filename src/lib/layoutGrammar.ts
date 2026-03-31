@@ -387,21 +387,27 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
-  // ── 13. Full Spread (1 landscape photo across both pages) ──────
+  // ── 13. Full Spread — requires 2+ photos to prevent single-photo waste
   {
     id: 'full-spread',
     name: 'פנורמה מלאה',
     category: 'hero',
-    minPhotos: 1,
-    maxPhotos: 1,
+    minPhotos: 2,
+    maxPhotos: 3,
     acceptsQuote: false,
-    cannotRepeatWithin: 3,
+    cannotRepeatWithin: 999,
     bestForMood: ['dramatic', 'serene', 'romantic', 'nostalgic'],
-    bestForScene: ['landscape_scenic', 'outdoor', 'portrait'],
+    bestForScene: ['landscape_scenic', 'outdoor'],
     spanning: true,
     slots: [
-      slot('full-span', 'left', 0, 0, 100, 100, {
-        importance: 'hero', minQuality: 7, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      slot('full-span', 'left', 0, 0, 100, 55, {
+        importance: 'hero', minQuality: 7, accepts: ['landscape'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-left', 'left', 0, 55, 50, 45, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-right', 'right', 50, 55, 50, 45, {
+        importance: 'secondary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED,
       }),
     ],
   },
@@ -898,6 +904,176 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
       }),
     ],
   },
+
+  // ── 33. Asymmetric Hero + Steps (break symmetry) ──────────────────
+  {
+    id: 'asymmetric-hero-steps',
+    name: 'ראשית + מדרגות',
+    category: 'balanced',
+    minPhotos: 4,
+    maxPhotos: 5,
+    acceptsQuote: false,
+    cannotRepeatWithin: 3,
+    bestForMood: ['joyful', 'romantic', 'nostalgic', 'energetic'],
+    bestForScene: ['outdoor', 'portrait', 'group', 'detail'],
+    slots: [
+      slot('left-big', 'left', 0, 0, 100, 65, {
+        importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('left-small', 'left', 0, 65, 55, 35, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-tall', 'right', 0, 0, 55, 65, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-top-small', 'right', 55, 0, 45, 40, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-bottom', 'right', 0, 65, 100, 35, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 34. L-Shape (big feature + small accents in corner) ──────────
+  {
+    id: 'l-shape',
+    name: 'צורת L',
+    category: 'hero',
+    minPhotos: 3,
+    maxPhotos: 4,
+    acceptsQuote: false,
+    cannotRepeatWithin: 3,
+    bestForMood: ['romantic', 'dramatic', 'tender', 'serene'],
+    bestForScene: ['portrait', 'outdoor', 'landscape_scenic', 'group'],
+    slots: [
+      slot('left-hero', 'left', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_GUTTER,
+      }),
+      slot('right-feature', 'right', 0, 0, 65, 65, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-bottom-left', 'right', 0, 65, 65, 35, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-side', 'right', 65, 0, 35, 65, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 35. Dynamic Trio (1 dominant + 2 offset) ─────────────────────
+  {
+    id: 'dynamic-trio',
+    name: 'שלישיית דינמית',
+    category: 'balanced',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: true,
+    quotePosition: 'right-bottom',
+    cannotRepeatWithin: 3,
+    bestForMood: ['joyful', 'romantic', 'nostalgic', 'energetic'],
+    bestForScene: ['outdoor', 'portrait', 'group', 'detail'],
+    slots: [
+      slot('left-full', 'left', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-large', 'right', 0, 0, 100, 60, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-small', 'right', 25, 60, 75, 40, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 36. Staggered Grid (asymmetric 5-photo layout) ───────────────
+  {
+    id: 'staggered-grid',
+    name: 'רשת משוחררת',
+    category: 'grid',
+    minPhotos: 5,
+    maxPhotos: 6,
+    acceptsQuote: false,
+    cannotRepeatWithin: 3,
+    bestForMood: ['joyful', 'energetic', 'nostalgic'],
+    bestForScene: ['detail', 'group', 'outdoor', 'food'],
+    slots: [
+      slot('left-big', 'left', 0, 0, 60, 55, {
+        importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('left-top-right', 'left', 60, 0, 40, 45, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('left-bottom', 'left', 0, 55, 100, 45, {
+        importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-top', 'right', 0, 0, 100, 55, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-bottom-left', 'right', 0, 55, 45, 45, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-bottom-right', 'right', 45, 55, 55, 45, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 37. Photo Over Photo (background + overlay square) ───────────
+  {
+    id: 'photo-over-photo',
+    name: 'תמונה על תמונה',
+    category: 'hero',
+    minPhotos: 3,
+    maxPhotos: 4,
+    acceptsQuote: true,
+    quotePosition: 'right-center',
+    cannotRepeatWithin: 4,
+    bestForMood: ['romantic', 'dramatic', 'serene', 'tender'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'portrait'],
+    slots: [
+      slot('bg-photo', 'left', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 7, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('overlay-square', 'left', 55, 55, 40, 40, {
+        importance: 'primary', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-top', 'right', 0, 0, 100, 55, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-bottom-left', 'right', 0, 55, 50, 45, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 38. Photo Over Photo (right page variant) ────────────────────
+  {
+    id: 'photo-over-photo-right',
+    name: 'תמונה על תמונה ימין',
+    category: 'hero',
+    minPhotos: 3,
+    maxPhotos: 4,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['romantic', 'dramatic', 'serene', 'tender'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'portrait'],
+    slots: [
+      slot('left-top', 'left', 0, 0, 100, 55, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('left-bottom-left', 'left', 0, 55, 50, 45, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bg-photo', 'right', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 7, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('overlay-square', 'right', 5, 55, 40, 40, {
+        importance: 'primary', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
 ]
 
 // ─── Template Lookup ────────────────────────────────────────────────
@@ -950,29 +1126,28 @@ export function isTemplateAllowedAtPosition(
 export const FALLBACK_SEQUENCE: string[] = [
   'cover-hero',
   'detail-grid',
-  'portrait-grid-4',
+  'photo-over-photo',
   'hero-top-grid-bottom',
   'portrait-duo',
-  'grid-3x2',
+  'asymmetric-hero-steps',
   'mosaic-5',
-  'full-spread',
+  'dynamic-trio',
   'portrait-hero-grid',
   'hero-left-grid-right',
-  'portrait-5',
-  'detail-grid',
+  'staggered-grid',
+  'l-shape',
   'three-rows',
-  'mixed-top-bottom',
+  'photo-over-photo-right',
   'portrait-trio',
   'grid-2x2',
   'hero-top-grid-bottom',
-  'portrait-6',
+  'balanced-4',
   'trio-left-hero-right',
   'grid-3x2',
   'mosaic-5',
-  'balanced-4',
+  'asymmetric-hero-steps',
   'portrait-grid-4',
   'detail-grid',
-  'full-spread',
   'hero-left-grid-right',
 ]
 

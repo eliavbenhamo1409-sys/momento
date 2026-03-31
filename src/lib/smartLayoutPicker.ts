@@ -52,6 +52,8 @@ const MIXED_TEMPLATES = [
   'mixed-top-bottom', 'hero-top-grid-bottom', 'mosaic-5',
   'hero-left-grid-right', 'balanced-4', 'grid-2x2',
   'grid-3x2', 'detail-grid', 'cross-diagonal', 'three-rows',
+  'asymmetric-hero-steps', 'l-shape', 'dynamic-trio', 'staggered-grid',
+  'photo-over-photo', 'photo-over-photo-right',
 ]
 
 const EXTREME_ORIENTATION_TEMPLATES = new Set([

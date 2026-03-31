@@ -391,6 +391,101 @@ const MemoLegacyPhotoSlot = React.memo(function MemoLegacyPhotoSlot({
   )
 })
 
+const OVERLAY_TEMPLATES: Record<string, 'left' | 'right'> = {
+  'photo-over-photo': 'left',
+  'photo-over-photo-right': 'right',
+}
+
+function OverlayPageElements({
+  spread,
+  style,
+  variant,
+  side,
+  selectedPhotoId,
+  selectPhoto,
+}: {
+  spread: EditorSpread
+  style: ResolvedSpreadStyle
+  variant: TemplateVariant | null
+  side: 'left' | 'right'
+  selectedPhotoId: string | null
+  selectPhoto: (id: string | null) => void
+}) {
+  const slotDataByUrl = useMemo(
+    () => new Map((spread.slots ?? []).map((s) => [s.photoUrl, s])),
+    [spread.slots],
+  )
+
+  const handleToggleSelect = useCallback((photoId: string) => {
+    selectPhoto(selectedPhotoId === photoId ? null : photoId)
+  }, [selectPhoto, selectedPhotoId])
+
+  const photos = side === 'left' ? spread.leftPhotos : spread.rightPhotos
+  const bgSrc = photos[0]
+  const overlaySrc = photos[1]
+
+  const bgSlotData = bgSrc ? slotDataByUrl.get(bgSrc) as EnrichedSlotData | undefined : undefined
+  const overlaySlotData = overlaySrc ? slotDataByUrl.get(overlaySrc) as EnrichedSlotData | undefined : undefined
+
+  return (
+    <div className="w-full h-full relative z-[1]">
+      {bgSrc ? (
+        <div
+          className="absolute inset-0 overflow-hidden"
+          style={{ borderRadius: style.frame.borderRadius }}
+        >
+          <MemoLegacyPhotoSlot
+            src={bgSrc}
+            photoId={`${spread.id}-${side}-0`}
+            isSelected={selectedPhotoId === `${spread.id}-${side}-0`}
+            onToggleSelect={handleToggleSelect}
+            objectPosition={bgSlotData?.objectPosition}
+            transform={bgSlotData?.transform}
+            frame={{ ...style.frame, borderWidth: 0, shadow: 'none', innerPadding: 0 }}
+            variant={variant}
+            slotImportance="hero"
+          />
+        </div>
+      ) : (
+        <EmptySlot spreadId={spread.id} side={side} index={0} className="absolute inset-0" />
+      )}
+
+      {overlaySrc && (
+        <div
+          className="absolute z-10"
+          style={{
+            right: side === 'left' ? '6%' : undefined,
+            left: side === 'right' ? '6%' : undefined,
+            bottom: '6%',
+            width: '38%',
+            aspectRatio: '1',
+          }}
+        >
+          <div
+            className="w-full h-full rounded-xl overflow-hidden"
+            style={{
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.15)',
+              border: '3px solid rgba(255,255,255,0.85)',
+            }}
+          >
+            <MemoLegacyPhotoSlot
+              src={overlaySrc}
+              photoId={`${spread.id}-${side}-1`}
+              isSelected={selectedPhotoId === `${spread.id}-${side}-1`}
+              onToggleSelect={handleToggleSelect}
+              objectPosition={overlaySlotData?.objectPosition}
+              transform={overlaySlotData?.transform}
+              frame={{ ...style.frame, borderWidth: 0, borderRadius: 12, shadow: 'none', innerPadding: 0 }}
+              variant={variant}
+              slotImportance="primary"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function LegacyPageElements({
   spread,
   style,
@@ -418,6 +513,20 @@ function LegacyPageElements({
   const adj = variant?.adjustments
   const gapPx = adj?.gapOverride ?? style.spacing.photoGapPx
   const photos = side === 'left' ? spread.leftPhotos : spread.rightPhotos
+
+  const overlaySide = spread.templateId ? OVERLAY_TEMPLATES[spread.templateId] : undefined
+  if (overlaySide === side) {
+    return (
+      <OverlayPageElements
+        spread={spread}
+        style={style}
+        variant={variant}
+        side={side}
+        selectedPhotoId={selectedPhotoId}
+        selectPhoto={selectPhoto}
+      />
+    )
+  }
 
   if (side === 'left') {
     return (
