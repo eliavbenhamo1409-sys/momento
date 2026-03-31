@@ -270,6 +270,8 @@ body {
   background-color: #fff;
   transform-style: flat !important;
   overflow: hidden;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
 }
 .album-flipbook .stf__outerShadow,
 .album-flipbook .stf__innerShadow,

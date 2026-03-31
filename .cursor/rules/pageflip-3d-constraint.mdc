@@ -18,10 +18,11 @@ When flipping a page, ONE photo from the destination page would appear "dressed 
 2. **React DOM mutations during flip** — Updating `currentSpreadIndex` (and thus `isCurrent` on each `SpreadPage`) while the flip is animating toggles selection, overflow, and shadows on pages that are still on screen, which looks like a "wrong photo" or placeholder swap. **Do not** sync the store from `onFlip`; sync only when the library returns to `read` state (see constraint 2 below). Never virtualize spreads with an `isNearby`-style placeholder vs full content during a flip.
 3. **Unstable `children` prop** — `react-pageflip` calls `updateFromHtml()` (full page reinitialization) whenever its `children` prop reference changes, tearing down and rebuilding all pages mid-animation.
 4. **`cssText` clobbering** — `page-flip` overwrites `element.style.cssText` on the `.stf__item` node every animation frame (`drawHard`, `drawSoft`, `simpleDraw`). Any React inline style on that node (transform, background, overflow, dimensions) is **deleted** the moment a flip starts. Visual chrome and the RTL mirror **must** live on an inner wrapper that the library never touches.
+5. **Backface flash from triple-mirror stack** — During a hard flip, the library sets `backface-visibility: visible` and draws the flipping page at `rotateY(180°)` at the START of the animation, at the same z-index and same visual position as the current page. The triple-mirror chain (EditorCanvas `scaleX(-1)` × `rotateY(180°)` backface × inner `scaleX(-1)`) produces visible destination-page content overlaid on the current page at frame 1. Overriding to `backface-visibility: hidden !important` hides pages rotated past 90°, producing a clean flip with no flash.
 
 ---
 
-## SEVEN mandatory constraints
+## EIGHT mandatory constraints
 
 ### 1. Deselect before flipping (arrows AND swipe)
 
@@ -87,6 +88,10 @@ Use a stable reference: `const flipBookStyle = useMemo(() => ({}), [])`. A liter
 
 `page-flip` overwrites `element.style.cssText` on the `.stf__item` node every animation frame. **Do not** put `transform`, `backgroundColor`, `overflow`, `width`, `height`, or any other inline style on the outer `ref` div. All visual properties belong on the **inner wrapper** div.
 
+### 8. `backface-visibility: hidden !important` on `.stf__item`
+
+The library sets `backface-visibility: visible` inline during `drawHard()`. With the RTL double-mirror setup, this causes the flipping page (starting at `rotateY(180°)`, z-index 5) to show through on the same visual position as the current page — an immediate flash of destination content. The CSS `!important` override hides pages whose back face points toward the viewer, producing a clean rotation where the old page fades out past 90° and the new page fades in from 90°.
+
 ---
 
 ## Required CSS on `.stf__item` (src/index.css)
@@ -96,14 +101,17 @@ Use a stable reference: `const flipBookStyle = useMemo(() => ({}), [])`. A liter
   background-color: #fff;
   transform-style: flat !important;
   overflow: hidden;
+  backface-visibility: hidden !important;
+  -webkit-backface-visibility: hidden !important;
 }
 ```
 
 - `transform-style: flat !important` — Prevents page content from participating in the parent's 3D stacking in a way that causes compositor glitches during `rotateY` flip.
 - `overflow: hidden` — Hard clip boundary. Even if a photo somehow has `overflow: visible`, content cannot escape the page rectangle.
 - `background-color: #fff` — Ensures opaque pages; prevents destination page content from showing through transparent areas.
+- `backface-visibility: hidden !important` — **Critical.** Overrides the library's inline `backface-visibility: visible`. Without this, the flipping page at `rotateY(180°)` shows through the triple-mirror stack (`EditorCanvas scaleX(-1)` × backface × inner `scaleX(-1)`), causing the destination photo to appear instantly on the current page at the start of every flip.
 
-**Do NOT remove or weaken any of these three properties.**
+**Do NOT remove or weaken any of these properties.**
 
 ---
 
@@ -138,7 +146,7 @@ Use a stable reference: `const flipBookStyle = useMemo(() => ({}), [])`. A liter
 | Put React inline styles on SpreadPage's `ref` div | `page-flip` overwrites `cssText` every frame — styles vanish mid-flip |
 | Call `setCurrentSpread` from `onFlip` | Store / `isCurrent` updates mid-flip — wrong layer or "jumping" content |
 | Add `isNearby` (or similar) placeholder branch | **Core flash bug:** subtree swap when index changes mid-flip |
-| Add `backfaceVisibility: hidden` to SpreadPage root | GPU glitch with `scaleX(-1)` mirror |
+| Remove `backface-visibility: hidden !important` from `.stf__item` CSS | Destination page backface becomes visible at start of flip — instant flash |
 | Pass interaction state as props to SpreadPage | Breaks `flipPages` memoization — `updateFromHtml()` |
 | Use `style={{}}` on HTMLFlipBook | New object every render — breaks `React.memo` |
 | Call `flipNext()`/`flipPrev()` without `deselectAll()` first | `overflow: visible` on selected photo leaks across pages |
