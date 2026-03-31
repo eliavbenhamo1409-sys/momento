@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import Icon from '../shared/Icon'
 import type { CoverMaterial } from '../../types'
@@ -126,22 +127,133 @@ export function CoverMaterialPicker({
   const safeValue = value && materials.includes(value) ? value : DEFAULT_MATERIAL
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [menuRect, setMenuRect] = useState<{ top: number; left: number; width: number } | null>(null)
 
   const close = useCallback(() => setOpen(false), [])
+
+  const updateMenuPosition = useCallback(() => {
+    const btn = buttonRef.current
+    if (!btn) return
+    const r = btn.getBoundingClientRect()
+    setMenuRect({
+      top: r.bottom + 6,
+      left: r.left,
+      width: Math.max(r.width, 120),
+    })
+  }, [])
+
+  useLayoutEffect(() => {
+    if (!open) return
+    updateMenuPosition()
+    const id = requestAnimationFrame(updateMenuPosition)
+    return () => cancelAnimationFrame(id)
+  }, [open, updateMenuPosition])
+
+  useEffect(() => {
+    if (!open) return
+    const onWin = () => updateMenuPosition()
+    window.addEventListener('resize', onWin)
+    window.addEventListener('scroll', onWin, true)
+    return () => {
+      window.removeEventListener('resize', onWin)
+      window.removeEventListener('scroll', onWin, true)
+    }
+  }, [open, updateMenuPosition])
 
   useEffect(() => {
     if (!open) return
     const onDoc = (e: MouseEvent) => {
-      const el = rootRef.current
-      if (el && !el.contains(e.target as Node)) close()
+      const t = e.target as Node
+      if (rootRef.current?.contains(t)) return
+      if (menuRef.current?.contains(t)) return
+      close()
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') close()
     }
     document.addEventListener('mousedown', onDoc, true)
-    return () => document.removeEventListener('mousedown', onDoc, true)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc, true)
+      document.removeEventListener('keydown', onKey)
+    }
   }, [open, close])
 
   const current = MATERIALS[safeValue]
 
+  const menuLayer =
+    typeof document !== 'undefined'
+      ? createPortal(
+          <AnimatePresence>
+            {open && menuRect ? (
+              <motion.div
+                key="cover-material-menu"
+                ref={menuRef}
+                role="listbox"
+                dir="rtl"
+                aria-label="חומר כריכה"
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                className="fixed py-1 rounded-xl border border-black/[0.08] shadow-[0_12px_40px_rgba(45,40,35,0.18)] overflow-hidden pointer-events-auto"
+                style={{
+                  backgroundColor: '#faf8f5',
+                  top: menuRect.top,
+                  left: menuRect.left,
+                  width: menuRect.width,
+                  zIndex: 200,
+                }}
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}
+              >
+                {materials.map((mat) => {
+                  const info = MATERIALS[mat]
+                  const active = mat === safeValue
+                  return (
+                    <button
+                      key={mat}
+                      type="button"
+                      role="option"
+                      aria-selected={active}
+                      className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 text-right transition-colors ${
+                        active ? 'bg-sage/12' : 'hover:bg-black/[0.04]'
+                      }`}
+                      onClick={() => {
+                        onChange(mat)
+                        close()
+                      }}
+                    >
+                      <span
+                        className="size-5 rounded-md shrink-0 ring-1 ring-black/[0.06]"
+                        style={{
+                          backgroundColor: info.solid,
+                          backgroundImage: `${info.texture}, ${info.bg}`,
+                        }}
+                      />
+                      <span
+                        className="text-[11px] font-semibold text-deep-brown/85"
+                        style={{ fontFamily: 'var(--font-family-body)' }}
+                      >
+                        {info.label}
+                      </span>
+                      {active && (
+                        <Icon name="check" size={16} className="text-sage ms-auto shrink-0" />
+                      )}
+                    </button>
+                  )
+                })}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>,
+          document.body,
+        )
+      : null
+
   return (
+    <>
     <div
       ref={rootRef}
       dir="rtl"
@@ -150,6 +262,7 @@ export function CoverMaterialPicker({
       onPointerDown={(e) => e.stopPropagation()}
     >
       <motion.button
+        ref={buttonRef}
         type="button"
         aria-expanded={open}
         aria-haspopup="listbox"
@@ -181,58 +294,8 @@ export function CoverMaterialPicker({
           className={`text-deep-brown/45 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`}
         />
       </motion.button>
-
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            role="listbox"
-            aria-label="חומר כריכה"
-            initial={{ opacity: 0, y: -4, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.98 }}
-            transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-            className="absolute end-0 top-[calc(100%+6px)] min-w-full py-1 rounded-xl border border-black/[0.08] shadow-[0_8px_28px_rgba(45,40,35,0.12)] overflow-hidden"
-            style={{ backgroundColor: '#faf8f5' }}
-          >
-            {materials.map((mat) => {
-              const info = MATERIALS[mat]
-              const active = mat === safeValue
-              return (
-                <button
-                  key={mat}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  className={`w-full flex items-center gap-2.5 px-2.5 py-1.5 text-right transition-colors ${
-                    active ? 'bg-sage/12' : 'hover:bg-black/[0.04]'
-                  }`}
-                  onClick={() => {
-                    onChange(mat)
-                    close()
-                  }}
-                >
-                  <span
-                    className="size-5 rounded-md shrink-0 ring-1 ring-black/[0.06]"
-                    style={{
-                      backgroundColor: info.solid,
-                      backgroundImage: `${info.texture}, ${info.bg}`,
-                    }}
-                  />
-                  <span
-                    className="text-[11px] font-semibold text-deep-brown/85"
-                    style={{ fontFamily: 'var(--font-family-body)' }}
-                  >
-                    {info.label}
-                  </span>
-                  {active && (
-                    <Icon name="check" size={16} className="text-sage ms-auto shrink-0" />
-                  )}
-                </button>
-              )
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
     </div>
+    {menuLayer}
+    </>
   )
 }
