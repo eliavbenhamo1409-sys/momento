@@ -1890,8 +1890,12 @@ export default function EditorCanvas() {
         />
       </div>
 
-      {/* Cover material selector */}
-      <div className="flex justify-center mt-3">
+      {/* Cover material selector — stopPropagation so canvas bg-click / deselect does not steal taps */}
+      <div
+        className="flex justify-center mt-4 mb-2 sm:mb-6 relative z-30"
+        onClick={(e) => e.stopPropagation()}
+        onPointerDown={(e) => e.stopPropagation()}
+      >
         <CoverMaterialPicker
           value={coverMaterial}
           onChange={(m) => setCoverMaterial('coverMaterial', m)}
