@@ -333,7 +333,7 @@ export function placePhotosInSpreads(
       // 1-photo spread: duplicate onto both pages as a cinematic duo
       if (planScores.length === 1) {
         const singleUrl = photoUrlMap.get(planScores[0].photoId) ?? ''
-        const crop = computeCrop(planScores[0], { id: 'forced', page: 'left', x: 0, y: 0, width: 100, height: 100, importance: 'hero', accepts: ['any'], safeZone: { top: 0, bottom: 0, left: 0, right: 0 } })
+        const crop = computeCrop(planScores[0], { id: 'forced', page: 'left', x: 0, y: 0, width: 100, height: 100, importance: 'hero', minQuality: 1, accepts: ['any'], safeZone: { top: 0, bottom: 0, left: 0, right: 0 } })
         const pos = crop ? `${Math.round(crop.focusX * 100)}% ${Math.round(crop.focusY * 100)}%` : '50% 35%'
         return {
           id: `spread-${idx}-${Date.now().toString(36)}`,
