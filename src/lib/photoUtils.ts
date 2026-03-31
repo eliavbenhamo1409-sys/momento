@@ -1,7 +1,93 @@
 import exifr from 'exifr'
+import heic2any from 'heic2any'
 import type { Photo, PhotoOrientation } from '../types'
 
 const MAX_VISION_DIM = 512
+
+const NATIVE_IMAGE_TYPES = new Set([
+  'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+  'image/bmp', 'image/svg+xml', 'image/avif',
+])
+
+const HEIC_TYPES = new Set([
+  'image/heic', 'image/heif', 'image/heic-sequence', 'image/heif-sequence',
+])
+
+const HEIC_EXTENSIONS = /\.(heic|heif)$/i
+
+const CONVERTIBLE_IMAGE_TYPES = new Set([
+  'image/tiff', 'image/x-tiff',
+  'image/x-icon', 'image/vnd.microsoft.icon',
+  'image/x-ms-bmp',
+])
+
+/**
+ * Returns true when the browser can natively decode this file as an image
+ * (or we can convert it client-side).
+ */
+export function isImageFile(file: File): boolean {
+  const { type, name } = file
+  if (NATIVE_IMAGE_TYPES.has(type)) return true
+  if (HEIC_TYPES.has(type) || HEIC_EXTENSIONS.test(name)) return true
+  if (CONVERTIBLE_IMAGE_TYPES.has(type)) return true
+  if (type.startsWith('image/')) return true
+  const ext = name.split('.').pop()?.toLowerCase() ?? ''
+  return ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp', 'avif', 'svg',
+    'heic', 'heif', 'tiff', 'tif', 'ico'].includes(ext)
+}
+
+function isHeicFile(file: File): boolean {
+  return HEIC_TYPES.has(file.type) || HEIC_EXTENSIONS.test(file.name)
+}
+
+function canvasConvert(blob: Blob): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(blob)
+    const img = new Image()
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      canvas.getContext('2d')!.drawImage(img, 0, 0)
+      canvas.toBlob(
+        (out) => (out ? resolve(out) : reject(new Error('Canvas conversion failed'))),
+        'image/jpeg',
+        0.92,
+      )
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('Browser cannot decode this image format'))
+    }
+    img.src = url
+  })
+}
+
+/**
+ * Convert any image file to a browser-displayable format.
+ * HEIC/HEIF → JPEG via heic2any, other exotic types → canvas re-encode.
+ * Returns the original File unchanged if already natively supported.
+ */
+export async function convertImageFile(file: File): Promise<File> {
+  if (NATIVE_IMAGE_TYPES.has(file.type)) return file
+
+  if (isHeicFile(file)) {
+    const result = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.92 })
+    const jpeg = Array.isArray(result) ? result[0] : result
+    const name = file.name.replace(/\.(heic|heif)$/i, '.jpg')
+    return new File([jpeg], name, { type: 'image/jpeg', lastModified: file.lastModified })
+  }
+
+  try {
+    const jpeg = await canvasConvert(file)
+    const ext = file.name.split('.').pop()?.toLowerCase() ?? ''
+    const name = file.name.replace(new RegExp(`\\.${ext}$`, 'i'), '.jpg')
+    return new File([jpeg], name, { type: 'image/jpeg', lastModified: file.lastModified })
+  } catch {
+    return file
+  }
+}
 
 /** Detect orientation from image dimensions */
 export function detectOrientation(width: number, height: number): PhotoOrientation {

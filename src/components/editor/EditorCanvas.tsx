@@ -80,11 +80,15 @@ export function EmptySlot({
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,.heic,.heif,.tiff,.tif"
         className="sr-only"
-        onChange={(e) => {
-          const f = e.target.files?.[0]
-          if (f) assignSlotImageFromFile(spreadId, side, index, f)
+        onChange={async (e) => {
+          const raw = e.target.files?.[0]
+          if (raw) {
+            const { convertImageFile } = await import('../../lib/photoUtils')
+            const f = await convertImageFile(raw).catch(() => raw)
+            assignSlotImageFromFile(spreadId, side, index, f)
+          }
           e.target.value = ''
         }}
       />
@@ -818,7 +822,13 @@ export function AbsolutePhotoElement({
   // Uses native listeners + setPointerCapture so the drag keeps
   // working even after React re-renders inject the selection UI.
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
-    if (!element.photoUrl || isSwapping) return
+    if (isSwapping) {
+      e.stopPropagation()
+      e.preventDefault()
+      onSelectRef.current()
+      return
+    }
+    if (!element.photoUrl) return
     e.stopPropagation()
     e.preventDefault()
 
@@ -1014,16 +1024,20 @@ export function AbsolutePhotoElement({
             data-slot-id={element.slotId}
             data-spread-id={spreadId}
             data-has-photo="false"
-            onClick={(e) => { e.stopPropagation(); if (!drag) emptyFileRef.current?.click() }}
+            onClick={(e) => { e.stopPropagation(); if (!drag && !isSwapping) emptyFileRef.current?.click() }}
           >
             <input
               ref={emptyFileRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif,.tiff,.tif"
               className="sr-only"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) replaceInSlot(element.slotId, f)
+              onChange={async (e) => {
+                const raw = e.target.files?.[0]
+                if (raw) {
+                  const { convertImageFile } = await import('../../lib/photoUtils')
+                  const f = await convertImageFile(raw).catch(() => raw)
+                  replaceInSlot(element.slotId, f)
+                }
                 e.target.value = ''
               }}
             />
@@ -1093,8 +1107,9 @@ export function AbsolutePhotoElement({
             onAiResult={(sid, dataUrl) => setPhotoUrl(sid, dataUrl)}
             onToggleMove={() => setIsMoveMode((v) => !v)}
             onSwap={() => {
-              const { enterSwapMode } = useEditorStore.getState()
+              const { enterSwapMode, setSwapSource } = useEditorStore.getState()
               enterSwapMode()
+              setSwapSource(element.slotId)
             }}
             onPaddingChange={(p) => {
               const { updatePhotoPadding } = useEditorStore.getState()
@@ -1106,11 +1121,15 @@ export function AbsolutePhotoElement({
           <input
             ref={replaceFileRef}
             type="file"
-            accept="image/*"
+            accept="image/*,.heic,.heif,.tiff,.tif"
             className="sr-only"
-            onChange={(e) => {
-              const f = e.target.files?.[0]
-              if (f) replaceInSlot(element.slotId, f)
+            onChange={async (e) => {
+              const raw = e.target.files?.[0]
+              if (raw) {
+                const { convertImageFile } = await import('../../lib/photoUtils')
+                const f = await convertImageFile(raw).catch(() => raw)
+                replaceInSlot(element.slotId, f)
+              }
               e.target.value = ''
             }}
           />

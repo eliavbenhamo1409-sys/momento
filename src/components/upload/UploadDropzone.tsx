@@ -51,7 +51,7 @@ export default function UploadDropzone() {
           ref={inputRef}
           type="file"
           multiple
-          accept="image/*"
+          accept="image/*,.heic,.heif,.tiff,.tif"
           onChange={handleFileChange}
           className="hidden"
         />
@@ -74,7 +74,7 @@ export default function UploadDropzone() {
         <div className="flex gap-3">
           <span className="flex items-center gap-1.5 px-4 py-2 bg-surface-container-highest rounded-full text-xs text-secondary font-medium">
             <Icon name="photo_library" size={14} />
-            JPG, PNG, HEIC
+            כל סוגי התמונות
           </span>
           <span className="flex items-center gap-1.5 px-4 py-2 bg-surface-container-highest rounded-full text-xs text-secondary font-medium">
             <Icon name="speed" size={14} />

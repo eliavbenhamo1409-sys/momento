@@ -1,7 +1,7 @@
 import { useCallback, useRef } from 'react'
 import { useAlbumStore } from '../store/albumStore'
 import { useShallow } from 'zustand/react/shallow'
-import { createThumbnailUrl } from '../lib/photoUtils'
+import { createThumbnailUrl, isImageFile, convertImageFile } from '../lib/photoUtils'
 import type { Photo } from '../types'
 
 let photoCounter = 0
@@ -24,9 +24,7 @@ export function useFileUpload() {
 
   const processFiles = useCallback(
     async (files: FileList | File[], append = false) => {
-      const imageFiles = Array.from(files).filter((f) =>
-        f.type.startsWith('image/'),
-      )
+      const imageFiles = Array.from(files).filter(isImageFile)
       if (imageFiles.length === 0) return false
 
       setIsUploading(true)
@@ -39,7 +37,13 @@ export function useFileUpload() {
       for (let i = 0; i < total; i++) {
         if (abortRef.current) break
 
-        const file = imageFiles[i]
+        let file: File
+        try {
+          file = await convertImageFile(imageFiles[i])
+        } catch {
+          file = imageFiles[i]
+        }
+
         const id = `photo-${++photoCounter}`
         const fullUrl = URL.createObjectURL(file)
 

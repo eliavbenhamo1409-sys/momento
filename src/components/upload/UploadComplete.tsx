@@ -36,7 +36,7 @@ export default function UploadComplete() {
         ref={inputRef}
         type="file"
         multiple
-        accept="image/*"
+        accept="image/*,.heic,.heif,.tiff,.tif"
         onChange={handleAddFiles}
         className="hidden"
       />

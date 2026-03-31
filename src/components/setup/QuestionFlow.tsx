@@ -61,17 +61,18 @@ export default function QuestionFlow() {
   const canProceed = true
 
   const handleFiles = useCallback(async (files: FileList | File[]) => {
+    const { isImageFile, convertImageFile } = await import('../../lib/photoUtils')
     const remaining = MAX_REFERENCES - vibeReferences.length
-    const toProcess = Array.from(files).slice(0, remaining)
+    const toProcess = Array.from(files).filter(isImageFile).slice(0, remaining)
 
-    for (const file of toProcess) {
-      if (!file.type.startsWith('image/')) continue
+    for (const rawFile of toProcess) {
       try {
+        const file = await convertImageFile(rawFile).catch(() => rawFile)
         const dataUrl = await fileToDataUrl(file)
         addVibeReference({
           id: `ref-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
           dataUrl,
-          name: file.name,
+          name: rawFile.name,
         })
       } catch (err) {
         console.error('Failed to read reference image:', err)
@@ -263,7 +264,7 @@ export default function QuestionFlow() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
+                accept="image/*,.heic,.heif,.tiff,.tif"
                 multiple
                 className="hidden"
                 onChange={(e) => {

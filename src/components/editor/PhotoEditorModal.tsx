@@ -397,11 +397,13 @@ export default function PhotoEditorModal() {
             <input
               ref={fileRef}
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif,.tiff,.tif"
               className="sr-only"
-              onChange={(e) => {
-                const f = e.target.files?.[0]
-                if (f) {
+              onChange={async (e) => {
+                const raw = e.target.files?.[0]
+                if (raw) {
+                  const { convertImageFile } = await import('../../lib/photoUtils')
+                  const f = await convertImageFile(raw).catch(() => raw)
                   replacePhotoInSlot(slotId, f)
                   addToast('התמונה הוחלפה בהצלחה', 'success')
                 }
