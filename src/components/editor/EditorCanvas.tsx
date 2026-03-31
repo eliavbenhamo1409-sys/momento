@@ -174,7 +174,7 @@ export function LegacyPhotoSlot({
           alt=""
           className="w-full h-full object-cover"
           style={{
-            objectPosition: objectPosition || '50% 50%',
+            objectPosition: objectPosition || '50% 35%',
             transform: transform || undefined,
           }}
         />
@@ -836,7 +836,7 @@ export function AbsolutePhotoElement({
     const cW = containerRect.width || 1
     const cH = containerRect.height || 1
 
-    const [posXStr, posYStr] = (element.objectPosition || '50% 50%').split(' ')
+    const [posXStr, posYStr] = (element.objectPosition || '50% 35%').split(' ')
     let posX = parseFloat(posXStr) || 50
     let posY = parseFloat(posYStr) || 50
     const effScale = Math.max(1.12, element.scale ?? 1)
@@ -1000,9 +1000,9 @@ export function AbsolutePhotoElement({
               className="w-full h-full object-cover select-none"
               draggable={false}
               style={{
-                objectPosition: element.objectPosition || '50% 50%',
+                objectPosition: element.objectPosition || '50% 35%',
                 objectFit: element.objectFit,
-                transformOrigin: element.objectPosition || '50% 50%',
+                transformOrigin: element.objectPosition || '50% 35%',
                 transform: `scale(${Math.max(1.12, currentScale)})`,
               }}
               onLoad={() => setImgLoaded(true)}

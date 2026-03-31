@@ -107,6 +107,8 @@ function computeCrop(
 ): CropSuggestion | null {
   const slotAspect = slot.width / slot.height
   const photoAspect = photo.aspectRatio
+  const isVerticalCrop = photoAspect < slotAspect
+  const hasPeople = photo.hasFaces || photo.peopleCount > 0
 
   let focusX = 0.5
   let focusY = computeSmartDefaultY(photoAspect, slot.width, slot.height)
@@ -115,20 +117,24 @@ function computeCrop(
     switch (photo.facesRegion) {
       case 'left': focusX = 0.30; break
       case 'right': focusX = 0.70; break
-      case 'top': focusY = 0.15; break
+      case 'top': focusY = 0.10; break
       case 'bottom': focusY = 0.75; break
-      case 'center': focusY = 0.20; break
-      case 'spread': focusY = 0.30; break
+      case 'center': focusY = isVerticalCrop ? 0.15 : 0.35; break
+      case 'spread': focusY = isVerticalCrop ? 0.20 : 0.35; break
     }
     return { focusX, focusY, scale: 1.0, reason: 'מיקוד על פנים' }
   }
 
-  if (photo.peopleCount > 0 && photoAspect < slotAspect) {
-    focusY = Math.min(focusY, 0.30)
+  if (hasPeople) {
+    if (isVerticalCrop) {
+      focusY = Math.min(focusY, 0.25)
+    } else {
+      focusY = Math.min(focusY, 0.35)
+    }
     return { focusX, focusY, scale: 1.0, reason: 'הטיה לראש — אנשים בתמונה' }
   }
 
-  if (Math.abs(slotAspect - photoAspect) < 0.15) {
+  if (Math.abs(slotAspect - photoAspect) < 0.1) {
     return null
   }
 
@@ -269,7 +275,7 @@ function cropToSlotData(assignment: SlotAssignment): FinalSlotData {
     objectFit: 'cover',
     objectPosition: crop
       ? `${Math.round(crop.focusX * 100)}% ${Math.round(crop.focusY * 100)}%`
-      : '50% 50%',
+      : '50% 35%',
     transform: '',
   }
 }
@@ -575,12 +581,15 @@ export function placePhotosInDesigns(
               slot.height,
               photo.facesRegion,
             )
+          } else if (photo.peopleCount > 0) {
+            const smartY = computeSmartDefaultY(photo.aspectRatio, slot.width, slot.height)
+            slot.objectPosition = `50% ${Math.round(Math.min(smartY, 0.30) * 100)}%`
           } else {
             const smartY = computeSmartDefaultY(photo.aspectRatio, slot.width, slot.height)
-            if (photo.peopleCount > 0 && photo.aspectRatio < (slot.width / slot.height)) {
-              slot.objectPosition = `50% ${Math.round(Math.min(smartY, 0.30) * 100)}%`
-            } else if (smartY < 0.48) {
+            if (smartY < 0.48) {
               slot.objectPosition = `50% ${Math.round(smartY * 100)}%`
+            } else {
+              slot.objectPosition = '50% 35%'
             }
           }
         }

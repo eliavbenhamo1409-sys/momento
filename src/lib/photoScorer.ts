@@ -334,7 +334,7 @@ export function buildPageGroups(
     for (const g of rawGroups) g.sort((a, b) => b.overallQuality - a.overallQuality)
   }
 
-  // Extract hero photos into standalone 1-photo groups for full-page treatment
+  // Extract hero photos with a companion to fill both pages
   const heroGroups: PageGroup[] = []
   const normalGroups: PhotoScore[][] = []
 
@@ -343,10 +343,17 @@ export function buildPageGroups(
       (p.overallQuality >= 9 && (p.isHeroCandidate || p.isHighlight)) ||
       (p.overallQuality >= 8 && p.isHeroCandidate && p.isCoverCandidate)
     )
-    if (heroPhoto && group.length > 1) {
-      heroGroups.push(buildGroupMeta(`hero-${heroPhoto.photoId}`, [heroPhoto], 'hero'))
+    if (heroPhoto && group.length >= 3) {
       const rest = group.filter((p) => p.photoId !== heroPhoto.photoId)
-      if (rest.length > 0) normalGroups.push(rest)
+      const companion = rest.reduce((best, p) =>
+        p.overallQuality > best.overallQuality ? p : best, rest[0])
+      heroGroups.push(buildGroupMeta(
+        `hero-${heroPhoto.photoId}`,
+        [heroPhoto, companion],
+        'hero',
+      ))
+      const remaining = rest.filter((p) => p.photoId !== companion.photoId)
+      if (remaining.length > 0) normalGroups.push(remaining)
     } else {
       normalGroups.push(group)
     }
@@ -366,47 +373,89 @@ export function buildPageGroups(
   }
   const normalGroupsFinal = splitGroups
 
-  // Merge tiny groups (< MIN_GROUP) with neighbours
+  // Merge tiny groups (< MIN_GROUP) with same-event neighbours only
   let merged: PhotoScore[][] = []
   let pending: PhotoScore[] = []
+  let pendingSetting: string | undefined
 
   for (const group of normalGroupsFinal) {
+    const gSetting = groupDominantSetting(group)
     if (group.length >= MIN_GROUP) {
       if (pending.length > 0) {
-        merged.push([...pending])
+        if (pending.length >= MIN_GROUP || gSetting === pendingSetting) {
+          merged.push([...pending])
+        } else if (merged.length > 0) {
+          const lastSetting = groupDominantSetting(merged[merged.length - 1])
+          if (lastSetting === pendingSetting && merged[merged.length - 1].length + pending.length <= MAX_GROUP) {
+            merged[merged.length - 1].push(...pending)
+          } else {
+            merged.push([...pending])
+          }
+        } else {
+          merged.push([...pending])
+        }
         pending = []
+        pendingSetting = undefined
       }
       merged.push(group)
     } else {
+      if (pending.length > 0 && pendingSetting !== gSetting) {
+        merged.push([...pending])
+        pending = []
+      }
       pending.push(...group)
+      pendingSetting = gSetting ?? pendingSetting
       if (pending.length >= MIN_GROUP) {
         merged.push([...pending])
         pending = []
+        pendingSetting = undefined
       }
     }
   }
   if (pending.length > 0) {
-    if (merged.length > 0 && merged[merged.length - 1].length + pending.length <= MAX_GROUP) {
-      merged[merged.length - 1].push(...pending)
+    if (merged.length > 0) {
+      const lastSetting = groupDominantSetting(merged[merged.length - 1])
+      if (lastSetting === pendingSetting && merged[merged.length - 1].length + pending.length <= MAX_GROUP) {
+        merged[merged.length - 1].push(...pending)
+      } else {
+        merged.push(pending)
+      }
     } else {
       merged.push(pending)
     }
   }
 
-  // Reduce groups if too many for target spread count
+  // Reduce groups if too many for target spread count (prefer merging same-event groups)
   if (merged.length + heroGroups.length > targetSpreads) {
     while (merged.length + heroGroups.length > targetSpreads && merged.length > 1) {
       const smallest = merged.reduce((minI, g, i, arr) =>
         g.length < arr[minI].length ? i : minI, 0)
       const removed = merged.splice(smallest, 1)[0]
-      const target = merged.reduce((minI, g, i, arr) =>
-        g.length < arr[minI].length ? i : minI, 0)
-      merged[target].push(...removed)
-      if (merged[target].length > MAX_GROUP) {
-        const over = merged[target]
-        merged.splice(target, 1)
-        for (let i = 0; i < over.length; i += MAX_GROUP) {
-          merged.push(over.slice(i, i + MAX_GROUP))
+      const removedSetting = groupDominantSetting(removed)
+
+      let bestTarget = -1
+      let bestScore = -Infinity
+      for (let t = 0; t < merged.length; t++) {
+        if (merged[t].length + removed.length > MAX_GROUP) continue
+        const tSetting = groupDominantSetting(merged[t])
+        let score = -merged[t].length
+        if (removedSetting && tSetting === removedSetting) score += 100
+        if (Math.abs(t - smallest) <= 1) score += 10
+        if (score > bestScore) { bestScore = score; bestTarget = t }
+      }
+
+      if (bestTarget >= 0) {
+        merged[bestTarget].push(...removed)
+      } else {
+        const target = merged.reduce((minI, g, i, arr) =>
+          g.length < arr[minI].length ? i : minI, 0)
+        merged[target].push(...removed)
+        if (merged[target].length > MAX_GROUP) {
+          const over = merged[target]
+          merged.splice(target, 1)
+          for (let i = 0; i < over.length; i += MAX_GROUP) {
+            merged.push(over.slice(i, i + MAX_GROUP))
+          }
         }
       }
     }

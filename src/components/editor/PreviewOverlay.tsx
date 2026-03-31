@@ -64,8 +64,8 @@ function PreviewSpread({ spread }: { spread: EditorSpread }) {
           >
             {el.photoUrl ? (
               <img src={el.photoUrl} alt="" className="w-full h-full object-cover" style={{
-                objectPosition: el.objectPosition || '50% 50%',
-                transformOrigin: (el.scale ?? 1) > 1 ? (el.objectPosition || '50% 50%') : undefined,
+                objectPosition: el.objectPosition || '50% 35%',
+                transformOrigin: (el.scale ?? 1) > 1 ? (el.objectPosition || '50% 35%') : undefined,
                 transform: (el.scale ?? 1) > 1 ? `scale(${el.scale})` : undefined,
               }} />
             ) : (
@@ -86,8 +86,8 @@ function PreviewSpread({ spread }: { spread: EditorSpread }) {
             >
               {el.photoUrl ? (
                 <img src={el.photoUrl} alt="" className="w-full h-full object-cover" style={{
-                  objectPosition: el.objectPosition || '50% 50%',
-                  transformOrigin: (el.scale ?? 1) > 1 ? (el.objectPosition || '50% 50%') : undefined,
+                  objectPosition: el.objectPosition || '50% 35%',
+                  transformOrigin: (el.scale ?? 1) > 1 ? (el.objectPosition || '50% 35%') : undefined,
                   transform: (el.scale ?? 1) > 1 ? `scale(${el.scale})` : undefined,
                 }} />
               ) : (
@@ -109,8 +109,8 @@ function PreviewSpread({ spread }: { spread: EditorSpread }) {
             >
               {el.photoUrl ? (
                 <img src={el.photoUrl} alt="" className="w-full h-full object-cover" style={{
-                  objectPosition: el.objectPosition || '50% 50%',
-                  transformOrigin: (el.scale ?? 1) > 1 ? (el.objectPosition || '50% 50%') : undefined,
+                  objectPosition: el.objectPosition || '50% 35%',
+                  transformOrigin: (el.scale ?? 1) > 1 ? (el.objectPosition || '50% 35%') : undefined,
                   transform: (el.scale ?? 1) > 1 ? `scale(${el.scale})` : undefined,
                 }} />
               ) : (
