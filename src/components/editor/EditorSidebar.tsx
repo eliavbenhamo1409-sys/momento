@@ -298,7 +298,7 @@ export default function EditorSidebar() {
         />
         <ToolBtn
           icon="padding"
-          label="שוליים"
+          label="שוליים ופינות"
           active={activeTool === 'margins' || showMargins}
           onClick={() => {
             setShowLayoutPicker(false)

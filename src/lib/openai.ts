@@ -1,5 +1,5 @@
 import OpenAI from 'openai'
-import type { Photo, PhotoScore, SpreadPlan, SpreadPlanDesign, AlbumConfig, PhotoOrientation, DesignFamily, SpreadSequenceSlot, MoodConceptId } from '../types'
+import type { Photo, PhotoScore, SpreadPlan, SpreadPlanDesign, AlbumConfig, PhotoOrientation, DesignFamily, SpreadSequenceSlot, MoodConceptId, PhotoFaceObservation, AlbumPerson } from '../types'
 import { preparePhotoForVision, detectOrientation } from './photoUtils'
 import { getTemplatesForFamily } from './layoutGrammar'
 import { describeSequence } from './rhythmOrchestrator'
@@ -42,6 +42,10 @@ For EACH image (numbered starting from 1), return a JSON object with these EXACT
 - recommended_display: one of: "square", "landscape", "portrait" — Choose the display format that best honors the photo's natural composition. Use "portrait" for vertical subjects (standing people, full-body shots, tall scenes). Use "landscape" for wide scenes (panoramas, group shots, scenic horizons). Use "square" for balanced compositions that work well cropped either way. Be honest about what looks best — don't force one format.
 - description: one sentence in Hebrew describing the photo
 - setting: a short English tag for the specific setting/location (e.g. "ski resort", "beach sunset", "restaurant dinner", "park picnic", "city street", "home living room", "wedding ceremony", "pool party"). Be specific — two photos at the same place should get the same tag.
+- faces: an array of face descriptions (ONLY when has_faces is true, otherwise omit or use []). For each visible face:
+  - face_index: integer starting from 0
+  - short_label_he: a short Hebrew label describing the person visually (e.g. "גבר עם זקן", "ילדה בשמלה ורודה", "אישה בלונדינית עם משקפיים"). Be consistent — the SAME person across different photos should get a very similar label.
+  - match_hint_en: a concise English description for cross-photo matching (e.g. "bearded man ~35 dark hair", "blonde woman glasses ~30", "girl pink dress ~5"). Focus on STABLE features (age, gender, hair color/style, glasses, facial hair) — NOT clothing or expression which change between photos. The same real person MUST get near-identical match_hint_en across all photos.
 
 Return ONLY a valid JSON object: { "photos": [ {...}, {...}, ... ] }
 No markdown, no explanation, just JSON.`
@@ -94,64 +98,10 @@ export async function analyzePhotoBatch(
 
   const text = response.output_text
   const parsed = JSON.parse(text) as {
-    photos: Array<{
-      sharpness: number
-      exposure: number
-      composition: number
-      overall_quality: number
-      scene: string
-      people_count: number
-      has_faces: boolean
-      faces_region: string
-      emotion: string
-      color_dominant: string
-      is_highlight: boolean
-      is_cover_candidate: boolean
-      is_hero_candidate: boolean
-      is_closeup: boolean
-      is_group_shot: boolean
-      recommended_display?: string
-      description: string
-      setting?: string
-    }>
+    photos: Array<RawScoringResult>
   }
 
-  return parsed.photos.map((raw, i) => {
-    const photo = photos[i]
-    const dims = orientations.get(photo.id) ?? {
-      orientation: detectOrientation(photo.width, photo.height),
-      aspectRatio: photo.width / photo.height,
-    }
-
-    const validDisplays = ['square', 'landscape', 'portrait'] as const
-    const recDisplay = validDisplays.includes(raw.recommended_display as typeof validDisplays[number])
-      ? (raw.recommended_display as PhotoScore['recommendedDisplay'])
-      : 'square'
-
-    return {
-      photoId: photo.id,
-      orientation: dims.orientation,
-      aspectRatio: dims.aspectRatio,
-      sharpness: clamp(raw.sharpness, 1, 10),
-      exposure: clamp(raw.exposure, 1, 10),
-      composition: clamp(raw.composition, 1, 10),
-      overallQuality: clamp(raw.overall_quality, 1, 10),
-      scene: raw.scene as PhotoScore['scene'],
-      peopleCount: raw.people_count ?? 0,
-      hasFaces: raw.has_faces ?? false,
-      facesRegion: (raw.faces_region ?? 'none') as PhotoScore['facesRegion'],
-      emotion: raw.emotion as PhotoScore['emotion'],
-      colorDominant: raw.color_dominant as PhotoScore['colorDominant'],
-      isHighlight: raw.is_highlight ?? false,
-      isCoverCandidate: raw.is_cover_candidate ?? false,
-      isHeroCandidate: raw.is_hero_candidate ?? false,
-      isCloseup: raw.is_closeup ?? false,
-      isGroupShot: raw.is_group_shot ?? false,
-      recommendedDisplay: recDisplay,
-      description: raw.description ?? '',
-      setting: raw.setting ?? undefined,
-    }
-  })
+  return parsed.photos.map((raw, i) => mapRawToPhotoScore(raw, photos[i], orientations))
 }
 
 // ─── Layer 1b: Photo Scoring via Gemini Vision ──────────────────────
@@ -197,62 +147,199 @@ export async function analyzePhotoBatchGemini(
   const text = response.text ?? ''
   const cleaned = text.replace(/```json\s*|```\s*/g, '').trim()
   const parsed = JSON.parse(cleaned) as {
-    photos: Array<{
-      sharpness: number
-      exposure: number
-      composition: number
-      overall_quality: number
-      scene: string
-      people_count: number
-      has_faces: boolean
-      faces_region: string
-      emotion: string
-      color_dominant: string
-      is_highlight: boolean
-      is_cover_candidate: boolean
-      is_hero_candidate: boolean
-      is_closeup: boolean
-      is_group_shot: boolean
-      recommended_display?: string
-      description: string
-      setting?: string
-    }>
+    photos: Array<RawScoringResult>
   }
 
-  return parsed.photos.map((raw, i) => {
-    const photo = photos[i]
-    const dims = orientations.get(photo.id) ?? {
-      orientation: detectOrientation(photo.width, photo.height),
-      aspectRatio: photo.width / photo.height,
+  return parsed.photos.map((raw, i) => mapRawToPhotoScore(raw, photos[i], orientations))
+}
+
+// ─── Shared raw scoring result + mapper ─────────────────────────────
+
+interface RawScoringResult {
+  sharpness: number
+  exposure: number
+  composition: number
+  overall_quality: number
+  scene: string
+  people_count: number
+  has_faces: boolean
+  faces_region: string
+  emotion: string
+  color_dominant: string
+  is_highlight: boolean
+  is_cover_candidate: boolean
+  is_hero_candidate: boolean
+  is_closeup: boolean
+  is_group_shot: boolean
+  recommended_display?: string
+  description: string
+  setting?: string
+  faces?: Array<{
+    face_index: number
+    short_label_he: string
+    match_hint_en: string
+  }>
+}
+
+function mapRawToPhotoScore(
+  raw: RawScoringResult,
+  photo: Photo,
+  orientations: Map<string, { orientation: PhotoOrientation; aspectRatio: number }>,
+): PhotoScore {
+  const dims = orientations.get(photo.id) ?? {
+    orientation: detectOrientation(photo.width, photo.height),
+    aspectRatio: photo.width / photo.height,
+  }
+
+  const validDisplays = ['square', 'landscape', 'portrait'] as const
+  const recDisplay = validDisplays.includes(raw.recommended_display as typeof validDisplays[number])
+    ? (raw.recommended_display as PhotoScore['recommendedDisplay'])
+    : 'square'
+
+  const faceObservations: PhotoFaceObservation[] | undefined =
+    raw.faces && raw.faces.length > 0
+      ? raw.faces.map((f) => ({
+          photoId: photo.id,
+          faceIndex: f.face_index ?? 0,
+          labelHe: f.short_label_he ?? '',
+          matchHint: f.match_hint_en ?? '',
+        }))
+      : undefined
+
+  return {
+    photoId: photo.id,
+    orientation: dims.orientation,
+    aspectRatio: dims.aspectRatio,
+    sharpness: clamp(raw.sharpness, 1, 10),
+    exposure: clamp(raw.exposure, 1, 10),
+    composition: clamp(raw.composition, 1, 10),
+    overallQuality: clamp(raw.overall_quality, 1, 10),
+    scene: raw.scene as PhotoScore['scene'],
+    peopleCount: raw.people_count ?? 0,
+    hasFaces: raw.has_faces ?? false,
+    facesRegion: (raw.faces_region ?? 'none') as PhotoScore['facesRegion'],
+    emotion: raw.emotion as PhotoScore['emotion'],
+    colorDominant: raw.color_dominant as PhotoScore['colorDominant'],
+    isHighlight: raw.is_highlight ?? false,
+    isCoverCandidate: raw.is_cover_candidate ?? false,
+    isHeroCandidate: raw.is_hero_candidate ?? false,
+    isCloseup: raw.is_closeup ?? false,
+    isGroupShot: raw.is_group_shot ?? false,
+    recommendedDisplay: recDisplay,
+    description: raw.description ?? '',
+    setting: raw.setting ?? undefined,
+    faceObservations,
+  }
+}
+
+// ─── People Consolidation (cross-photo identity matching) ───────────
+
+const CONSOLIDATION_SYSTEM_PROMPT = `You are an identity-matching assistant for a photo album.
+You receive a list of face observations from multiple photos. Each observation has:
+- photo_id: which photo it came from
+- match_hint_en: an English description of the person's stable features (age, gender, hair, glasses, etc.)
+- short_label_he: a Hebrew label
+
+Your job: group observations that describe the SAME real person across different photos into "people."
+
+Return JSON:
+{
+  "people": [
+    {
+      "display_name": "short Hebrew name for this person (e.g. ״אבא״, ״הילדה הקטנה״, ״סבתא״)",
+      "photo_ids": ["photo-1", "photo-3", "photo-7"],
+      "avatar_photo_id": "photo-1"
+    }
+  ]
+}
+
+Rules:
+- Merge observations with very similar match_hint_en into one person.
+- display_name should be short (1-3 words), natural Hebrew, and descriptive.
+- avatar_photo_id should be the photo where that person is most prominent (fewest other people, or best described).
+- If a person appears in only one photo, still include them.
+- Do NOT merge different people. When in doubt, keep them separate.
+- Return ONLY valid JSON, no markdown.`
+
+export async function consolidateAlbumPeople(
+  scores: PhotoScore[],
+): Promise<AlbumPerson[]> {
+  const allObservations: Array<{ photo_id: string; match_hint_en: string; short_label_he: string }> = []
+
+  for (const score of scores) {
+    if (!score.faceObservations?.length) continue
+    for (const obs of score.faceObservations) {
+      allObservations.push({
+        photo_id: obs.photoId,
+        match_hint_en: obs.matchHint,
+        short_label_he: obs.labelHe,
+      })
+    }
+  }
+
+  if (allObservations.length === 0) return []
+
+  // For very small sets (<=3 observations), skip the API call and create one person per unique hint
+  if (allObservations.length <= 3) {
+    return buildPeopleFromObservationsLocally(allObservations)
+  }
+
+  try {
+    const ai = getGeminiClient()
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [{
+        role: 'user',
+        parts: [{ text: `${CONSOLIDATION_SYSTEM_PROMPT}\n\nObservations:\n${JSON.stringify(allObservations, null, 1)}` }],
+      }],
+      config: {
+        responseMimeType: 'application/json',
+        temperature: 0.1,
+      },
+    })
+
+    const text = (response.text ?? '').replace(/```json\s*|```\s*/g, '').trim()
+    const parsed = JSON.parse(text) as {
+      people: Array<{
+        display_name: string
+        photo_ids: string[]
+        avatar_photo_id: string
+      }>
     }
 
-    const validDisplays = ['square', 'landscape', 'portrait'] as const
-    const recDisplay = validDisplays.includes(raw.recommended_display as typeof validDisplays[number])
-      ? (raw.recommended_display as PhotoScore['recommendedDisplay'])
-      : 'square'
+    return parsed.people.map((p) => ({
+      id: crypto.randomUUID(),
+      displayName: p.display_name,
+      photoIds: [...new Set(p.photo_ids)],
+      avatarPhotoId: p.avatar_photo_id || p.photo_ids[0],
+    }))
+  } catch (err) {
+    console.error('[People] Consolidation failed, falling back to local grouping:', err)
+    return buildPeopleFromObservationsLocally(allObservations)
+  }
+}
 
+function buildPeopleFromObservationsLocally(
+  observations: Array<{ photo_id: string; match_hint_en: string; short_label_he: string }>,
+): AlbumPerson[] {
+  const groups = new Map<string, { label: string; photoIds: Set<string> }>()
+  for (const obs of observations) {
+    const key = obs.match_hint_en.toLowerCase().trim()
+    const existing = groups.get(key)
+    if (existing) {
+      existing.photoIds.add(obs.photo_id)
+    } else {
+      groups.set(key, { label: obs.short_label_he, photoIds: new Set([obs.photo_id]) })
+    }
+  }
+  return [...groups.values()].map((g) => {
+    const photoIds = [...g.photoIds]
     return {
-      photoId: photo.id,
-      orientation: dims.orientation,
-      aspectRatio: dims.aspectRatio,
-      sharpness: clamp(raw.sharpness, 1, 10),
-      exposure: clamp(raw.exposure, 1, 10),
-      composition: clamp(raw.composition, 1, 10),
-      overallQuality: clamp(raw.overall_quality, 1, 10),
-      scene: raw.scene as PhotoScore['scene'],
-      peopleCount: raw.people_count ?? 0,
-      hasFaces: raw.has_faces ?? false,
-      facesRegion: (raw.faces_region ?? 'none') as PhotoScore['facesRegion'],
-      emotion: raw.emotion as PhotoScore['emotion'],
-      colorDominant: raw.color_dominant as PhotoScore['colorDominant'],
-      isHighlight: raw.is_highlight ?? false,
-      isCoverCandidate: raw.is_cover_candidate ?? false,
-      isHeroCandidate: raw.is_hero_candidate ?? false,
-      isCloseup: raw.is_closeup ?? false,
-      isGroupShot: raw.is_group_shot ?? false,
-      recommendedDisplay: recDisplay,
-      description: raw.description ?? '',
-      setting: raw.setting ?? undefined,
+      id: crypto.randomUUID(),
+      displayName: g.label,
+      photoIds,
+      avatarPhotoId: photoIds[0],
     }
   })
 }

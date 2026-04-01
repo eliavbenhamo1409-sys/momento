@@ -36,14 +36,14 @@ export function useAlbumSave() {
       return
     }
 
-    const { albumId, albumTitle, config } = useAlbumStore.getState()
+    const { albumId, albumTitle, config, peopleRoster } = useAlbumStore.getState()
     const { spreads, setSaving, setLastSaved } = useEditorStore.getState()
 
     savingRef.current = true
     setSaving(true)
 
     try {
-      const id = await saveAlbum(albumId, userId, albumTitle, config, spreads)
+      const id = await saveAlbum(albumId, userId, albumTitle, config, spreads, peopleRoster)
 
       if (!albumId) {
         useAlbumStore.getState().setAlbumId(id)
@@ -86,6 +86,7 @@ export function useAlbumLoad() {
         albumId: album.id,
         albumTitle: album.title,
         config: album.config,
+        peopleRoster: album.people_roster ?? [],
       })
 
       useEditorStore.getState().setSpreads(album.spreads)

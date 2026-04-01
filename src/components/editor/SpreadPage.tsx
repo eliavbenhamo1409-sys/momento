@@ -214,6 +214,9 @@ const MemoPhotoWrapper = React.memo(function MemoPhotoWrapper({
   isSelected,
   isSwapping,
   onPhotoClick,
+  layoutInsetPercent,
+  collectivePaddingPx,
+  collectiveBorderRadiusPx,
 }: {
   element: PhotoElement
   spreadId: string
@@ -222,6 +225,9 @@ const MemoPhotoWrapper = React.memo(function MemoPhotoWrapper({
   isSelected: boolean
   isSwapping: boolean
   onPhotoClick: (slotId: string, pid: string) => void
+  layoutInsetPercent: number
+  collectivePaddingPx: number | null
+  collectiveBorderRadiusPx: number | null
 }) {
   const handleSelect = useCallback(() => {
     onPhotoClick(element.slotId, pid)
@@ -235,6 +241,9 @@ const MemoPhotoWrapper = React.memo(function MemoPhotoWrapper({
       isSelected={isSelected}
       isSwapping={isSwapping}
       onSelect={handleSelect}
+      layoutInsetPercent={layoutInsetPercent}
+      collectivePaddingPx={collectivePaddingPx}
+      collectiveBorderRadiusPx={collectiveBorderRadiusPx}
     />
   )
 })
@@ -244,11 +253,13 @@ const MemoQuoteWrapper = React.memo(function MemoQuoteWrapper({
   elementIndex,
   isSelected,
   onQuoteClick,
+  layoutInsetPercent,
 }: {
   element: QuoteElement
   elementIndex: number
   isSelected: boolean
   onQuoteClick: (gIdx: number) => void
+  layoutInsetPercent: number
 }) {
   const handleSelect = useCallback(() => {
     onQuoteClick(elementIndex)
@@ -260,6 +271,7 @@ const MemoQuoteWrapper = React.memo(function MemoQuoteWrapper({
       elementIndex={elementIndex}
       isSelected={isSelected}
       onSelect={handleSelect}
+      layoutInsetPercent={layoutInsetPercent}
     />
   )
 })
@@ -275,6 +287,9 @@ function AbsolutePageElements({
   swapPhase,
   swapSourceSlotId: _swapSourceSlotId,
   onSwapClick,
+  layoutInsetPercent,
+  collectivePaddingPx,
+  collectiveBorderRadiusPx,
 }: {
   spread: EditorSpread
   design: SpreadDesign
@@ -286,6 +301,9 @@ function AbsolutePageElements({
   swapPhase: 'off' | 'pick-source' | 'pick-target'
   swapSourceSlotId: string | null
   onSwapClick: (slotId: string) => void
+  layoutInsetPercent: number
+  collectivePaddingPx: number | null
+  collectiveBorderRadiusPx: number | null
 }) {
   const isSwapping = swapPhase !== 'off'
 
@@ -331,6 +349,9 @@ function AbsolutePageElements({
               isSelected={!isSwapping && selectedPhotoId === pid}
               isSwapping={isSwapping}
               onPhotoClick={handlePhotoClick}
+              layoutInsetPercent={layoutInsetPercent}
+              collectivePaddingPx={collectivePaddingPx}
+              collectiveBorderRadiusPx={collectiveBorderRadiusPx}
             />
           )
         }
@@ -343,10 +364,17 @@ function AbsolutePageElements({
               elementIndex={gIdx}
               isSelected={selectedTextIndex === gIdx}
               onQuoteClick={handleQuoteClick}
+              layoutInsetPercent={layoutInsetPercent}
             />
           )
         }
-        return <AbsoluteDecorativeElement key={`d-${side}-${i}-${el.x}-${el.y}`} element={el} />
+        return (
+          <AbsoluteDecorativeElement
+            key={`d-${side}-${i}-${el.x}-${el.y}`}
+            element={el}
+            layoutInsetPercent={layoutInsetPercent}
+          />
+        )
       })}
     </>
   )
@@ -510,8 +538,6 @@ function LegacyPageElements({
     selectPhoto(selectedPhotoId === photoId ? null : photoId)
   }, [selectPhoto, selectedPhotoId])
 
-  const adj = variant?.adjustments
-  const gapPx = adj?.gapOverride ?? style.spacing.photoGapPx
   const margin = style.spacing.pageMarginPercent
   const photos = side === 'left' ? spread.leftPhotos : spread.rightPhotos
 
@@ -534,7 +560,6 @@ function LegacyPageElements({
   const pageSlots = allPageSlots
 
   if (template && pageSlots.length > 0 && photos.length > 0) {
-    const gapPercent = gapPx * 0.2
     return (
       <div className="w-full h-full relative z-[1]" style={{ padding: `${margin}%` }}>
         <div className="w-full h-full relative">
@@ -553,10 +578,10 @@ function LegacyPageElements({
                 key={photoId}
                 className="absolute [&>*]:!w-full [&>*]:!h-full"
                 style={{
-                  left: `${slot.x + gapPercent / 2}%`,
-                  top: `${slot.y + gapPercent / 2}%`,
-                  width: `${slot.width - gapPercent}%`,
-                  height: `${slot.height - gapPercent}%`,
+                  left: `${slot.x}%`,
+                  top: `${slot.y}%`,
+                  width: `${slot.width}%`,
+                  height: `${slot.height}%`,
                 }}
               >
                 <MemoLegacyPhotoSlot
@@ -582,7 +607,7 @@ function LegacyPageElements({
     return (
       <div
         className="w-full h-full flex flex-col relative z-[1]"
-        style={{ padding: `${margin}%`, gap: gapPx }}
+        style={{ padding: `${margin}%`, gap: 0 }}
       >
         {photos.map((src, i) => {
           const photoId = `${spread.id}-left-${i}`
@@ -614,7 +639,7 @@ function LegacyPageElements({
   return (
     <div
       className="w-full h-full grid grid-cols-2 relative z-[1]"
-      style={{ padding: `${margin}%`, gap: gapPx }}
+      style={{ padding: `${margin}%`, gap: 0 }}
     >
       {photos.map((src, i) => {
         const photoId = `${spread.id}-right-${i}`
@@ -675,22 +700,33 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
       else if (phase === 'pick-target') executeSwap(slotId)
     }, [])
 
-    const globalPhotoGapPx = useEditorStore((s) => s.globalPhotoGapPx)
+    const globalPhotoFramePaddingPx = useEditorStore((s) => s.globalPhotoFramePaddingPx)
     const globalPageMarginPercent = useEditorStore((s) => s.globalPageMarginPercent)
+    const globalPhotoBorderRadiusPx = useEditorStore((s) => s.globalPhotoBorderRadiusPx)
 
     const design = spread.design
     const baseStyle = spread.resolvedStyle ?? DEFAULT_STYLE
     const style = useMemo<ResolvedSpreadStyle>(() => {
-      if (globalPhotoGapPx === null && globalPageMarginPercent === null) return baseStyle
+      if (
+        globalPhotoFramePaddingPx === null
+        && globalPageMarginPercent === null
+        && globalPhotoBorderRadiusPx === null
+      ) {
+        return baseStyle
+      }
       return {
         ...baseStyle,
         spacing: {
           ...baseStyle.spacing,
-          ...(globalPhotoGapPx !== null ? { photoGapPx: globalPhotoGapPx } : {}),
           ...(globalPageMarginPercent !== null ? { pageMarginPercent: globalPageMarginPercent } : {}),
         },
+        frame: {
+          ...baseStyle.frame,
+          ...(globalPhotoFramePaddingPx !== null ? { innerPadding: globalPhotoFramePaddingPx } : {}),
+          ...(globalPhotoBorderRadiusPx !== null ? { borderRadius: globalPhotoBorderRadiusPx } : {}),
+        },
       }
-    }, [baseStyle, globalPhotoGapPx, globalPageMarginPercent])
+    }, [baseStyle, globalPhotoFramePaddingPx, globalPageMarginPercent, globalPhotoBorderRadiusPx])
     const variant = spread.variant ?? null
     const useAbs = !!design && design.elements.length > 0
     const bgColor = useAbs ? design!.background.color : style.background.color
@@ -736,6 +772,9 @@ const SpreadPage = React.memo(React.forwardRef<HTMLDivElement, SpreadPageProps>(
               swapPhase={isCurrent ? swapPhase : 'off'}
               swapSourceSlotId={isCurrent ? swapSourceSlotId : null}
               onSwapClick={isCurrent ? onSwapClick : NOOP_SLOT}
+              layoutInsetPercent={style.spacing.pageMarginPercent}
+              collectivePaddingPx={globalPhotoFramePaddingPx}
+              collectiveBorderRadiusPx={globalPhotoBorderRadiusPx}
             />
           ) : (
             <LegacyPageElements

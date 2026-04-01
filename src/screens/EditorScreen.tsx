@@ -10,6 +10,7 @@ import PageThumbnails from '../components/editor/PageThumbnails'
 import PreviewOverlay from '../components/editor/PreviewOverlay'
 import AlbumOverview from '../components/editor/AlbumOverview'
 import DotGrid from '../components/editor/DotGrid'
+import EditorPeopleStrip from '../components/editor/EditorPeopleStrip'
 import { contentReveal } from '../lib/animations'
 import { useEditorStore } from '../store/editorStore'
 import { useAlbumStore } from '../store/albumStore'
@@ -122,6 +123,7 @@ export default function EditorScreen() {
       <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#EEECEA] relative">
         <DotGrid />
         <EditorTopBar />
+        <EditorPeopleStrip />
 
         <AnimatePresence>
           {!contentReady && (

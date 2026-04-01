@@ -10,7 +10,7 @@ import type {
   PhotoElement,
 } from '../types'
 import { batchArray, detectOrientation, getImageDimensions, extractPhotoDate } from './photoUtils'
-import { analyzePhotoBatch, analyzePhotoBatchGemini, generateSpreadBackgrounds } from './openai'
+import { analyzePhotoBatch, analyzePhotoBatchGemini, generateSpreadBackgrounds, consolidateAlbumPeople } from './openai'
 import { curatePhotos, buildPageGroups } from './photoScorer'
 import {
   placePhotosInSpreads,
@@ -67,7 +67,7 @@ export async function generateAlbum(
 
   // ── Stage 1 (0-55%): Photo Scoring via Vision API ─────────────
 
-  onProgress(0, 0, 'מתחיל לנתח את התמונות שלך...')
+  onProgress(0, 0, 'מתחיל לנתח את התמונות שלך')
 
   const orientations = new Map<
     string,
@@ -113,7 +113,7 @@ export async function generateAlbum(
   const exifCount = [...dateLookup.values()].filter(d => d.getTime() > 1000).length
   if (exifCount > 0) {
     console.log(`[אלבום חכם] חולצו תאריכים מ-${exifCount}/${photos.length} תמונות`)
-    onProgress(0, 3, `חולצו תאריכים מ-${exifCount} תמונות...`)
+    onProgress(0, 3, `חולצו תאריכים מ-${exifCount} תמונות`)
   }
 
   const batches = batchArray(photos, BATCH_SIZE)
@@ -129,7 +129,7 @@ export async function generateAlbum(
     for (let attempt = 0; attempt < 2 && !batchScored; attempt++) {
       try {
         if (attempt > 0) {
-          onProgress(0, Math.round((batchesDone / batches.length) * 55), `ניסיון חוזר... ${allScores.length}/${photos.length}`)
+          onProgress(0, Math.round((batchesDone / batches.length) * 55), `ניסיון חוזר (${allScores.length}/${photos.length})`)
           await sleep(1000 * attempt)
         }
         const scores = await analyzePhotoBatchGemini(batch, orientations)
@@ -145,7 +145,7 @@ export async function generateAlbum(
     // Fallback: try OpenAI if Gemini failed
     if (!batchScored) {
       try {
-        onProgress(0, Math.round((batchesDone / batches.length) * 55), `מנסה ערוץ חלופי...`)
+        onProgress(0, Math.round((batchesDone / batches.length) * 55), `מנסה ערוץ חלופי`)
         const scores = await analyzePhotoBatch(batch, orientations)
         allScores.push(...scores)
         aiSuccessCount += batch.length
@@ -171,7 +171,7 @@ export async function generateAlbum(
 
     batchesDone++
     const pct = Math.round((batchesDone / batches.length) * 55)
-    onProgress(0, pct, `מנתח תמונות... ${allScores.length}/${photos.length}`)
+    onProgress(0, pct, `מנתח תמונות ${allScores.length}/${photos.length}`)
   }
 
   if (fallbackCount > 0) {
@@ -185,7 +185,7 @@ export async function generateAlbum(
   // ── Stage 2 (55-64%): Curation & Ranking ──────────────────────
 
   await sleep(600)
-  onProgress(1, 56, 'מדרג תמונות לפי איכות, חדות ורגש...')
+  onProgress(1, 56, 'מדרג תמונות לפי איכות, חדות ורגש')
 
   const curated = curatePhotos(allScores, config)
 
@@ -203,7 +203,7 @@ export async function generateAlbum(
   // ── Stage 3 (64-74%): Smart Grouping & Template Picking ──────
 
   await sleep(500)
-  onProgress(2, 65, 'ממיין תמונות לפי תאריך וסצנה...')
+  onProgress(2, 65, 'ממיין תמונות לפי תאריך וסצנה')
 
   const selectedScores = curated.selected.map((r) => r.score)
 
@@ -228,7 +228,7 @@ export async function generateAlbum(
   }
 
   await sleep(700)
-  onProgress(2, 68, 'בוחר תבנית מתאימה לכל עמוד...')
+  onProgress(2, 68, 'בוחר תבנית מתאימה לכל עמוד')
 
   const spreadPlans = buildSmartSpreadPlans(pageGroups, scoreMap, spreadCount)
 
@@ -249,7 +249,7 @@ export async function generateAlbum(
   // ── Stage 4 (74-82%): Photo-to-Slot Assignment ────────────────
 
   await sleep(500)
-  onProgress(3, 75, 'משבץ כל תמונה בעמוד המתאים לה...')
+  onProgress(3, 75, 'משבץ כל תמונה בעמוד המתאים לה')
 
   const spreads = placePhotosInSpreads(spreadPlans, scoreMap, photoMap, spreadCount)
 
@@ -303,7 +303,7 @@ export async function generateAlbum(
   // ── Stage 4.5 (82-84%): Mood Concept Assignment ────────────────
 
   await sleep(400)
-  onProgress(3, 83, 'בוחר קונספט עיצובי לכל עמוד...')
+  onProgress(3, 83, 'בוחר קונספט עיצובי לכל עמוד')
 
   const moodAssignments = assignMoodConcepts(
     spreads,
@@ -328,9 +328,9 @@ export async function generateAlbum(
   const moodPacksForBg = moodAssignments.map((a) => a.pack)
 
   if (config.backgroundMode === 'ai-generated') {
-    onProgress(4, 85, 'מעצב רקעים ייחודיים לכל עמוד...')
+    onProgress(4, 85, 'מעצב רקעים ייחודיים לכל עמוד')
     const vibeText = config.vibeText || ''
-    onProgress(4, 86, `מייצר ${spreads.length} רקעים מקוריים עם AI — כל עמוד ייחודי...`)
+    onProgress(4, 86, `מייצר ${spreads.length} רקעים מקוריים עם AI — כל עמוד ייחודי`)
 
     try {
       const sceneHints = spreads.map((s, idx) => {
@@ -344,7 +344,7 @@ export async function generateAlbum(
         vibeText,
         (done, total) => {
           const pct = 86 + Math.round((done / total) * 4)
-          onProgress(4, pct, `נוצר רקע ${done}/${total}...`)
+          onProgress(4, pct, `נוצר רקע ${done}/${total}`)
         },
         referenceDataUrls,
         sceneHints,
@@ -365,7 +365,7 @@ export async function generateAlbum(
   // ── Stage 5 (90-93%): Visual Resolution ────────────────────────
 
   await sleep(500)
-  onProgress(4, 91, `מקמפל עיצוב — סגנון ${family.nameHe}...`)
+  onProgress(4, 91, `מקמפל עיצוב — סגנון ${family.nameHe}`)
 
   const resolvedSpreads = resolveAlbumVisuals(spreads, sequencePlan, family)
 
@@ -385,7 +385,7 @@ export async function generateAlbum(
   // ── Stage 5.5 (93-95%): Composition Building ──────────────────
 
   await sleep(400)
-  onProgress(4, 93, 'בונה קומפוזיציות לכל עמוד...')
+  onProgress(4, 93, 'בונה קומפוזיציות לכל עמוד')
 
   console.log(`[אלבום חכם] ── שלב 5.5: בניית קומפוזיציה (רקע=${config.backgroundMode === 'white' ? 'לבן' : 'AI'}) ──`)
 
@@ -411,7 +411,7 @@ export async function generateAlbum(
   // ── Stage 6 (95-100%): Face Verification Scan (Multi-Pass) ──────
 
   await sleep(400)
-  onProgress(5, 95, 'סורק פרצופים בכל העמודים...')
+  onProgress(5, 95, 'סורק פרצופים בכל העמודים')
   await sleep(500)
 
   const faceScoreMap = new Map(allScores.map((s) => [s.photoId, s]))
@@ -497,7 +497,7 @@ export async function generateAlbum(
   } else {
     // ── Pass 2: Fix via objectPosition for moderate issues ────────
 
-    onProgress(5, 96, `נמצאו ${allFaceIssues.length} בעיות חיתוך — מתחיל תיקון...`)
+    onProgress(5, 96, `נמצאו ${allFaceIssues.length} בעיות חיתוך — מתחיל תיקון`)
     await sleep(400)
 
     console.log('[אלבום חכם] ══════════ סריקת פנים — פאס 2: תיקון מיקום ══════════')
@@ -548,7 +548,7 @@ export async function generateAlbum(
     // ── Pass 3: Template swap for severe issues ──────────────────
 
     if (stillBroken.length > 0) {
-      onProgress(5, 97, `${stillBroken.length} תמונות עדיין בעייתיות — מחליף מבנה עמודים...`)
+      onProgress(5, 97, `${stillBroken.length} תמונות עדיין בעייתיות — מחליף מבנה עמודים`)
       await sleep(400)
 
       console.log('[אלבום חכם] ══════════ סריקת פנים — פאס 3: החלפת מבנה עמודים ══════════')
@@ -710,16 +710,34 @@ export async function generateAlbum(
     console.log('[אלבום חכם] ══════════ סריקת פנים — הושלמה ══════════')
   }
 
-  // ── Stage 7 (98-100%): Final Assembly ──────────────────────────
+  // ── Stage 6.5 (98-99%): People Consolidation ────────────────────
 
-  onProgress(5, 97, 'מבצע ליטוש אחרון...')
-  await sleep(400)
-
-  onProgress(5, 98, 'מרכיב את האלבום הסופי...')
+  onProgress(5, 98, 'מזהה אנשים באלבום')
   await sleep(300)
 
-  onProgress(5, 99, 'בודק שהכל מושלם...')
-  await sleep(200)
+  let peopleRoster: import('../types').AlbumPerson[] = []
+  const facePhotosCount = allScores.filter((s) => s.faceObservations?.length).length
+  if (facePhotosCount > 0) {
+    try {
+      console.log(`[אלבום חכם] ── שלב 6.5: איחוד אנשים — ${facePhotosCount} תמונות עם פנים ──`)
+      peopleRoster = await consolidateAlbumPeople(allScores)
+      console.log(`[אלבום חכם] זוהו ${peopleRoster.length} אנשים ייחודיים`)
+      for (const person of peopleRoster) {
+        console.log(`  ${person.displayName}: ${person.photoIds.length} תמונות`)
+      }
+      onProgress(5, 99, `זוהו ${peopleRoster.length} אנשים באלבום`)
+    } catch (err) {
+      console.error('[People] Consolidation failed:', err)
+      onProgress(5, 99, 'זיהוי אנשים לא הצליח — ממשיכים')
+    }
+  } else {
+    onProgress(5, 99, 'לא זוהו פנים — ממשיכים')
+  }
+
+  // ── Stage 7 (99-100%): Final Assembly ──────────────────────────
+
+  onProgress(5, 99, 'מרכיב את האלבום הסופי')
+  await sleep(300)
 
   onProgress(5, 100, 'האלבום שלך מוכן')
 
@@ -727,6 +745,7 @@ export async function generateAlbum(
     spreads: composedSpreads,
     analyses: allScores,
     curated,
+    peopleRoster,
   }
 }
 

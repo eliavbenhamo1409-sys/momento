@@ -55,10 +55,14 @@ interface EditorState {
   swapPhase: SwapPhase
   swapSourceSlotId: string | null
 
-  globalPhotoGapPx: number | null
+  /** Collective white frame (px) around each photo; null = use per-element / family defaults */
+  globalPhotoFramePaddingPx: number | null
   globalPageMarginPercent: number | null
-  setGlobalPhotoGap: (gap: number | null) => void
+  /** Collective corner radius (px) for every photo frame; null = per-element / family */
+  globalPhotoBorderRadiusPx: number | null
+  setGlobalPhotoFramePadding: (paddingPx: number | null) => void
   setGlobalPageMargin: (margin: number | null) => void
+  setGlobalPhotoBorderRadius: (radiusPx: number | null) => void
 
   setSpreads: (spreads: EditorSpread[]) => void
   setCurrentSpread: (index: number) => void
@@ -117,10 +121,16 @@ export const useEditorStore = create<EditorState>((set) => ({
   swapPhase: 'off' as SwapPhase,
   swapSourceSlotId: null,
 
-  globalPhotoGapPx: null,
+  globalPhotoFramePaddingPx: null,
   globalPageMarginPercent: null,
-  setGlobalPhotoGap: (gap) => set({ globalPhotoGapPx: gap }),
+  globalPhotoBorderRadiusPx: null,
+  setGlobalPhotoFramePadding: (paddingPx) => set({ globalPhotoFramePaddingPx: paddingPx }),
   setGlobalPageMargin: (margin) => set({ globalPageMarginPercent: margin }),
+  setGlobalPhotoBorderRadius: (radiusPx) =>
+    set({
+      globalPhotoBorderRadiusPx:
+        radiusPx == null ? null : Math.max(0, Math.min(50, radiusPx)),
+    }),
 
   setSpreads: (spreads) =>
     set({

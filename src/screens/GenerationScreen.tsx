@@ -33,19 +33,24 @@ function Particle({ delay }: { delay: number }) {
 
 function AnimatedDots() {
   return (
-    <span className="inline-flex w-[1.2em] justify-start" dir="ltr">
-      <motion.span
-        animate={{ opacity: [0, 1, 0] }}
-        transition={{ duration: 1.4, repeat: Infinity, times: [0, 0.3, 1] }}
-      >.</motion.span>
-      <motion.span
-        animate={{ opacity: [0, 1, 0] }}
-        transition={{ duration: 1.4, repeat: Infinity, times: [0, 0.3, 1], delay: 0.2 }}
-      >.</motion.span>
-      <motion.span
-        animate={{ opacity: [0, 1, 0] }}
-        transition={{ duration: 1.4, repeat: Infinity, times: [0, 0.3, 1], delay: 0.4 }}
-      >.</motion.span>
+    <span
+      className="inline-flex flex-row items-center gap-1 ms-1.5 align-middle"
+      dir="ltr"
+      aria-hidden
+    >
+      {[0, 1, 2].map((i) => (
+        <motion.span
+          key={i}
+          className="block size-1 rounded-full bg-deep-brown/50 shrink-0"
+          animate={{ opacity: [0.2, 1, 0.2] }}
+          transition={{
+            duration: 1.15,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: i * 0.18,
+          }}
+        />
+      ))}
     </span>
   )
 }
@@ -69,7 +74,7 @@ export default function GenerationScreen() {
   }, [])
 
   const runGeneration = useCallback(async () => {
-    const { photos, config, vibeReferences, setPhotoScores, setCuratedSet } = useAlbumStore.getState()
+    const { photos, config, vibeReferences, setPhotoScores, setCuratedSet, setPeopleRoster } = useAlbumStore.getState()
     const { setSpreads } = useEditorStore.getState()
 
     if (photos.length === 0) {
@@ -89,6 +94,7 @@ export default function GenerationScreen() {
       setSpreads(result.spreads)
       setPhotoScores(result.analyses)
       setCuratedSet(result.curated)
+      setPeopleRoster(result.peopleRoster)
 
       setResultStats({
         spreads: result.spreads.length,
@@ -207,11 +213,17 @@ export default function GenerationScreen() {
                   exit={{ opacity: 0 }}
                   className="flex flex-col items-center gap-8 w-full"
                 >
-                  <div className="relative w-[120px] h-[120px]">
+                  <div className="relative w-[112px] h-[112px]">
                     <div className="w-full h-full rounded-full bg-white flex items-center justify-center animate-soft-pulse editorial-shadow relative z-10">
-                      <Icon name="auto_awesome" filled size={48} className="text-sage" />
+                      <motion.span
+                        className="block rounded-full border-[2.5px] border-sage/25 border-t-sage"
+                        style={{ width: 44, height: 44 }}
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1.35, repeat: Infinity, ease: 'linear' }}
+                        aria-hidden
+                      />
                     </div>
-                    <div className="absolute inset-0 rounded-full bg-sage/10 blur-2xl -z-10" />
+                    <div className="absolute inset-0 rounded-full bg-sage/8 blur-2xl -z-10" />
                     {particles.map((p) => (
                       <Particle key={p} delay={0} />
                     ))}
@@ -243,6 +255,13 @@ export default function GenerationScreen() {
                         {stage.subtext}
                       </motion.p>
                     </AnimatePresence>
+                    <p
+                      className="text-sm text-deep-brown/70 leading-relaxed max-w-[22rem] mx-auto pt-1"
+                      style={{ fontFamily: 'var(--font-family-body)' }}
+                    >
+                      לכו תעשו לכם קפה… כשתחזרו, האלבום יהיה מוכן. מוזמנים גם לעבור לטאב אחר — התהליך ממשיך
+                      ברקע.
+                    </p>
                   </div>
 
                   <div className="w-full max-w-sm space-y-4">

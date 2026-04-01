@@ -152,6 +152,23 @@ export interface DecorativeElement {
   svgPath?: string
 }
 
+// ─── People Roster Types ────────────────────────────────────────────
+
+export interface PhotoFaceObservation {
+  photoId: string
+  faceIndex: number
+  labelHe: string
+  matchHint: string
+}
+
+export interface AlbumPerson {
+  id: string
+  displayName: string
+  photoIds: string[]
+  avatarPhotoId: string
+  avatarObjectPosition?: string
+}
+
 // ─── AI Generation Pipeline Types ───────────────────────────────────
 
 export type PhotoOrientation = 'portrait' | 'landscape' | 'square'
@@ -189,6 +206,7 @@ export interface PhotoScore {
   similarityCluster?: string
   description: string
   setting?: string
+  faceObservations?: PhotoFaceObservation[]
 }
 
 export type PhotoRole = 'cover' | 'hero' | 'standard' | 'filler'
@@ -651,6 +669,7 @@ export interface GenerationResult {
   spreads: EditorSpread[]
   analyses: PhotoScore[]
   curated: CuratedPhotoSet
+  peopleRoster: AlbumPerson[]
 }
 
 export interface AlbumQuestion {

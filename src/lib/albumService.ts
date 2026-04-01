@@ -1,7 +1,6 @@
 import { supabase, getPublicUrl } from './supabase'
 import { mergeAlbumConfig } from '../store/albumStore'
-import type { EditorSpread } from '../types'
-import type { AlbumConfig } from '../types'
+import type { EditorSpread, AlbumConfig, AlbumPerson } from '../types'
 
 export interface AlbumRow {
   id: string
@@ -10,6 +9,7 @@ export interface AlbumRow {
   cover_url: string | null
   config: AlbumConfig
   spreads: EditorSpread[]
+  people_roster: AlbumPerson[]
   status: 'draft' | 'ordered' | 'archived'
   created_at: string
   updated_at: string
@@ -93,6 +93,7 @@ export async function saveAlbum(
   title: string,
   config: AlbumConfig,
   spreads: EditorSpread[],
+  peopleRoster?: AlbumPerson[],
 ): Promise<string> {
   const id = albumId || crypto.randomUUID()
 
@@ -107,6 +108,7 @@ export async function saveAlbum(
     cover_url: coverUrl,
     config: config as unknown as Record<string, unknown>,
     spreads: cleanedSpreads as unknown as Record<string, unknown>[],
+    people_roster: (peopleRoster ?? []) as unknown as Record<string, unknown>[],
     status: 'draft',
   }
 
@@ -130,7 +132,11 @@ export async function loadAlbum(albumId: string): Promise<AlbumRow | null> {
     throw error
   }
   const row = data as AlbumRow
-  return { ...row, config: mergeAlbumConfig(row.config) }
+  return {
+    ...row,
+    config: mergeAlbumConfig(row.config),
+    people_roster: Array.isArray(row.people_roster) ? row.people_roster : [],
+  }
 }
 
 export async function listUserAlbums(userId: string): Promise<AlbumRow[]> {

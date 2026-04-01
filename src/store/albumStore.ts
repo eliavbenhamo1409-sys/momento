@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Photo, AlbumConfig, PhotoScore, CuratedPhotoSet, CoverMaterial } from '../types'
+import type { Photo, AlbumConfig, PhotoScore, CuratedPhotoSet, CoverMaterial, AlbumPerson } from '../types'
 
 export interface VibeReference {
   id: string
@@ -19,6 +19,7 @@ interface AlbumState {
 
   photoScores: PhotoScore[]
   curatedSet: CuratedPhotoSet | null
+  peopleRoster: AlbumPerson[]
 
   setAlbumId: (id: string | null) => void
   setPhotos: (photos: Photo[]) => void
@@ -33,6 +34,7 @@ interface AlbumState {
   removeVibeReference: (id: string) => void
   setPhotoScores: (scores: PhotoScore[]) => void
   setCuratedSet: (set: CuratedPhotoSet) => void
+  setPeopleRoster: (roster: AlbumPerson[]) => void
   resetAlbum: () => void
 }
 
@@ -80,6 +82,7 @@ export const useAlbumStore = create<AlbumState>((set) => ({
 
   photoScores: [],
   curatedSet: null,
+  peopleRoster: [],
 
   setAlbumId: (id) => set({ albumId: id }),
   setPhotos: (photos) => set({ photos }),
@@ -95,6 +98,7 @@ export const useAlbumStore = create<AlbumState>((set) => ({
   removeVibeReference: (id) => set((s) => ({ vibeReferences: s.vibeReferences.filter((r) => r.id !== id) })),
   setPhotoScores: (scores) => set({ photoScores: scores }),
   setCuratedSet: (curatedSet) => set({ curatedSet }),
+  setPeopleRoster: (peopleRoster) => set({ peopleRoster }),
   resetAlbum: () =>
     set({
       albumId: null,
@@ -107,6 +111,7 @@ export const useAlbumStore = create<AlbumState>((set) => ({
       vibeReferences: [],
       photoScores: [],
       curatedSet: null,
+      peopleRoster: [],
     }),
 }))
 

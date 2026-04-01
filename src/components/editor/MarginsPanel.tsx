@@ -3,12 +3,13 @@ import { motion } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import Icon from '../shared/Icon'
 
-const GAP_PRESETS = [
+/** White frame around each photo (px) */
+const FRAME_PRESETS = [
   { label: 'ללא', value: 0 },
-  { label: 'צר', value: 4 },
-  { label: 'רגיל', value: 10 },
-  { label: 'רחב', value: 18 },
-  { label: 'מרווח', value: 28 },
+  { label: 'דק', value: 4 },
+  { label: 'רגיל', value: 8 },
+  { label: 'רחב', value: 14 },
+  { label: 'מסגרת', value: 22 },
 ]
 
 const MARGIN_PRESETS = [
@@ -18,6 +19,77 @@ const MARGIN_PRESETS = [
   { label: 'רחב', value: 10 },
   { label: 'מרווח', value: 16 },
 ]
+
+const CORNER_PRESETS = [
+  { label: 'חד', value: 0 },
+  { label: 'מעט', value: 6 },
+  { label: 'רגיל', value: 12 },
+  { label: 'עגול', value: 18 },
+  { label: 'מלא', value: 24 },
+]
+
+function MarginsMiniPreview({
+  pageMarginPercent,
+  framePaddingPx,
+  cornerRadiusPx,
+}: {
+  pageMarginPercent: number
+  framePaddingPx: number
+  cornerRadiusPx: number
+}) {
+  const m = Math.max(0, Math.min(20, pageMarginPercent))
+  const f = Math.max(0, framePaddingPx)
+  const frameVis = Math.min(6, 1 + f * 0.35)
+  const rMini = Math.max(0, Math.min(10, cornerRadiusPx * 0.38))
+
+  return (
+    <motion.div
+      className="shrink-0 flex flex-col items-center gap-2"
+      initial={false}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+    >
+      <span
+        className="text-[9px] font-semibold text-secondary/45 uppercase tracking-wide"
+        style={{ fontFamily: 'var(--font-family-body)' }}
+      >
+        תצוגה
+      </span>
+      <div
+        className="rounded-xl overflow-hidden shadow-[inset_0_1px_3px_rgba(45,40,35,0.08)] border border-black/[0.07] box-border"
+        style={{
+          width: 72,
+          height: 92,
+          background: 'linear-gradient(160deg, #f3f0ea 0%, #e8e4dc 100%)',
+          padding: `${m}%`,
+        }}
+      >
+        <div className="w-full h-full min-h-0 flex">
+          <div
+            className="flex-1 rounded-md bg-white flex gap-0.5 min-h-0 min-w-0 shadow-[0_1px_4px_rgba(45,40,35,0.06)]"
+            style={{
+              padding: `${frameVis}px`,
+              gap: 2,
+            }}
+          >
+            <motion.div
+              className="flex-1 min-w-0 min-h-0 bg-gradient-to-br from-stone-400/55 to-stone-500/45"
+              layout
+              style={{ borderRadius: rMini }}
+              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+            />
+            <motion.div
+              className="flex-1 min-w-0 min-h-0 bg-gradient-to-br from-stone-400/55 to-stone-500/45"
+              layout
+              style={{ borderRadius: rMini }}
+              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+            />
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
 
 function SliderRow({
   label,
@@ -92,6 +164,7 @@ function SliderRow({
         {presets.map((p) => (
           <button
             key={p.value}
+            type="button"
             onClick={() => onChange(p.value)}
             className={`flex-1 text-[9px] font-semibold py-1.5 rounded-lg transition-all duration-200 ${
               value === p.value
@@ -108,23 +181,27 @@ function SliderRow({
 }
 
 export default function MarginsPanel({ onClose }: { onClose: () => void }) {
-  const storeGap = useEditorStore((s) => s.globalPhotoGapPx)
+  const storeFrame = useEditorStore((s) => s.globalPhotoFramePaddingPx)
   const storeMargin = useEditorStore((s) => s.globalPageMarginPercent)
-  const setGlobalPhotoGap = useEditorStore((s) => s.setGlobalPhotoGap)
+  const storeRadius = useEditorStore((s) => s.globalPhotoBorderRadiusPx)
+  const setGlobalPhotoFramePadding = useEditorStore((s) => s.setGlobalPhotoFramePadding)
   const setGlobalPageMargin = useEditorStore((s) => s.setGlobalPageMargin)
+  const setGlobalPhotoBorderRadius = useEditorStore((s) => s.setGlobalPhotoBorderRadius)
 
-  const initialGap = useRef(storeGap)
+  const initialFrame = useRef(storeFrame)
   const initialMargin = useRef(storeMargin)
+  const initialRadius = useRef(storeRadius)
 
-  const [gap, setGap] = useState(storeGap ?? 10)
+  const [framePx, setFramePx] = useState(storeFrame ?? 8)
   const [margin, setMargin] = useState(storeMargin ?? 6)
+  const [cornerPx, setCornerPx] = useState(storeRadius ?? 12)
   const [dirty, setDirty] = useState(false)
 
-  const handleGapChange = useCallback((v: number) => {
-    setGap(v)
+  const handleFrameChange = useCallback((v: number) => {
+    setFramePx(v)
     setDirty(true)
-    setGlobalPhotoGap(v)
-  }, [setGlobalPhotoGap])
+    setGlobalPhotoFramePadding(v)
+  }, [setGlobalPhotoFramePadding])
 
   const handleMarginChange = useCallback((v: number) => {
     setMargin(v)
@@ -132,25 +209,35 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
     setGlobalPageMargin(v)
   }, [setGlobalPageMargin])
 
+  const handleCornerChange = useCallback((v: number) => {
+    setCornerPx(v)
+    setDirty(true)
+    setGlobalPhotoBorderRadius(v)
+  }, [setGlobalPhotoBorderRadius])
+
   const handleConfirm = useCallback(() => {
-    setGlobalPhotoGap(gap)
+    setGlobalPhotoFramePadding(framePx)
     setGlobalPageMargin(margin)
+    setGlobalPhotoBorderRadius(cornerPx)
     onClose()
-  }, [gap, margin, setGlobalPhotoGap, setGlobalPageMargin, onClose])
+  }, [framePx, margin, cornerPx, setGlobalPhotoFramePadding, setGlobalPageMargin, setGlobalPhotoBorderRadius, onClose])
 
   const handleReset = useCallback(() => {
-    setGap(10)
+    setFramePx(8)
     setMargin(6)
+    setCornerPx(12)
     setDirty(true)
-    setGlobalPhotoGap(null)
+    setGlobalPhotoFramePadding(null)
     setGlobalPageMargin(null)
-  }, [setGlobalPhotoGap, setGlobalPageMargin])
+    setGlobalPhotoBorderRadius(null)
+  }, [setGlobalPhotoFramePadding, setGlobalPageMargin, setGlobalPhotoBorderRadius])
 
   const handleCancel = useCallback(() => {
-    setGlobalPhotoGap(initialGap.current)
+    setGlobalPhotoFramePadding(initialFrame.current)
     setGlobalPageMargin(initialMargin.current)
+    setGlobalPhotoBorderRadius(initialRadius.current)
     onClose()
-  }, [setGlobalPhotoGap, setGlobalPageMargin, onClose])
+  }, [setGlobalPhotoFramePadding, setGlobalPageMargin, setGlobalPhotoBorderRadius, onClose])
 
   return (
     <motion.div
@@ -158,7 +245,7 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -12 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute md:right-full md:top-0 md:me-3 max-md:bottom-full max-md:mb-3 max-md:right-0 w-72 max-w-[min(18rem,calc(100vw-3rem))] max-h-[70vh] overflow-y-auto no-scrollbar rounded-2xl bg-white/95 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_rgba(45,40,35,0.12)] p-4 pointer-events-auto"
+      className="absolute md:right-full md:top-0 md:me-3 max-md:bottom-full max-md:mb-3 max-md:right-0 w-[min(22rem,calc(100vw-2.5rem))] max-h-[78vh] overflow-y-auto no-scrollbar rounded-2xl bg-white/95 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_rgba(45,40,35,0.12)] p-4 pointer-events-auto"
       dir="rtl"
       onClick={(e) => e.stopPropagation()}
     >
@@ -171,10 +258,11 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
             className="text-sm font-bold text-on-surface"
             style={{ fontFamily: 'var(--font-family-headline)' }}
           >
-            שוליים
+            שוליים ופינות
           </h3>
         </div>
         <button
+          type="button"
           onClick={handleCancel}
           className="w-6 h-6 rounded-full flex items-center justify-center text-secondary/50 hover:text-on-surface hover:bg-surface-container-high/70 transition-colors"
         >
@@ -182,36 +270,61 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      <div className="flex flex-col gap-5">
-        <SliderRow
-          label="מרווח בין תמונות"
-          icon="space_bar"
-          value={gap}
-          min={0}
-          max={28}
-          step={1}
-          presets={GAP_PRESETS}
-          unit="px"
-          onChange={handleGapChange}
-        />
+      <div className="flex flex-col sm:flex-row gap-4 sm:items-start sm:gap-5">
+        <div className="flex flex-col gap-5 flex-1 min-w-0 order-2 sm:order-1">
+          <SliderRow
+            label="מסגרת לבנה סביב כל תמונה"
+            icon="crop_square"
+            value={framePx}
+            min={0}
+            max={28}
+            step={1}
+            presets={FRAME_PRESETS}
+            unit="px"
+            onChange={handleFrameChange}
+          />
 
-        <div className="h-px bg-gradient-to-l from-transparent via-black/6 to-transparent" />
+          <div className="h-px bg-gradient-to-l from-transparent via-black/6 to-transparent" />
 
-        <SliderRow
-          label="שוליים מקצה העמוד"
-          icon="crop_free"
-          value={margin}
-          min={0}
-          max={16}
-          step={0.5}
-          presets={MARGIN_PRESETS}
-          unit="%"
-          onChange={handleMarginChange}
-        />
+          <SliderRow
+            label="שוליים מקצה העמוד (כל הפריסה)"
+            icon="crop_free"
+            value={margin}
+            min={0}
+            max={16}
+            step={0.5}
+            presets={MARGIN_PRESETS}
+            unit="%"
+            onChange={handleMarginChange}
+          />
+
+          <div className="h-px bg-gradient-to-l from-transparent via-black/6 to-transparent" />
+
+          <SliderRow
+            label="עיגול פינות כל המסגרות"
+            icon="rounded_corner"
+            value={cornerPx}
+            min={0}
+            max={24}
+            step={1}
+            presets={CORNER_PRESETS}
+            unit="px"
+            onChange={handleCornerChange}
+          />
+        </div>
+
+        <div className="order-1 sm:order-2 flex justify-center sm:pt-1">
+          <MarginsMiniPreview
+            pageMarginPercent={margin}
+            framePaddingPx={framePx}
+            cornerRadiusPx={cornerPx}
+          />
+        </div>
       </div>
 
       <div className="mt-5 flex gap-2">
         <motion.button
+          type="button"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           onClick={handleConfirm}
@@ -223,6 +336,7 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
           </div>
         </motion.button>
         <motion.button
+          type="button"
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.97 }}
           onClick={handleReset}
@@ -234,7 +348,9 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
 
       <div className="mt-3 pt-2 border-t border-black/[0.04]">
         <p className="text-[9px] text-secondary/40 leading-relaxed text-center">
-          {dirty ? 'תצוגה מקדימה — לחצו אישור לשמירה' : 'השינויים חלים על כל עמודי האלבום'}
+          {dirty
+            ? 'השינויים מוצגים בזמן אמת — אישור משאיר את הערכים בכל העמודים'
+            : 'השינויים חלים על כל עמודי האלבום'}
         </p>
       </div>
     </motion.div>

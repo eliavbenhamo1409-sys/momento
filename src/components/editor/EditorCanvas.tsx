@@ -20,6 +20,7 @@ import type {
   FamilyDecorative,
   FamilyTypography,
 } from '../../types'
+import { applyPageMarginToPercentRect } from '../../lib/layoutInset'
 
 // Re-export defaults & texture util for consumers that import from here
 export { DEFAULT_FRAME, DEFAULT_STYLE, getTexturePattern }
@@ -265,7 +266,8 @@ function PhotoToolbarPortal({
   currentPadding,
   onZoomIn,
   onZoomOut,
-  onReset,
+  currentBorderRadius,
+  onToggleRoundedCorners,
   onReplace,
   onDelete,
   onAiResult,
@@ -282,7 +284,8 @@ function PhotoToolbarPortal({
   currentPadding: number
   onZoomIn: () => void
   onZoomOut: () => void
-  onReset: () => void
+  currentBorderRadius: number
+  onToggleRoundedCorners: () => void
   onReplace: () => void
   onDelete: () => void
   onAiResult: (slotId: string, dataUrl: string) => void
@@ -517,7 +520,7 @@ function PhotoToolbarPortal({
           </button>
         </ToolbarTooltip>
 
-        <ToolbarTooltip text="שוליים">
+        <ToolbarTooltip text="שוליים ופינות">
           <button
             onClick={() => setShowPadding((v) => !v)}
             className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${showPadding ? 'bg-violet-500/30 text-violet-300' : 'text-white/80 hover:bg-white/15'}`}
@@ -526,12 +529,13 @@ function PhotoToolbarPortal({
           </button>
         </ToolbarTooltip>
 
-        <ToolbarTooltip text="אפס מיקום">
+        <ToolbarTooltip text="עיגול פינות">
           <button
-            onClick={onReset}
-            className="w-7 h-7 rounded-lg flex items-center justify-center text-white/80 hover:bg-white/15 active:scale-90 transition-all"
+            type="button"
+            onClick={onToggleRoundedCorners}
+            className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all active:scale-90 ${currentBorderRadius >= 16 ? 'bg-sage/40 text-white' : 'text-white/80 hover:bg-white/15'}`}
           >
-            <Icon name="center_focus_strong" size={16} />
+            <Icon name="rounded_corner" size={16} />
           </button>
         </ToolbarTooltip>
 
@@ -592,12 +596,15 @@ function ResizeHandle({
   slotId,
   element,
   setRect,
+  layoutInsetPercent = 0,
 }: {
   corner: 'nw' | 'ne' | 'sw' | 'se'
   containerRef: React.RefObject<HTMLDivElement | null>
   slotId: string
   element: { x: number; y: number; width: number; height: number }
   setRect: (slotId: string, rect: { x: number; y: number; width: number; height: number }) => void
+  /** Page margin % — DOM feedback during drag uses the same mapping as render */
+  layoutInsetPercent?: number
 }) {
   const elRef = useRef<HTMLDivElement>(null)
   const setRectRef = useRef(setRect)
@@ -665,11 +672,13 @@ function ResizeHandle({
 
       lastRect = { x: newX, y: newY, width: newW, height: newH }
 
+      const m = Math.max(0, Math.min(48, layoutInsetPercent))
+      const s = (100 - 2 * m) / 100
       // Direct DOM write — bypasses React for zero-latency visual feedback
-      target.style.left = `${newX}%`
-      target.style.top = `${newY}%`
-      target.style.width = `${newW}%`
-      target.style.height = `${newH}%`
+      target.style.left = `${m + newX * s}%`
+      target.style.top = `${m + newY * s}%`
+      target.style.width = `${newW * s}%`
+      target.style.height = `${newH * s}%`
     }
 
     const onMove = (ev: PointerEvent) => {
@@ -691,7 +700,7 @@ function ResizeHandle({
 
     el.addEventListener('pointermove', onMove)
     el.addEventListener('pointerup', onUp)
-  }, [corner, slotId, containerRef, element.x, element.y, element.width, element.height])
+  }, [corner, slotId, containerRef, element.x, element.y, element.width, element.height, layoutInsetPercent])
 
   return (
     <div
@@ -775,6 +784,9 @@ export function AbsolutePhotoElement({
   isSelected,
   isSwapping = false,
   onSelect,
+  layoutInsetPercent = 0,
+  collectivePaddingPx = null,
+  collectiveBorderRadiusPx = null,
 }: {
   element: PhotoElement
   spreadId?: string
@@ -782,9 +794,17 @@ export function AbsolutePhotoElement({
   isSelected: boolean
   isSwapping?: boolean
   onSelect: () => void
+  /** Global page margin % (inset layout toward center) */
+  layoutInsetPercent?: number
+  /** When set, every photo uses this white frame (px); null = per-element padding */
+  collectivePaddingPx?: number | null
+  /** When set, every photo uses this corner radius (px); null = per-element radius */
+  collectiveBorderRadiusPx?: number | null
 }) {
   const updatePos = useEditorStore((s) => s.updatePhotoObjectPosition)
   const updateScale = useEditorStore((s) => s.updatePhotoScale)
+  const updatePhotoSlotRadius = useEditorStore((s) => s.updatePhotoSlotRadius)
+  const setGlobalPhotoBorderRadius = useEditorStore((s) => s.setGlobalPhotoBorderRadius)
   const replaceInSlot = useEditorStore((s) => s.replacePhotoInSlot)
   const removeSlot = useEditorStore((s) => s.removePhotoSlot)
   const clearPhoto = useEditorStore((s) => s.removePhotoFromSlot)
@@ -812,6 +832,16 @@ export function AbsolutePhotoElement({
 
   const currentScale = element.scale ?? 1
   const [isMoveMode, setIsMoveMode] = useState(false)
+
+  const layoutRect = applyPageMarginToPercentRect(
+    element.x,
+    element.y,
+    element.width,
+    element.height,
+    layoutInsetPercent,
+  )
+  const pad = collectivePaddingPx != null ? collectivePaddingPx : element.padding
+  const radius = collectiveBorderRadiusPx != null ? collectiveBorderRadiusPx : element.borderRadius
 
   useEffect(() => { if (!isSelected) setIsMoveMode(false) }, [isSelected])
 
@@ -937,18 +967,18 @@ export function AbsolutePhotoElement({
 
   const positionStyle: React.CSSProperties = {
     position: 'absolute',
-    left: `${element.x}%`,
-    top: `${element.y}%`,
-    width: `${element.width}%`,
-    height: `${element.height}%`,
+    left: `${layoutRect.x}%`,
+    top: `${layoutRect.y}%`,
+    width: `${layoutRect.width}%`,
+    height: `${layoutRect.height}%`,
     zIndex: isDragSource ? 50 : element.zIndex,
     borderWidth: element.borderWidth > 0 && !element.clipPath ? element.borderWidth : undefined,
     borderColor: element.borderWidth > 0 && !element.clipPath ? element.borderColor : undefined,
     borderStyle: element.borderWidth > 0 && !element.clipPath ? 'solid' : undefined,
-    borderRadius: element.clipPath ? undefined : element.borderRadius,
+    borderRadius: element.clipPath ? undefined : radius,
     boxShadow: element.shadow || undefined,
-    padding: element.padding > 0 && !element.clipPath ? element.padding : undefined,
-    backgroundColor: element.padding > 0 && !element.clipPath ? '#FFFFFF' : undefined,
+    padding: pad > 0 && !element.clipPath ? pad : undefined,
+    backgroundColor: pad > 0 && !element.clipPath ? '#FFFFFF' : undefined,
     transform: element.rotation !== 0 ? `rotate(${element.rotation.toFixed(1)}deg)` : undefined,
     overflow: isSelected ? 'visible' : 'hidden',
     clipPath: isSelected ? undefined : (element.clipPath || undefined),
@@ -986,9 +1016,9 @@ export function AbsolutePhotoElement({
       <div
         className="w-full h-full overflow-hidden"
         style={{
-          borderRadius: element.borderRadius > 8
-            ? Math.max(4, element.borderRadius * 0.6)
-            : Math.max(0, element.borderRadius - element.padding),
+          borderRadius: radius > 8
+            ? Math.max(4, radius * 0.6)
+            : Math.max(0, radius - pad),
           clipPath: isSelected ? (element.clipPath || undefined) : undefined,
           WebkitClipPath: isSelected ? (element.clipPath || undefined) : undefined,
         }}
@@ -1100,10 +1130,18 @@ export function AbsolutePhotoElement({
             slotId={element.slotId}
             photoUrl={element.photoUrl!}
             isMoveMode={isMoveMode}
-            currentPadding={element.padding}
+            currentPadding={pad}
             onZoomIn={() => updateScale(element.slotId, Math.min(3, currentScale + 0.15))}
             onZoomOut={() => updateScale(element.slotId, Math.max(1, currentScale - 0.15))}
-            onReset={() => { updatePos(element.slotId, '50% 50%'); updateScale(element.slotId, 1) }}
+            currentBorderRadius={radius}
+            onToggleRoundedCorners={() => {
+              if (collectiveBorderRadiusPx != null) {
+                setGlobalPhotoBorderRadius(radius >= 16 ? 0 : 22)
+              } else {
+                const r = element.borderRadius
+                updatePhotoSlotRadius(element.slotId, r >= 16 ? 0 : 22)
+              }
+            }}
             onReplace={() => replaceFileRef.current?.click()}
             onDelete={() => clearPhoto(element.slotId)}
             onAiResult={(sid, dataUrl) => setPhotoUrl(sid, dataUrl)}
@@ -1145,6 +1183,7 @@ export function AbsolutePhotoElement({
               slotId={element.slotId}
               element={element}
               setRect={setRect}
+              layoutInsetPercent={layoutInsetPercent}
             />
           ))}
 
@@ -1170,11 +1209,13 @@ export function AbsoluteQuoteElement({
   elementIndex,
   isSelected,
   onSelect,
+  layoutInsetPercent = 0,
 }: {
   element: QuoteElement
   elementIndex: number
   isSelected: boolean
   onSelect: () => void
+  layoutInsetPercent?: number
 }) {
   const updateText = useEditorStore((s) => s.updateTextElement)
   const removeText = useEditorStore((s) => s.removeTextElement)
@@ -1186,6 +1227,18 @@ export function AbsoluteQuoteElement({
 
   const showQuoteMarks = element.quoteMarks !== 'none'
   const quoteMarkSize = element.quoteMarks === 'serif-large' ? 28 : element.quoteMarks === 'elegant' ? 22 : 18
+
+  const m = Math.max(0, Math.min(48, layoutInsetPercent))
+  const s = (100 - 2 * m) / 100
+  const toDisplay = useCallback(
+    (x: number, y: number, w: number, h: number) => ({
+      left: `${m + x * s}%`,
+      top: `${m + y * s}%`,
+      width: `${w * s}%`,
+      height: `${h * s}%`,
+    }),
+    [m, s],
+  )
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if ((e.target as HTMLElement).dataset.resizeHandle) return
@@ -1216,8 +1269,9 @@ export function AbsoluteQuoteElement({
       const newY = Math.max(0, Math.min(95, startRef.current.elY + (dy / rect.height) * 100))
       localQuotePosRef.current = { x: newX, y: newY }
       if (containerRef.current) {
-        containerRef.current.style.left = `${newX}%`
-        containerRef.current.style.top = `${newY}%`
+        const d = toDisplay(newX, newY, startRef.current.elW, startRef.current.elH)
+        containerRef.current.style.left = d.left
+        containerRef.current.style.top = d.top
       }
     }
 
@@ -1237,13 +1291,14 @@ export function AbsoluteQuoteElement({
 
       localQuotePosRef.current = { x: newX, y: newY, w: newW, h: newH }
       if (containerRef.current) {
-        containerRef.current.style.left = `${newX}%`
-        containerRef.current.style.top = `${newY}%`
-        containerRef.current.style.width = `${newW}%`
-        containerRef.current.style.height = `${newH}%`
+        const d = toDisplay(newX, newY, newW, newH)
+        containerRef.current.style.left = d.left
+        containerRef.current.style.top = d.top
+        containerRef.current.style.width = d.width
+        containerRef.current.style.height = d.height
       }
     }
-  }, [isDragging, isResizing])
+  }, [isDragging, isResizing, toDisplay])
 
   const handlePointerUp = useCallback(() => {
     if (localQuotePosRef.current) {
@@ -1279,6 +1334,8 @@ export function AbsoluteQuoteElement({
     updateText(elementIndex, { fontSize: Math.max(10, Math.min(72, element.fontSize + delta)) })
   }, [elementIndex, element.fontSize, updateText])
 
+  const disp = toDisplay(element.x, element.y, element.width, element.height)
+
   return (
     <motion.div
       ref={containerRef}
@@ -1287,10 +1344,10 @@ export function AbsoluteQuoteElement({
       transition={{ duration: 0.5, delay: 0.2 }}
       style={{
         position: 'absolute',
-        left: `${element.x}%`,
-        top: `${element.y}%`,
-        width: `${element.width}%`,
-        height: `${element.height}%`,
+        left: disp.left,
+        top: disp.top,
+        width: disp.width,
+        height: disp.height,
         zIndex: isSelected ? 50 : element.zIndex,
         display: 'flex',
         flexDirection: 'column',
@@ -1386,13 +1443,20 @@ export function AbsoluteQuoteElement({
 
 // ─── Absolute-Positioned Decorative Element ──────────────────────────
 
-export function AbsoluteDecorativeElement({ element }: { element: DecorativeElement }) {
+export function AbsoluteDecorativeElement({
+  element,
+  layoutInsetPercent = 0,
+}: {
+  element: DecorativeElement
+  layoutInsetPercent?: number
+}) {
+  const r = applyPageMarginToPercentRect(element.x, element.y, element.width, element.height, layoutInsetPercent)
   const basePos: React.CSSProperties = {
     position: 'absolute',
-    left: `${element.x}%`,
-    top: `${element.y}%`,
-    width: `${element.width}%`,
-    height: `${element.height}%`,
+    left: `${r.x}%`,
+    top: `${r.y}%`,
+    width: `${r.width}%`,
+    height: `${r.height}%`,
     zIndex: element.zIndex,
     opacity: element.opacity,
     pointerEvents: 'none',
@@ -1425,7 +1489,7 @@ export function AbsoluteDecorativeElement({ element }: { element: DecorativeElem
         <div
           style={{
             ...basePos,
-            height: element.height < 1 ? 1 : `${element.height}%`,
+            height: r.height < 0.15 ? 1 : `${r.height}%`,
             background: `linear-gradient(90deg, transparent, ${element.color}, transparent)`,
           }}
         />
