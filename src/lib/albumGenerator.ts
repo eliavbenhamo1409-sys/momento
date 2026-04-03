@@ -8,6 +8,7 @@ import type {
   EditorSpread,
   FaceRegion,
   PhotoElement,
+  PreScoredData,
 } from '../types'
 import { batchArray, detectOrientation, getImageDimensions, extractPhotoDate } from './photoUtils'
 import { analyzePhotoBatch, analyzePhotoBatchGemini, generateSpreadBackgrounds, consolidateAlbumPeople } from './openai'
@@ -53,6 +54,7 @@ export async function generateAlbum(
   config: AlbumConfig,
   onProgress: ProgressCallback,
   referenceDataUrls?: string[],
+  preScored?: PreScoredData,
 ): Promise<GenerationResult> {
   if (photos.length === 0) {
     throw new Error('No photos to generate album from')
@@ -60,145 +62,153 @@ export async function generateAlbum(
 
   console.log('[אלבום חכם] ═══════════════════════════════════════════')
   console.log(`[אלבום חכם] התחלת צינור: ${photos.length} תמונות, ${config.pages} עמודים, רקע=${config.backgroundMode === 'white' ? 'לבן' : 'AI'}`)
+  if (preScored) console.log('[אלבום חכם] מקבל נתוני סינון מוכנים — מדלג על שלבים 1-2')
   console.log('[אלבום חכם] ═══════════════════════════════════════════')
 
   const family = getDesignFamily(config.designFamily)
   const spreadCount = Math.max(3, Math.floor(config.pages / 2))
 
-  // ── Stage 1 (0-55%): Photo Scoring via Vision API ─────────────
+  let allScores: PhotoScore[]
+  let curated: import('../types').CuratedPhotoSet
+  let dateLookup: Map<string, Date>
 
-  onProgress(0, 0, 'מתחיל לנתח את התמונות שלך')
+  if (preScored) {
+    allScores = preScored.allScores
+    curated = preScored.curated
+    dateLookup = preScored.dateLookup
+    onProgress(2, 64, 'דירוג התמונות הושלם — ממשיך לשלב הסידור')
+  } else {
+    // ── Stage 1 (0-55%): Photo Scoring via Vision API ─────────────
 
-  const orientations = new Map<
-    string,
-    { orientation: PhotoOrientation; aspectRatio: number }
-  >()
-  for (const photo of photos) {
-    if (photo.file) {
-      try {
-        const dims = await getImageDimensions(photo.file)
-        orientations.set(photo.id, {
-          orientation: detectOrientation(dims.width, dims.height),
-          aspectRatio: dims.width / dims.height,
-        })
-      } catch {
+    onProgress(0, 0, 'מתחיל לנתח את התמונות שלך')
+
+    const orientations = new Map<
+      string,
+      { orientation: PhotoOrientation; aspectRatio: number }
+    >()
+    for (const photo of photos) {
+      if (photo.file) {
+        try {
+          const dims = await getImageDimensions(photo.file)
+          orientations.set(photo.id, {
+            orientation: detectOrientation(dims.width, dims.height),
+            aspectRatio: dims.width / dims.height,
+          })
+        } catch {
+          orientations.set(photo.id, {
+            orientation: detectOrientation(photo.width, photo.height),
+            aspectRatio: photo.width / photo.height,
+          })
+        }
+      } else {
         orientations.set(photo.id, {
           orientation: detectOrientation(photo.width, photo.height),
           aspectRatio: photo.width / photo.height,
         })
       }
-    } else {
-      orientations.set(photo.id, {
-        orientation: detectOrientation(photo.width, photo.height),
-        aspectRatio: photo.width / photo.height,
-      })
     }
-  }
 
-  // Extract EXIF dates for chronological grouping
-  const dateLookup = new Map<string, Date>()
-  for (let idx = 0; idx < photos.length; idx++) {
-    const photo = photos[idx]
-    if (photo.file) {
-      try {
-        const d = await extractPhotoDate(photo.file)
-        dateLookup.set(photo.id, d)
-      } catch {
-        dateLookup.set(photo.id, new Date(photo.file.lastModified))
-      }
-    } else {
-      dateLookup.set(photo.id, new Date(idx))
-    }
-  }
-  const exifCount = [...dateLookup.values()].filter(d => d.getTime() > 1000).length
-  if (exifCount > 0) {
-    console.log(`[אלבום חכם] חולצו תאריכים מ-${exifCount}/${photos.length} תמונות`)
-    onProgress(0, 3, `חולצו תאריכים מ-${exifCount} תמונות`)
-  }
-
-  const batches = batchArray(photos, BATCH_SIZE)
-  const allScores: PhotoScore[] = []
-  let batchesDone = 0
-  let aiSuccessCount = 0
-  let fallbackCount = 0
-
-  for (const batch of batches) {
-    let batchScored = false
-
-    // Try Gemini first (primary)
-    for (let attempt = 0; attempt < 2 && !batchScored; attempt++) {
-      try {
-        if (attempt > 0) {
-          onProgress(0, Math.round((batchesDone / batches.length) * 55), `ניסיון חוזר (${allScores.length}/${photos.length})`)
-          await sleep(1000 * attempt)
+    dateLookup = new Map<string, Date>()
+    for (let idx = 0; idx < photos.length; idx++) {
+      const photo = photos[idx]
+      if (photo.file) {
+        try {
+          const d = await extractPhotoDate(photo.file)
+          dateLookup.set(photo.id, d)
+        } catch {
+          dateLookup.set(photo.id, new Date(photo.file.lastModified))
         }
-        const scores = await analyzePhotoBatchGemini(batch, orientations)
-        allScores.push(...scores)
-        aiSuccessCount += batch.length
-        batchScored = true
-        console.log(`[AI Scoring] Gemini succeeded for batch ${batchesDone + 1}/${batches.length}`)
-      } catch (err) {
-        console.error(`[AI Scoring] Gemini attempt ${attempt + 1} failed:`, err)
+      } else {
+        dateLookup.set(photo.id, new Date(idx))
       }
     }
-
-    // Fallback: try OpenAI if Gemini failed
-    if (!batchScored) {
-      try {
-        onProgress(0, Math.round((batchesDone / batches.length) * 55), `מנסה ערוץ חלופי`)
-        const scores = await analyzePhotoBatch(batch, orientations)
-        allScores.push(...scores)
-        aiSuccessCount += batch.length
-        batchScored = true
-        console.log(`[AI Scoring] OpenAI fallback succeeded for batch ${batchesDone + 1}/${batches.length}`)
-      } catch (err) {
-        console.error(`[AI Scoring] OpenAI fallback also failed:`, err)
-      }
+    const exifCount = [...dateLookup.values()].filter(d => d.getTime() > 1000).length
+    if (exifCount > 0) {
+      console.log(`[אלבום חכם] חולצו תאריכים מ-${exifCount}/${photos.length} תמונות`)
+      onProgress(0, 3, `חולצו תאריכים מ-${exifCount} תמונות`)
     }
 
-    // Last resort: default scores
-    if (!batchScored) {
-      for (const photo of batch) {
-        const dims = orientations.get(photo.id) ?? {
-          orientation: detectOrientation(photo.width, photo.height) as PhotoOrientation,
-          aspectRatio: photo.width / photo.height,
+    const batches = batchArray(photos, BATCH_SIZE)
+    allScores = []
+    let batchesDone = 0
+    let aiSuccessCount = 0
+    let fallbackCount = 0
+
+    for (const batch of batches) {
+      let batchScored = false
+
+      for (let attempt = 0; attempt < 2 && !batchScored; attempt++) {
+        try {
+          if (attempt > 0) {
+            onProgress(0, Math.round((batchesDone / batches.length) * 55), `ניסיון חוזר (${allScores.length}/${photos.length})`)
+            await sleep(1000 * attempt)
+          }
+          const scores = await analyzePhotoBatchGemini(batch, orientations)
+          allScores.push(...scores)
+          aiSuccessCount += batch.length
+          batchScored = true
+          console.log(`[AI Scoring] Gemini succeeded for batch ${batchesDone + 1}/${batches.length}`)
+        } catch (err) {
+          console.error(`[AI Scoring] Gemini attempt ${attempt + 1} failed:`, err)
         }
-        allScores.push(createDefaultScore(photo.id, dims.orientation, dims.aspectRatio))
       }
-      fallbackCount += batch.length
-      console.warn(`[AI Scoring] Batch ${batchesDone + 1} fell back to defaults (${batch.length} photos)`)
+
+      if (!batchScored) {
+        try {
+          onProgress(0, Math.round((batchesDone / batches.length) * 55), `מנסה ערוץ חלופי`)
+          const scores = await analyzePhotoBatch(batch, orientations)
+          allScores.push(...scores)
+          aiSuccessCount += batch.length
+          batchScored = true
+          console.log(`[AI Scoring] OpenAI fallback succeeded for batch ${batchesDone + 1}/${batches.length}`)
+        } catch (err) {
+          console.error(`[AI Scoring] OpenAI fallback also failed:`, err)
+        }
+      }
+
+      if (!batchScored) {
+        for (const photo of batch) {
+          const dims = orientations.get(photo.id) ?? {
+            orientation: detectOrientation(photo.width, photo.height) as PhotoOrientation,
+            aspectRatio: photo.width / photo.height,
+          }
+          allScores.push(createDefaultScore(photo.id, dims.orientation, dims.aspectRatio))
+        }
+        fallbackCount += batch.length
+        console.warn(`[AI Scoring] Batch ${batchesDone + 1} fell back to defaults (${batch.length} photos)`)
+      }
+
+      batchesDone++
+      const pct = Math.round((batchesDone / batches.length) * 55)
+      onProgress(0, pct, `מנתח תמונות ${allScores.length}/${photos.length}`)
     }
 
-    batchesDone++
-    const pct = Math.round((batchesDone / batches.length) * 55)
-    onProgress(0, pct, `מנתח תמונות ${allScores.length}/${photos.length}`)
-  }
+    if (fallbackCount > 0) {
+      console.warn(`[AI Scoring] ${fallbackCount}/${photos.length} photos used default scores (AI unavailable)`)
+      onProgress(0, 55, `ניתוח הושלם — ${aiSuccessCount} נותחו עם AI, ${fallbackCount} עם ברירות מחדל`)
+    } else {
+      console.log(`[AI Scoring] All ${aiSuccessCount} photos scored by AI successfully`)
+      onProgress(0, 55, `ניתוח AI הושלם — ${allScores.length} תמונות נסרקו בהצלחה`)
+    }
 
-  if (fallbackCount > 0) {
-    console.warn(`[AI Scoring] ${fallbackCount}/${photos.length} photos used default scores (AI unavailable)`)
-    onProgress(0, 55, `ניתוח הושלם — ${aiSuccessCount} נותחו עם AI, ${fallbackCount} עם ברירות מחדל`)
-  } else {
-    console.log(`[AI Scoring] All ${aiSuccessCount} photos scored by AI successfully`)
-    onProgress(0, 55, `ניתוח AI הושלם — ${allScores.length} תמונות נסרקו בהצלחה`)
-  }
+    // ── Stage 2 (55-64%): Curation & Ranking ──────────────────────
 
-  // ── Stage 2 (55-64%): Curation & Ranking ──────────────────────
-
-  await sleep(600)
-  onProgress(1, 56, 'מדרג תמונות לפי איכות, חדות ורגש')
-
-  const curated = curatePhotos(allScores, config)
-
-  await sleep(800)
-  onProgress(1, 59, `נבחרו ${curated.totalSelected} התמונות הטובות מתוך ${curated.totalOriginal}`)
-
-  if (curated.removed.length > 0) {
     await sleep(600)
-    onProgress(1, 61, `סוננו ${curated.removed.length} תמונות כפולות או חלשות`)
-  }
+    onProgress(1, 56, 'מדרג תמונות לפי איכות, חדות ורגש')
 
-  await sleep(700)
-  onProgress(1, 64, 'דירוג התמונות הושלם')
+    curated = curatePhotos(allScores, config)
+
+    await sleep(800)
+    onProgress(1, 59, `נבחרו ${curated.totalSelected} התמונות הטובות מתוך ${curated.totalOriginal}`)
+
+    if (curated.removed.length > 0) {
+      await sleep(600)
+      onProgress(1, 61, `סוננו ${curated.removed.length} תמונות כפולות או חלשות`)
+    }
+
+    await sleep(700)
+    onProgress(1, 64, 'דירוג התמונות הושלם')
+  }
 
   // ── Stage 3 (64-74%): Smart Grouping & Template Picking ──────
 
@@ -747,6 +757,135 @@ export async function generateAlbum(
     curated,
     peopleRoster,
   }
+}
+
+// ─── Standalone Scoring (for curate screen) ─────────────────────────
+
+export interface ScoringResult {
+  scores: PhotoScore[]
+  dateLookup: Record<string, number>
+}
+
+/**
+ * Run ONLY the AI scoring pipeline (Stage 1) — identical logic to
+ * generateAlbum's Stage 1 but callable independently so the curate
+ * screen can present scores before layout building.
+ */
+export async function runPhotoScoring(
+  photos: Photo[],
+  onProgress: ProgressCallback,
+): Promise<ScoringResult> {
+  if (photos.length === 0) throw new Error('No photos to score')
+
+  onProgress(0, 0, 'מתחיל לנתח את התמונות שלך')
+
+  const orientations = new Map<
+    string,
+    { orientation: PhotoOrientation; aspectRatio: number }
+  >()
+  for (const photo of photos) {
+    if (photo.file) {
+      try {
+        const dims = await getImageDimensions(photo.file)
+        orientations.set(photo.id, {
+          orientation: detectOrientation(dims.width, dims.height),
+          aspectRatio: dims.width / dims.height,
+        })
+      } catch {
+        orientations.set(photo.id, {
+          orientation: detectOrientation(photo.width, photo.height),
+          aspectRatio: photo.width / photo.height,
+        })
+      }
+    } else {
+      orientations.set(photo.id, {
+        orientation: detectOrientation(photo.width, photo.height),
+        aspectRatio: photo.width / photo.height,
+      })
+    }
+  }
+
+  const dateLookup = new Map<string, Date>()
+  for (let idx = 0; idx < photos.length; idx++) {
+    const photo = photos[idx]
+    if (photo.file) {
+      try {
+        const d = await extractPhotoDate(photo.file)
+        dateLookup.set(photo.id, d)
+      } catch {
+        dateLookup.set(photo.id, new Date(photo.file.lastModified))
+      }
+    } else {
+      dateLookup.set(photo.id, new Date(idx))
+    }
+  }
+
+  const batches = batchArray(photos, BATCH_SIZE)
+  const allScores: PhotoScore[] = []
+  let batchesDone = 0
+  let aiSuccessCount = 0
+  let fallbackCount = 0
+
+  for (const batch of batches) {
+    let batchScored = false
+
+    for (let attempt = 0; attempt < 2 && !batchScored; attempt++) {
+      try {
+        if (attempt > 0) {
+          onProgress(0, Math.round((batchesDone / batches.length) * 90), `ניסיון חוזר (${allScores.length}/${photos.length})`)
+          await sleep(1000 * attempt)
+        }
+        const scores = await analyzePhotoBatchGemini(batch, orientations)
+        allScores.push(...scores)
+        aiSuccessCount += batch.length
+        batchScored = true
+      } catch {
+        // retry
+      }
+    }
+
+    if (!batchScored) {
+      try {
+        onProgress(0, Math.round((batchesDone / batches.length) * 90), 'מנסה ערוץ חלופי')
+        const scores = await analyzePhotoBatch(batch, orientations)
+        allScores.push(...scores)
+        aiSuccessCount += batch.length
+        batchScored = true
+      } catch {
+        // fallback below
+      }
+    }
+
+    if (!batchScored) {
+      for (const photo of batch) {
+        const dims = orientations.get(photo.id) ?? {
+          orientation: detectOrientation(photo.width, photo.height) as PhotoOrientation,
+          aspectRatio: photo.width / photo.height,
+        }
+        allScores.push(createDefaultScore(photo.id, dims.orientation, dims.aspectRatio))
+      }
+      fallbackCount += batch.length
+    }
+
+    batchesDone++
+    const pct = Math.round((batchesDone / batches.length) * 90)
+    onProgress(0, pct, `מנתח תמונות ${allScores.length}/${photos.length}`)
+  }
+
+  if (fallbackCount > 0) {
+    onProgress(0, 95, `ניתוח הושלם — ${aiSuccessCount} נותחו עם AI, ${fallbackCount} עם ברירות מחדל`)
+  } else {
+    onProgress(0, 95, `ניתוח AI הושלם — ${allScores.length} תמונות נסרקו בהצלחה`)
+  }
+
+  onProgress(0, 100, 'הניתוח הושלם')
+
+  const dateLookupRecord: Record<string, number> = {}
+  for (const [id, date] of dateLookup) {
+    dateLookupRecord[id] = date.getTime()
+  }
+
+  return { scores: allScores, dateLookup: dateLookupRecord }
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────

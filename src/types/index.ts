@@ -746,7 +746,13 @@ export interface GenerationStage {
   }
 }
 
-export type ScreenStep = 'upload' | 'configure' | 'setup' | 'generating' | 'editor'
+export type ScreenStep = 'upload' | 'curate' | 'configure' | 'setup' | 'generating' | 'editor'
+
+export interface PreScoredData {
+  allScores: PhotoScore[]
+  curated: CuratedPhotoSet
+  dateLookup: Map<string, Date>
+}
 
 export interface AlbumSize {
   id: string

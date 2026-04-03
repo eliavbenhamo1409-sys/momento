@@ -2,6 +2,7 @@ import type { ScreenStep } from '../../types'
 
 const steps: { key: ScreenStep; label: string }[] = [
   { key: 'upload', label: 'העלאה' },
+  { key: 'curate', label: 'סינון' },
   { key: 'configure', label: 'מפרט' },
   { key: 'setup', label: 'סגנון' },
   { key: 'editor', label: 'אלבום' },

@@ -5,6 +5,7 @@ import DashboardScreen from './screens/DashboardScreen'
 import UploadScreen from './screens/UploadScreen'
 import ConfigureScreen from './screens/ConfigureScreen'
 import SetupScreen from './screens/SetupScreen'
+import CurateScreen from './screens/CurateScreen'
 import GenerationScreen from './screens/GenerationScreen'
 import EditorScreen from './screens/EditorScreen'
 import CheckoutScreen from './screens/CheckoutScreen'
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/dashboard" element={<DashboardScreen />} />
           <Route path="/upload" element={<UploadScreen />} />
+          <Route path="/curate" element={<CurateScreen />} />
           <Route path="/configure" element={<ConfigureScreen />} />
           <Route path="/setup" element={<SetupScreen />} />
           <Route path="/generating" element={<GenerationScreen />} />

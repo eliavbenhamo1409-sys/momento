@@ -208,7 +208,7 @@ export default function UploadComplete() {
         transition={{ delay: 0.55, duration: 0.4 }}
         whileHover={!belowMin ? { scale: 1.01, y: -1 } : undefined}
         whileTap={!belowMin ? { scale: 0.98 } : undefined}
-        onClick={() => navigate('/configure')}
+        onClick={() => navigate('/curate')}
         disabled={belowMin}
         className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-300 ${
           belowMin

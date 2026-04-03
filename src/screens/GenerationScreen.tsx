@@ -74,7 +74,7 @@ export default function GenerationScreen() {
   }, [])
 
   const runGeneration = useCallback(async () => {
-    const { photos, config, vibeReferences, setPhotoScores, setCuratedSet, setPeopleRoster } = useAlbumStore.getState()
+    const { photos, config, vibeReferences, setPhotoScores, setCuratedSet, setPeopleRoster, photoScores, curatedSet, photoDateLookup } = useAlbumStore.getState()
     const { setSpreads } = useEditorStore.getState()
 
     if (photos.length === 0) {
@@ -84,12 +84,21 @@ export default function GenerationScreen() {
 
     const referenceDataUrls = vibeReferences.map((r) => r.dataUrl)
 
+    const hasPreScored = photoScores.length > 0 && curatedSet !== null
+    const preScored = hasPreScored ? {
+      allScores: photoScores,
+      curated: curatedSet!,
+      dateLookup: new Map(
+        Object.entries(photoDateLookup).map(([id, ts]) => [id, new Date(ts)]),
+      ),
+    } : undefined
+
     try {
       const result = await generateAlbum(photos, config, (stage, pct, msg) => {
         setStageIndex(stage)
         setProgress(pct)
         if (msg) showNotification(msg)
-      }, referenceDataUrls)
+      }, referenceDataUrls, preScored)
 
       setSpreads(result.spreads)
       setPhotoScores(result.analyses)
