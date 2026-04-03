@@ -76,7 +76,6 @@ export default function AlbumOverview() {
     if (!hoveredPhoto) return
     setSwapSource({ spreadId: hoveredPhoto.spreadId, slotId: hoveredPhoto.slotId })
     hoverLockRef.current = true
-    addToast('בחר תמונה יעד להחלפה', 'info')
   }, [hoveredPhoto, addToast])
 
   const handleClickSlotForSwap = useCallback((targetSpreadId: string, targetSlotId: string) => {
@@ -201,18 +200,6 @@ export default function AlbumOverview() {
           <span className="text-sm text-secondary/50 font-medium">
             {spreads.length} דפים
           </span>
-          {swapSource && (
-            <motion.button
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              type="button"
-              onClick={cancelSwap}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-semibold hover:bg-amber-100 transition-colors"
-            >
-              <Icon name="close" size={14} />
-              ביטול העברה
-            </motion.button>
-          )}
         </div>
         <motion.button
           type="button"
@@ -225,6 +212,39 @@ export default function AlbumOverview() {
           <Icon name="close" size={20} className="text-secondary/70" />
         </motion.button>
       </motion.header>
+
+      {/* Swap Mode Banner — same style as EditorCanvas */}
+      <AnimatePresence>
+        {swapSource && (
+          <motion.div
+            initial={{ opacity: 0, y: -18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -14 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            dir="rtl"
+            className="absolute top-[72px] left-1/2 -translate-x-1/2 z-[56] flex items-center gap-3 px-5 py-3 rounded-2xl bg-deep-brown/90 backdrop-blur-md shadow-xl shadow-black/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <span className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+              <Icon name="swap_horiz" size={18} className="text-white" />
+            </span>
+            <div className="flex flex-col">
+              <span className="text-white text-sm font-bold leading-snug">
+                בחרו את המיקום המוחלף
+              </span>
+              <span className="text-white/55 text-[10px] font-medium">
+                לחצו על תמונה או מיקום ריק כדי להחליף
+              </span>
+            </div>
+            <button
+              onClick={cancelSwap}
+              className="ms-2 w-7 h-7 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+            >
+              <Icon name="close" size={16} className="text-white/80" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Grid -- adjusted padding-right for sidebar */}
       <motion.div

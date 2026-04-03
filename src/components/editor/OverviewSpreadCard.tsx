@@ -295,12 +295,6 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
           </div>
         )}
 
-        {/* Swap mode overlay label */}
-        {swapTargetMode && (
-          <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 px-2 py-0.5 rounded-full bg-amber-500/90 text-white text-[8px] font-bold z-30 whitespace-nowrap">
-            בחר תמונה להחלפה
-          </div>
-        )}
       </motion.div>
 
       {/* Label */}
