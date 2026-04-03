@@ -55,6 +55,9 @@ interface EditorState {
   swapPhase: SwapPhase
   swapSourceSlotId: string | null
 
+  /** Cross-spread photo swap initiated from people panel */
+  pendingPhotoSwap: { spreadId: string; slotId: string } | null
+
   /** Collective white frame (px) around each photo; null = use per-element / family defaults */
   globalPhotoFramePaddingPx: number | null
   globalPageMarginPercent: number | null
@@ -105,6 +108,7 @@ interface EditorState {
   executeSwap: (targetSlotId: string) => void
   swapPhotosAcrossSpreads: (srcSpreadId: string, srcSlotId: string, tgtSpreadId: string, tgtSlotId: string) => void
   movePhotoToEmptySlot: (srcSpreadId: string, srcSlotId: string, tgtSpreadId: string, tgtSlotId: string) => void
+  setPendingPhotoSwap: (source: { spreadId: string; slotId: string } | null) => void
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -120,6 +124,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   isGenerated: false,
   swapPhase: 'off' as SwapPhase,
   swapSourceSlotId: null,
+  pendingPhotoSwap: null,
 
   globalPhotoFramePaddingPx: null,
   globalPageMarginPercent: null,
@@ -163,7 +168,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   })),
   setSaving: (val) => set({ isSaving: val }),
   setLastSaved: (date) => set({ lastSaved: date, isSaving: false }),
-  deselectAll: () => set({ selectedPhotoId: null, selectedTextIndex: null, sidebarMode: 'page' }),
+  deselectAll: () => set({ selectedPhotoId: null, selectedTextIndex: null, sidebarMode: 'page', pendingPhotoSwap: null }),
 
   addSpread: () =>
     set((s) => {
@@ -782,6 +787,8 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       return { spreads }
     }),
+
+  setPendingPhotoSwap: (source) => set({ pendingPhotoSwap: source }),
 }))
 
 // Preserve state across Vite HMR so the user's work isn't lost when code changes

@@ -323,7 +323,22 @@ function AbsolutePageElements({
   const elements = design.elements.filter((e) => e.page === side)
 
   const handlePhotoClick = useCallback((slotId: string, pid: string) => {
-    if (isSwapping && onSwapClick) {
+    const state = useEditorStore.getState()
+    if (state.pendingPhotoSwap) {
+      const { pendingPhotoSwap: src, spreads: allSpreads, currentSpreadIndex } = state
+      const tgtSpread = allSpreads[currentSpreadIndex]
+      if (tgtSpread) {
+        const tgtEl = tgtSpread.design?.elements.find(
+          (el) => el.type === 'photo' && el.slotId === slotId,
+        ) as import('../../types').PhotoElement | undefined
+        if (tgtEl?.photoUrl) {
+          state.swapPhotosAcrossSpreads(src.spreadId, src.slotId, tgtSpread.id, slotId)
+        } else {
+          state.movePhotoToEmptySlot(src.spreadId, src.slotId, tgtSpread.id, slotId)
+        }
+      }
+      state.setPendingPhotoSwap(null)
+    } else if (isSwapping && onSwapClick) {
       onSwapClick(slotId)
     } else {
       selectPhoto(selectedPhotoId === pid ? null : pid)

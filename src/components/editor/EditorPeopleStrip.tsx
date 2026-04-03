@@ -16,22 +16,23 @@ function buildPhotoIdToUrl(photos: { id: string; thumbnailUrl: string; fullUrl: 
   return map
 }
 
-function findSpreadIndexForPhotoUrl(spreads: EditorSpread[], targetUrl: string): number {
+function findSlotForPhotoUrl(
+  spreads: EditorSpread[],
+  targetUrl: string,
+): { spreadId: string; slotId: string; spreadIndex: number } | null {
   for (let i = 0; i < spreads.length; i++) {
     const spread = spreads[i]
-    if (spread.design) {
-      for (const el of spread.design.elements) {
-        if (el.type === 'photo') {
-          const pe = el as PhotoElement
-          if (pe.photoUrl === targetUrl) return i
+    if (!spread.design) continue
+    for (const el of spread.design.elements) {
+      if (el.type === 'photo') {
+        const pe = el as PhotoElement
+        if (pe.photoUrl === targetUrl) {
+          return { spreadId: spread.id, slotId: pe.slotId, spreadIndex: i }
         }
       }
     }
-    if (spread.leftPhotos.includes(targetUrl) || spread.rightPhotos.includes(targetUrl)) {
-      return i
-    }
   }
-  return -1
+  return null
 }
 
 /* ─── Editable Name ──────────────────────────────────────────────────── */
@@ -154,7 +155,6 @@ function PersonCircle({
           )}
         </div>
 
-        {/* Photo count badge */}
         <span className="absolute -bottom-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-deep-brown/80 text-white text-[9px] font-bold leading-none shadow-sm">
           {person.photoIds.length}
         </span>
@@ -171,17 +171,55 @@ function PersonCircle({
   )
 }
 
+/* ─── Swap Active Banner ─────────────────────────────────────────────── */
+
+function SwapActiveBanner({ onCancel }: { onCancel: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: -6 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -6 }}
+      className="absolute top-full left-0 right-0 z-30 mt-1 px-4 md:px-8"
+    >
+      <div className="flex items-center justify-between gap-3 px-4 py-2 bg-sage/10 backdrop-blur-md rounded-xl ring-1 ring-sage/20">
+        <div className="flex items-center gap-2">
+          <motion.div
+            animate={{ scale: [1, 1.2, 1] }}
+            transition={{ repeat: Infinity, duration: 1.8 }}
+          >
+            <Icon name="swap_horiz" size={18} className="text-sage" />
+          </motion.div>
+          <span className="text-xs font-medium text-deep-brown/80">
+            לחצו על תמונה באלבום כדי להחליף
+          </span>
+        </div>
+        <motion.button
+          type="button"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onCancel}
+          className="text-[11px] font-medium text-secondary/50 hover:text-deep-brown px-2 py-0.5 rounded-md hover:bg-white/60 transition-colors"
+        >
+          ביטול
+        </motion.button>
+      </div>
+    </motion.div>
+  )
+}
+
 /* ─── Expanded Photos Panel ──────────────────────────────────────────── */
 
 function PersonPhotosPanel({
   person,
   photoUrlMap,
-  onPhotoClick,
+  onPhotoSelect,
+  selectedPhotoId,
   onClose,
 }: {
   person: AlbumPerson
   photoUrlMap: Map<string, string>
-  onPhotoClick: (photoId: string) => void
+  onPhotoSelect: (photoId: string) => void
+  selectedPhotoId: string | null
   onClose: () => void
 }) {
   const photos = person.photoIds
@@ -200,60 +238,92 @@ function PersonPhotosPanel({
     >
       <div className="mx-4 md:mx-8 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_12px_48px_rgba(45,40,35,0.14)] ring-1 ring-black/[0.04] overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-outline-variant/8">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full overflow-hidden ring-2 ring-sage/30 shadow-sm">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-outline-variant/8">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-full overflow-hidden ring-2 ring-sage/30 shadow-sm shrink-0">
               {avatarSrc ? (
                 <img src={avatarSrc} alt="" className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
-                  <Icon name="person" size={16} className="text-secondary/40" />
+                  <Icon name="person" size={14} className="text-secondary/40" />
                 </div>
               )}
             </div>
-            <div>
+            <div className="min-w-0">
               <span
-                className="text-sm font-bold text-deep-brown block"
+                className="text-xs font-bold text-deep-brown block truncate"
                 style={{ fontFamily: 'var(--font-family-headline)' }}
               >
                 {person.displayName}
               </span>
-              <span className="text-[11px] text-secondary/50">
-                {photos.length} תמונות באלבום
+              <span className="text-[10px] text-secondary/50">
+                {photos.length} תמונות
               </span>
             </div>
           </div>
 
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            onClick={onClose}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-secondary/40 hover:text-deep-brown hover:bg-surface-container-high/60 transition-colors"
-          >
-            <Icon name="close" size={18} />
-          </motion.button>
+          <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 bg-cream/60 rounded-lg">
+              <Icon name="touch_app" size={13} className="text-sage/70" />
+              <span className="text-[10px] text-secondary/50 leading-none whitespace-nowrap">
+                בחרו תמונה → לחצו על מקום באלבום להחלפה
+              </span>
+            </div>
+
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onClose}
+              className="w-7 h-7 rounded-full flex items-center justify-center text-secondary/40 hover:text-deep-brown hover:bg-surface-container-high/60 transition-colors"
+            >
+              <Icon name="close" size={16} />
+            </motion.button>
+          </div>
         </div>
 
-        {/* Photos grid */}
-        <div className="p-3 max-h-[240px] overflow-y-auto">
+        {/* Instruction on mobile */}
+        <div className="sm:hidden px-3 py-1.5 bg-cream/40 border-b border-outline-variant/6">
+          <div className="flex items-center gap-1.5">
+            <Icon name="touch_app" size={13} className="text-sage/70" />
+            <span className="text-[10px] text-secondary/50">
+              בחרו תמונה → לחצו על מקום באלבום להחלפה
+            </span>
+          </div>
+        </div>
+
+        {/* Photos grid — compact */}
+        <div className="p-2 max-h-[180px] overflow-y-auto">
           {photos.length > 0 ? (
-            <div className="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-2">
-              {photos.map((photo) => (
-                <motion.button
-                  key={photo.id}
-                  type="button"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={() => onPhotoClick(photo.id)}
-                  className="aspect-square rounded-lg overflow-hidden ring-1 ring-black/[0.04] hover:ring-sage/50 hover:shadow-md transition-all duration-200 cursor-pointer"
-                >
-                  <img src={photo.url} alt="" className="w-full h-full object-cover" />
-                </motion.button>
-              ))}
+            <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
+              {photos.map((photo) => {
+                const isChosen = selectedPhotoId === photo.id
+                return (
+                  <motion.button
+                    key={photo.id}
+                    type="button"
+                    whileHover={{ scale: 1.08 }}
+                    whileTap={{ scale: 0.94 }}
+                    onClick={() => onPhotoSelect(photo.id)}
+                    className={`aspect-square rounded-md overflow-hidden transition-all duration-150 cursor-pointer ${
+                      isChosen
+                        ? 'ring-2 ring-sage shadow-[0_0_10px_rgba(139,152,120,0.35)] scale-[1.04]'
+                        : 'ring-1 ring-black/[0.05] hover:ring-sage/40 hover:shadow-sm'
+                    }`}
+                  >
+                    <img
+                      src={photo.url}
+                      alt=""
+                      className={`w-full h-full object-cover transition-opacity ${
+                        isChosen ? 'opacity-100' : 'opacity-90 hover:opacity-100'
+                      }`}
+                    />
+                  </motion.button>
+                )
+              })}
             </div>
           ) : (
-            <p className="text-xs text-secondary/40 py-6 text-center">לא נמצאו תמונות</p>
+            <p className="text-xs text-secondary/40 py-4 text-center">לא נמצאו תמונות</p>
           )}
         </div>
       </div>
@@ -268,33 +338,59 @@ export default function EditorPeopleStrip() {
   const storePhotos = useAlbumStore((s) => s.photos)
   const spreads = useEditorStore((s) => s.spreads)
   const setCurrentSpread = useEditorStore((s) => s.setCurrentSpread)
+  const pendingPhotoSwap = useEditorStore((s) => s.pendingPhotoSwap)
+  const setPendingPhotoSwap = useEditorStore((s) => s.setPendingPhotoSwap)
   const { deselectAll } = useEditorStore(useShallow((s) => ({ deselectAll: s.deselectAll })))
 
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [editingNameId, setEditingNameId] = useState<string | null>(null)
+  const [chosenPhotoId, setChosenPhotoId] = useState<string | null>(null)
 
   const photoUrlMap = useMemo(() => buildPhotoIdToUrl(storePhotos), [storePhotos])
 
   const handlePersonClick = useCallback((person: AlbumPerson) => {
     setSelectedPersonId((prev) => (prev === person.id ? null : person.id))
-  }, [])
+    setChosenPhotoId(null)
+    setPendingPhotoSwap(null)
+  }, [setPendingPhotoSwap])
 
-  const handlePhotoClick = useCallback(
+  const handlePhotoSelect = useCallback(
     (photoId: string) => {
       const url = photoUrlMap.get(photoId)
-      if (url) {
-        const idx = findSpreadIndexForPhotoUrl(spreads, url)
-        if (idx >= 0) {
-          deselectAll()
-          requestAnimationFrame(() => setCurrentSpread(idx))
-        }
+      if (!url) return
+
+      if (chosenPhotoId === photoId) {
+        setChosenPhotoId(null)
+        setPendingPhotoSwap(null)
+        return
       }
-      setSelectedPersonId(null)
+
+      const slot = findSlotForPhotoUrl(spreads, url)
+      if (!slot) return
+
+      setChosenPhotoId(photoId)
+      setPendingPhotoSwap({ spreadId: slot.spreadId, slotId: slot.slotId })
     },
-    [spreads, setCurrentSpread, deselectAll, photoUrlMap],
+    [spreads, photoUrlMap, chosenPhotoId, setPendingPhotoSwap],
   )
 
-  const handleClose = useCallback(() => setSelectedPersonId(null), [])
+  const handleCancelSwap = useCallback(() => {
+    setChosenPhotoId(null)
+    setPendingPhotoSwap(null)
+  }, [setPendingPhotoSwap])
+
+  useEffect(() => {
+    if (!pendingPhotoSwap && chosenPhotoId) {
+      setChosenPhotoId(null)
+      setSelectedPersonId(null)
+    }
+  }, [pendingPhotoSwap, chosenPhotoId])
+
+  const handleClose = useCallback(() => {
+    setSelectedPersonId(null)
+    setChosenPhotoId(null)
+    setPendingPhotoSwap(null)
+  }, [setPendingPhotoSwap])
 
   const handleStartEditName = useCallback((id: string) => setEditingNameId(id), [])
   const handleFinishEditName = useCallback(() => setEditingNameId(null), [])
@@ -326,14 +422,19 @@ export default function EditorPeopleStrip() {
         ))}
       </div>
 
-      <AnimatePresence>
-        {selectedPerson && (
+      <AnimatePresence mode="wait">
+        {selectedPerson && !pendingPhotoSwap && (
           <PersonPhotosPanel
+            key="panel"
             person={selectedPerson}
             photoUrlMap={photoUrlMap}
-            onPhotoClick={handlePhotoClick}
+            onPhotoSelect={handlePhotoSelect}
+            selectedPhotoId={chosenPhotoId}
             onClose={handleClose}
           />
+        )}
+        {pendingPhotoSwap && (
+          <SwapActiveBanner key="swap-banner" onCancel={handleCancelSwap} />
         )}
       </AnimatePresence>
     </div>
