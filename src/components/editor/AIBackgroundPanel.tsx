@@ -24,7 +24,7 @@ const QUICK_PROMPTS = [
   { label: 'כוכבים', prompt: 'שמיים זרועי כוכבים בלילה ברור עם שביל החלב' },
 ]
 
-export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) {
+export default function AIBackgroundPanel({ onClose, standalone }: { onClose: () => void; standalone?: boolean }) {
   const setSpreadGeneratedBg = useEditorStore((s) => s.setSpreadGeneratedBg)
   const addToast = useUIStore((s) => s.addToast)
   const [activeTab, setActiveTab] = useState<Tab>('gallery')
@@ -120,7 +120,10 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -12 }}
       transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute md:right-full md:top-0 md:me-3 max-md:bottom-full max-md:mb-3 max-md:right-0 w-80 max-w-[min(20rem,calc(100vw-3rem))] max-h-[80vh] overflow-y-auto no-scrollbar rounded-2xl bg-white/95 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_rgba(45,40,35,0.12)] p-4 pointer-events-auto"
+      className={standalone
+        ? 'w-full rounded-2xl bg-white/95 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_rgba(45,40,35,0.12)] p-4 pointer-events-auto'
+        : 'absolute md:right-full md:top-0 md:me-3 max-md:bottom-full max-md:mb-3 max-md:right-0 w-80 max-w-[min(20rem,calc(100vw-3rem))] max-h-[80vh] overflow-y-auto no-scrollbar rounded-2xl bg-white/95 backdrop-blur-xl border border-black/[0.06] shadow-[0_8px_32px_rgba(45,40,35,0.12)] p-4 pointer-events-auto'
+      }
       dir="rtl"
       onClick={(e) => e.stopPropagation()}
     >

@@ -7,7 +7,7 @@ import Icon from '../shared/Icon'
 
 const PANEL_SPRING = { type: 'spring' as const, stiffness: 500, damping: 35, mass: 0.7 }
 
-export type OverviewMode = 'idle' | 'replace' | 'swap-source' | 'swap-target' | 'remove' | 'bg-color' | 'bg-ai' | 'delete-spread'
+export type OverviewMode = 'idle' | 'replace' | 'swap-source' | 'swap-target' | 'remove' | 'bg-color' | 'bg-ai' | 'bg-ai-panel' | 'delete-spread'
 
 interface Props {
   activeMode: OverviewMode

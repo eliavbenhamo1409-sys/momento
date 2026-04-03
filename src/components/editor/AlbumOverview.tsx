@@ -6,6 +6,7 @@ import { useUIStore } from '../../store/uiStore'
 import { useShallow } from 'zustand/react/shallow'
 import OverviewSpreadCard from './OverviewSpreadCard'
 import OverviewSidebar, { type OverviewMode } from './OverviewSidebar'
+import AIBackgroundPanel from './AIBackgroundPanel'
 import Icon from '../shared/Icon'
 
 const OVERLAY_SPRING = { type: 'spring' as const, stiffness: 500, damping: 35, mass: 0.8 }
@@ -140,10 +141,7 @@ export default function AlbumOverview() {
       }
       case 'bg-ai': {
         setCurrentSpread(spreadIndex)
-        toggleOverview()
-        setTimeout(() => {
-          useEditorStore.setState({ sidebarMode: 'ai' })
-        }, 100)
+        setMode('bg-ai-panel')
         break
       }
       case 'delete-spread': {
@@ -283,7 +281,9 @@ export default function AlbumOverview() {
 
       {/* Grid */}
       <motion.div
-        className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 md:pr-[230px] py-6"
+        className={`relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-6 ${
+          mode === 'bg-ai-panel' ? 'md:pr-[340px]' : 'md:pr-[230px]'
+        }`}
         initial={{ opacity: 0 }}
         animate={{ opacity: gridReady ? 1 : 0 }}
         transition={{ duration: 0.25 }}
@@ -310,13 +310,34 @@ export default function AlbumOverview() {
       </motion.div>
 
       {/* Sidebar */}
-      <OverviewSidebar
-        activeMode={mode}
-        spreadsCount={spreads.length}
-        onSetMode={handleSetMode}
-        onSelectBgColor={handleSelectBgColor}
-        onClose={toggleOverview}
-      />
+      {mode !== 'bg-ai-panel' && (
+        <OverviewSidebar
+          activeMode={mode}
+          spreadsCount={spreads.length}
+          onSetMode={handleSetMode}
+          onSelectBgColor={handleSelectBgColor}
+          onClose={toggleOverview}
+        />
+      )}
+
+      {/* Inline AI Background Panel */}
+      <AnimatePresence>
+        {mode === 'bg-ai-panel' && (
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 40 }}
+            transition={{ type: 'spring', stiffness: 500, damping: 35, mass: 0.7 }}
+            className="fixed z-[55] top-[72px] right-4 md:right-6 bottom-[56px] w-80 max-w-[min(20rem,calc(100vw-3rem))] pointer-events-auto"
+            dir="rtl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="h-full overflow-y-auto no-scrollbar">
+              <AIBackgroundPanel onClose={() => handleSetMode('idle')} standalone />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Hidden file input for photo replacement */}
       <input
