@@ -186,7 +186,7 @@ export default function AIBackgroundPanel({ onClose }: { onClose: () => void }) 
                 צבעים וגרדיאנטים
               </span>
               <div className="grid grid-cols-4 gap-2">
-                {PREDEFINED_COLORS.map((bg) => (
+                {PREDEFINED_BG_COLORS.map((bg) => (
                   <motion.button
                     key={bg.value}
                     whileHover={{ scale: 1.06 }}

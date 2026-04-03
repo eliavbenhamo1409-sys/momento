@@ -17,6 +17,13 @@ export interface DragPayload {
   photoId: string
 }
 
+export interface SlotSelection {
+  spreadId: string
+  slotId: string
+  spreadIndex: number
+  rect: DOMRect
+}
+
 interface Props {
   spread: EditorSpread
   index: number
@@ -24,43 +31,55 @@ interface Props {
   isCurrent: boolean
   dropTargetSlotId: string | null
   dropTargetSpreadId: string | null
+  selectedSlot: SlotSelection | null
+  thumbnailLookup: Record<string, string>
   onDragStart: (payload: DragPayload, rect: DOMRect) => void
   onJumpToSpread: (index: number) => void
   onDeleteSpread: (spreadId: string) => void
   onGenerateBg: (spreadIndex: number) => void
+  onOpenBgPicker: (spreadId: string, rect: DOMRect) => void
+  onSelectSlot: (selection: SlotSelection | null) => void
   entranceDelay: number
 }
 
-const CARD_SPRING = { type: 'spring' as const, stiffness: 500, damping: 35, mass: 0.8 }
+const CARD_SPRING = { type: 'spring' as const, stiffness: 420, damping: 30, mass: 0.7 }
 
 function PhotoSlot({
   element,
   spreadId,
+  spreadIndex,
   isDropTarget,
+  isSelected,
+  thumbnailUrl,
   onDragStart,
+  onSelect,
 }: {
   element: PhotoElement
   spreadId: string
+  spreadIndex: number
   isDropTarget: boolean
+  isSelected: boolean
+  thumbnailUrl: string | null
   onDragStart: (payload: DragPayload, rect: DOMRect) => void
+  onSelect: (selection: SlotSelection | null) => void
 }) {
   const ref = useRef<HTMLDivElement>(null)
   const startPos = useRef<{ x: number; y: number } | null>(null)
-  const started = useRef(false)
+  const didDrag = useRef(false)
 
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
     if (!element.photoUrl) return
     e.stopPropagation()
     startPos.current = { x: e.clientX, y: e.clientY }
-    started.current = false
+    didDrag.current = false
   }, [element.photoUrl])
 
   const handlePointerMove = useCallback((e: React.PointerEvent) => {
-    if (!startPos.current || started.current) return
+    if (!startPos.current || didDrag.current) return
     const dx = e.clientX - startPos.current.x
     const dy = e.clientY - startPos.current.y
     if (Math.abs(dx) + Math.abs(dy) > 5) {
-      started.current = true
+      didDrag.current = true
       const rect = ref.current?.getBoundingClientRect()
       if (rect && element.photoUrl) {
         onDragStart(
@@ -72,29 +91,36 @@ function PhotoSlot({
   }, [spreadId, element.slotId, element.photoUrl, element.photoId, onDragStart])
 
   const handlePointerUp = useCallback(() => {
+    if (!didDrag.current && element.photoUrl && ref.current) {
+      const rect = ref.current.getBoundingClientRect()
+      onSelect({ spreadId, slotId: element.slotId, spreadIndex, rect })
+    }
     startPos.current = null
-    started.current = false
-  }, [])
+    didDrag.current = false
+  }, [element.photoUrl, element.slotId, spreadId, spreadIndex, onSelect])
 
   const hasPhoto = !!element.photoUrl
   const [imgLoaded, setImgLoaded] = useState(false)
+  const imgSrc = thumbnailUrl || element.photoUrl
 
   return (
     <div
       ref={ref}
-      className="absolute overflow-hidden transition-shadow duration-200"
+      className={`absolute overflow-hidden transition-all duration-200 ${
+        isSelected ? 'z-20' : ''
+      }`}
       style={{
         left: `${element.x}%`,
         top: `${element.y}%`,
         width: `${element.width}%`,
         height: `${element.height}%`,
         borderRadius: element.borderRadius,
-        zIndex: element.zIndex,
+        zIndex: isSelected ? 20 : element.zIndex,
       }}
       onPointerDown={hasPhoto ? handlePointerDown : undefined}
       onPointerMove={hasPhoto ? handlePointerMove : undefined}
-      onPointerUp={handlePointerUp}
-      onPointerCancel={handlePointerUp}
+      onPointerUp={hasPhoto ? handlePointerUp : undefined}
+      onPointerCancel={() => { startPos.current = null; didDrag.current = false }}
       data-slot-id={element.slotId}
       data-spread-id={spreadId}
     >
@@ -106,9 +132,11 @@ function PhotoSlot({
             />
           )}
           <img
-            src={element.photoUrl!}
+            src={imgSrc!}
             alt=""
-            className="w-full h-full object-cover select-none transition-opacity duration-300"
+            className={`w-full h-full object-cover select-none transition-all duration-200 ${
+              hasPhoto ? 'hover:brightness-[1.02]' : ''
+            }`}
             style={{ objectPosition: element.objectPosition, opacity: imgLoaded ? 1 : 0 }}
             draggable={false}
             loading="lazy"
@@ -121,8 +149,16 @@ function PhotoSlot({
         </div>
       )}
 
+      {isSelected && (
+        <div className="absolute inset-0 rounded-[inherit] ring-2 ring-primary/60 pointer-events-none z-10" />
+      )}
+
       {isDropTarget && (
-        <div className="absolute inset-0 rounded-[inherit] ring-2 ring-primary/70 bg-primary/10 pointer-events-none z-10 animate-pulse" />
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="absolute inset-0 rounded-[inherit] ring-2 ring-primary/70 bg-primary/10 pointer-events-none z-10"
+        />
       )}
     </div>
   )
@@ -135,10 +171,14 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
   isCurrent,
   dropTargetSlotId,
   dropTargetSpreadId,
+  selectedSlot,
+  thumbnailLookup,
   onDragStart,
   onJumpToSpread,
   onDeleteSpread,
   onGenerateBg,
+  onOpenBgPicker,
+  onSelectSlot,
   entranceDelay,
 }: Props) {
   const design = spread.design
@@ -157,20 +197,28 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
   const genBgLeftUrl = design?.background.generatedBgLeftUrl
   const genBgRightUrl = design?.background.generatedBgRightUrl
 
+  const bgBtnRef = useRef<HTMLButtonElement>(null)
+
+  const handleCardClick = useCallback(() => {
+    onJumpToSpread(index)
+  }, [onJumpToSpread, index])
+
   return (
     <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
       transition={{ ...CARD_SPRING, delay: entranceDelay }}
       className="flex flex-col gap-2"
     >
-      <div
-        className={`relative rounded-xl overflow-hidden cursor-pointer group transition-all duration-300 ${
+      <motion.div
+        whileHover={{ scale: 1.012 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+        className={`relative rounded-xl overflow-hidden cursor-pointer group transition-shadow duration-300 ${
           isCurrent
             ? 'ring-2 ring-primary/50 shadow-[0_4px_20px_rgba(96,92,72,0.15)]'
-            : 'ring-1 ring-black/[0.06] shadow-[0_2px_8px_rgba(45,40,35,0.05)] hover:shadow-[0_4px_16px_rgba(45,40,35,0.10)] hover:ring-black/[0.10]'
+            : 'ring-1 ring-black/[0.06] shadow-[0_2px_8px_rgba(45,40,35,0.05)] hover:shadow-[0_6px_20px_rgba(45,40,35,0.10)] hover:ring-black/[0.10]'
         }`}
-        onClick={() => onJumpToSpread(index)}
+        onClick={handleCardClick}
         style={{ aspectRatio: '2 / 1' }}
       >
         {/* Background */}
@@ -221,8 +269,12 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
                 key={el.slotId}
                 element={el}
                 spreadId={spread.id}
+                spreadIndex={index}
                 isDropTarget={dropTargetSpreadId === spread.id && dropTargetSlotId === el.slotId}
+                isSelected={selectedSlot?.spreadId === spread.id && selectedSlot?.slotId === el.slotId}
+                thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
                 onDragStart={onDragStart}
+                onSelect={onSelectSlot}
               />
             ))
           ) : (
@@ -242,8 +294,12 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
                 key={el.slotId}
                 element={el}
                 spreadId={spread.id}
+                spreadIndex={index}
                 isDropTarget={dropTargetSpreadId === spread.id && dropTargetSlotId === el.slotId}
+                isSelected={selectedSlot?.spreadId === spread.id && selectedSlot?.slotId === el.slotId}
+                thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
                 onDragStart={onDragStart}
+                onSelect={onSelectSlot}
               />
             ))
           ) : (
@@ -265,6 +321,19 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
           >
             <Icon name="auto_awesome" size={14} className="text-primary/70" />
           </button>
+          <button
+            ref={bgBtnRef}
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              const rect = bgBtnRef.current?.getBoundingClientRect()
+              if (rect) onOpenBgPicker(spread.id, rect)
+            }}
+            className="w-7 h-7 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm hover:bg-white hover:shadow-md transition-all"
+            title="צבע רקע"
+          >
+            <Icon name="palette" size={14} className="text-primary/70" />
+          </button>
           {total > 1 && (
             <button
               type="button"
@@ -283,7 +352,7 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
             נוכחי
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Label */}
       <span className={`text-xs font-medium text-center ${isCurrent ? 'text-primary' : 'text-secondary/50'}`}>
