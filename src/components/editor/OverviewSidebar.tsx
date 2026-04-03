@@ -7,21 +7,13 @@ import Icon from '../shared/Icon'
 
 const PANEL_SPRING = { type: 'spring' as const, stiffness: 500, damping: 35, mass: 0.7 }
 
-interface SelectedPhoto {
-  spreadId: string
-  slotId: string
-  spreadIndex: number
-  photoUrl: string
-  photoId: string
-}
+export type OverviewMode = 'idle' | 'replace' | 'swap-source' | 'swap-target' | 'remove' | 'bg-color' | 'bg-ai' | 'delete-spread'
 
 interface Props {
-  selectedPhoto: SelectedPhoto | null
+  activeMode: OverviewMode
   spreadsCount: number
-  onReplace: () => void
-  onRemove: () => void
-  onNavigate: () => void
-  onStartSwap: () => void
+  onSetMode: (mode: OverviewMode) => void
+  onSelectBgColor: (color: string) => void
   onClose: () => void
 }
 
@@ -30,33 +22,28 @@ function SidebarBtn({
   label,
   active,
   danger,
-  disabled,
   onClick,
 }: {
   icon: string
   label: string
   active?: boolean
   danger?: boolean
-  disabled?: boolean
   onClick: () => void
 }) {
   return (
     <motion.button
       type="button"
-      whileHover={disabled ? undefined : { scale: 1.04 }}
-      whileTap={disabled ? undefined : { scale: 0.94 }}
+      whileHover={{ scale: 1.04 }}
+      whileTap={{ scale: 0.94 }}
       onClick={onClick}
-      disabled={disabled}
       className={`w-full rounded-2xl flex items-center gap-3 py-2.5 px-3 transition-all duration-200 outline-none text-right ${
-        disabled
-          ? 'opacity-30 cursor-not-allowed'
-          : danger
-            ? active
-              ? 'bg-error text-on-error shadow-sm'
-              : 'text-error/70 hover:bg-error/8'
-            : active
-              ? 'bg-deep-brown text-white shadow-[0_4px_14px_rgba(47,46,43,0.25)]'
-              : 'text-secondary/80 hover:text-on-surface hover:bg-surface-container-high/60'
+        danger
+          ? active
+            ? 'bg-error text-on-error shadow-sm'
+            : 'text-error/70 hover:bg-error/8'
+          : active
+            ? 'bg-deep-brown text-white shadow-[0_4px_14px_rgba(47,46,43,0.25)]'
+            : 'text-secondary/80 hover:text-on-surface hover:bg-surface-container-high/60'
       }`}
     >
       <Icon name={icon} size={19} filled={active && !danger} className={active && !danger ? 'text-white' : ''} />
@@ -79,17 +66,12 @@ function SidebarSeparator() {
   )
 }
 
-function BgColorPanel({ spreadId, onClose }: { spreadId: string; onClose: () => void }) {
-  const setSpreadBgColor = useEditorStore((s) => s.setSpreadBgColor)
-  const setAllSpreadsBgColor = useEditorStore((s) => s.setAllSpreadsBgColor)
-  const addToast = useUIStore((s) => s.addToast)
-  const [lastApplied, setLastApplied] = useState<string | null>(null)
-
-  const apply = (color: string) => {
-    setSpreadBgColor(spreadId, color)
-    setLastApplied(color)
-    addToast('הרקע עודכן', 'success')
-  }
+function BgColorPanel({ onSelectColor, onApplyAll, onClose }: {
+  onSelectColor: (color: string) => void
+  onApplyAll: (color: string) => void
+  onClose: () => void
+}) {
+  const [selected, setSelected] = useState<string | null>(null)
 
   return (
     <motion.div
@@ -100,8 +82,8 @@ function BgColorPanel({ spreadId, onClose }: { spreadId: string; onClose: () => 
       className="flex flex-col gap-2.5"
     >
       <div className="flex items-center justify-between">
-        <span className="text-[11px] font-bold text-on-surface" style={{ fontFamily: 'var(--font-family-headline)' }}>
-          צבע רקע
+        <span className="text-[10px] font-bold text-on-surface leading-snug" style={{ fontFamily: 'var(--font-family-headline)' }}>
+          בחר צבע, אז לחץ על עמוד
         </span>
         <button
           type="button"
@@ -119,9 +101,9 @@ function BgColorPanel({ spreadId, onClose }: { spreadId: string; onClose: () => 
             type="button"
             whileHover={{ scale: 1.12 }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => apply(bg.value)}
+            onClick={() => { setSelected(bg.value); onSelectColor(bg.value) }}
             className={`aspect-square rounded-lg border shadow-sm transition-shadow ${
-              lastApplied === bg.value
+              selected === bg.value
                 ? 'ring-2 ring-primary ring-offset-1 ring-offset-white border-primary/30'
                 : 'border-black/[0.06] hover:shadow-md'
             }`}
@@ -131,17 +113,14 @@ function BgColorPanel({ spreadId, onClose }: { spreadId: string; onClose: () => 
         ))}
       </div>
 
-      {lastApplied && (
+      {selected && (
         <motion.button
           type="button"
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => {
-            setAllSpreadsBgColor(lastApplied)
-            addToast('הרקע הוחל על כל האלבום', 'success')
-          }}
+          onClick={() => onApplyAll(selected)}
           className="w-full py-1.5 bg-primary/10 hover:bg-primary/15 text-primary rounded-xl text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors"
         >
           <Icon name="select_all" size={13} />
@@ -153,45 +132,29 @@ function BgColorPanel({ spreadId, onClose }: { spreadId: string; onClose: () => 
 }
 
 export default function OverviewSidebar({
-  selectedPhoto,
+  activeMode,
   spreadsCount,
-  onReplace,
-  onRemove,
-  onNavigate,
-  onStartSwap,
+  onSetMode,
+  onSelectBgColor,
   onClose,
 }: Props) {
   const addSpread = useEditorStore((s) => s.addSpread)
-  const deleteSpread = useEditorStore((s) => s.deleteSpread)
+  const setAllSpreadsBgColor = useEditorStore((s) => s.setAllSpreadsBgColor)
   const addToast = useUIStore((s) => s.addToast)
 
-  const [showBgPanel, setShowBgPanel] = useState(false)
-  const hasPhoto = !!selectedPhoto
-
-  const handleDeleteSpread = useCallback(() => {
-    if (!selectedPhoto) return
-    const spreadId = selectedPhoto.spreadId
-    if (spreadsCount <= 1) {
-      addToast('לא ניתן למחוק את העמוד האחרון')
-      return
-    }
-    deleteSpread(spreadId)
-    addToast('העמוד נמחק')
-  }, [selectedPhoto, spreadsCount, deleteSpread, addToast])
+  const toggle = (mode: OverviewMode) => {
+    onSetMode(activeMode === mode ? 'idle' : mode)
+  }
 
   const handleAddSpread = useCallback(() => {
     addSpread()
     addToast('נוסף דף ריק', 'success')
   }, [addSpread, addToast])
 
-  const handleGenerateBg = useCallback(() => {
-    if (!selectedPhoto) return
-    useEditorStore.getState().setCurrentSpread(selectedPhoto.spreadIndex)
-    onClose()
-    setTimeout(() => {
-      useEditorStore.setState({ sidebarMode: 'ai' })
-    }, 100)
-  }, [selectedPhoto, onClose])
+  const handleBgApplyAll = useCallback((color: string) => {
+    setAllSpreadsBgColor(color)
+    addToast('הרקע הוחל על כל האלבום', 'success')
+  }, [setAllSpreadsBgColor, addToast])
 
   return (
     <motion.aside
@@ -203,104 +166,58 @@ export default function OverviewSidebar({
       dir="rtl"
     >
       <div className="h-full flex flex-col bg-white/90 backdrop-blur-xl rounded-[22px] border border-black/[0.06] shadow-[0_8px_40px_rgba(45,40,35,0.10)] overflow-hidden">
-        {/* Photo preview area */}
-        <div className="px-3 pt-3 pb-2">
-          <AnimatePresence mode="wait">
-            {hasPhoto ? (
-              <motion.div
-                key={selectedPhoto.slotId}
-                initial={{ opacity: 0, scale: 0.92 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.92 }}
-                transition={{ duration: 0.2 }}
-                className="relative rounded-xl overflow-hidden aspect-[4/3] bg-surface-container-low"
-              >
-                <img
-                  src={selectedPhoto.photoUrl}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute bottom-1.5 right-1.5 px-1.5 py-0.5 bg-black/50 backdrop-blur-sm rounded-md text-[8px] text-white/90 font-medium">
-                  עמוד {selectedPhoto.spreadIndex * 2 + 1}
-                </div>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="empty"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="rounded-xl aspect-[4/3] bg-black/[0.02] border border-dashed border-black/[0.08] flex flex-col items-center justify-center gap-1.5"
-              >
-                <Icon name="touch_app" size={22} className="text-secondary/25" />
-                <span className="text-[10px] text-secondary/35 font-medium">
-                  העבר עכבר על תמונה
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
         {/* Actions */}
-        <div className="flex-1 overflow-y-auto no-scrollbar px-2.5 pb-2.5">
+        <div className="flex-1 overflow-y-auto no-scrollbar px-2.5 py-3">
           <div className="flex flex-col gap-0.5">
-            {/* Photo-specific actions */}
             <div className="mb-0.5">
               <span className="text-[9px] text-secondary/40 font-bold px-1 mb-0.5 block">תמונה</span>
             </div>
             <SidebarBtn
               icon="swap_horiz"
               label="החלף תמונה"
-              disabled={!hasPhoto}
-              onClick={onReplace}
+              active={activeMode === 'replace'}
+              onClick={() => toggle('replace')}
             />
             <SidebarBtn
               icon="compare_arrows"
               label="העבר תמונה"
-              disabled={!hasPhoto}
-              onClick={onStartSwap}
+              active={activeMode === 'swap-source' || activeMode === 'swap-target'}
+              onClick={() => toggle('swap-source')}
             />
             <SidebarBtn
               icon="delete_outline"
               label="הסר תמונה"
               danger
-              disabled={!hasPhoto}
-              onClick={onRemove}
-            />
-            <SidebarBtn
-              icon="open_in_full"
-              label="עבור לעמוד"
-              disabled={!hasPhoto}
-              onClick={onNavigate}
+              active={activeMode === 'remove'}
+              onClick={() => toggle('remove')}
             />
 
             <SidebarSeparator />
 
-            {/* Spread actions */}
             <div className="mb-0.5">
               <span className="text-[9px] text-secondary/40 font-bold px-1 mb-0.5 block">עמוד</span>
             </div>
             <SidebarBtn
               icon="palette"
               label="צבע רקע"
-              active={showBgPanel}
-              disabled={!selectedPhoto}
-              onClick={() => setShowBgPanel((v) => !v)}
+              active={activeMode === 'bg-color'}
+              onClick={() => toggle('bg-color')}
             />
             <SidebarBtn
               icon="auto_awesome"
               label="רקע AI"
-              disabled={!selectedPhoto}
-              onClick={handleGenerateBg}
+              active={activeMode === 'bg-ai'}
+              onClick={() => toggle('bg-ai')}
             />
 
             <AnimatePresence>
-              {showBgPanel && selectedPhoto && (
+              {activeMode === 'bg-color' && (
                 <div className="mt-1 mb-1">
                   <BgColorPanel
                     key="bg-panel"
-                    spreadId={selectedPhoto.spreadId}
-                    onClose={() => setShowBgPanel(false)}
+                    onSelectColor={onSelectBgColor}
+                    onApplyAll={handleBgApplyAll}
+                    onClose={() => onSetMode('idle')}
                   />
                 </div>
               )}
@@ -308,7 +225,6 @@ export default function OverviewSidebar({
 
             <SidebarSeparator />
 
-            {/* Album actions */}
             <div className="mb-0.5">
               <span className="text-[9px] text-secondary/40 font-bold px-1 mb-0.5 block">אלבום</span>
             </div>
@@ -321,8 +237,8 @@ export default function OverviewSidebar({
               icon="delete"
               label="מחק עמוד"
               danger
-              disabled={!selectedPhoto || spreadsCount <= 1}
-              onClick={handleDeleteSpread}
+              active={activeMode === 'delete-spread'}
+              onClick={() => toggle('delete-spread')}
             />
           </div>
         </div>

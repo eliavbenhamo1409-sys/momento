@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { motion } from 'motion/react'
 import type { EditorSpread, PhotoElement } from '../../types'
+import type { OverviewMode } from './OverviewSidebar'
 import Icon from '../shared/Icon'
 
 const SPREAD_LABELS: Record<number, string> = { 0: 'כריכה' }
@@ -10,57 +11,60 @@ function getSpreadLabel(index: number, total: number): string {
   return `עמוד ${index * 2 + 1}–${index * 2 + 2}`
 }
 
-export interface HoveredPhoto {
-  spreadId: string
-  slotId: string
-  spreadIndex: number
-  photoUrl: string
-  photoId: string
-}
-
 interface Props {
   spread: EditorSpread
   index: number
   total: number
   isCurrent: boolean
-  activePhotoSlotId: string | null
-  swapTargetMode: boolean
+  activeMode: OverviewMode
+  swapSourceSlotId: string | null
   thumbnailLookup: Record<string, string>
-  onHoverPhoto: (photo: HoveredPhoto | null) => void
-  onClickSlotForSwap: (spreadId: string, slotId: string) => void
+  onClickPhoto: (spreadId: string, slotId: string, spreadIndex: number) => void
+  onClickSpread: (spreadId: string, spreadIndex: number) => void
   onJumpToSpread: (index: number) => void
   entranceDelay: number
 }
 
 const CARD_SPRING = { type: 'spring' as const, stiffness: 420, damping: 30, mass: 0.7 }
 
+function isPhotoClickMode(mode: OverviewMode) {
+  return mode === 'replace' || mode === 'swap-source' || mode === 'swap-target' || mode === 'remove'
+}
+
+function isSpreadClickMode(mode: OverviewMode) {
+  return mode === 'bg-color' || mode === 'bg-ai' || mode === 'delete-spread'
+}
+
 function PhotoSlot({
   element,
   spreadId,
   spreadIndex,
-  isActive,
-  isSwapTarget,
+  mode,
+  isSwapSource,
   thumbnailUrl,
-  onHover,
-  onClickForSwap,
+  onClick,
 }: {
   element: PhotoElement
   spreadId: string
   spreadIndex: number
-  isActive: boolean
-  isSwapTarget: boolean
+  mode: OverviewMode
+  isSwapSource: boolean
   thumbnailUrl: string | null
-  onHover: (photo: HoveredPhoto | null) => void
-  onClickForSwap: (spreadId: string, slotId: string) => void
+  onClick: (spreadId: string, slotId: string, spreadIndex: number) => void
 }) {
   const hasPhoto = !!element.photoUrl
   const [imgLoaded, setImgLoaded] = useState(false)
   const imgSrc = thumbnailUrl || element.photoUrl
 
+  const clickable = isPhotoClickMode(mode) && hasPhoto && !isSwapSource
+  const showSwapIcon = mode === 'swap-target' && hasPhoto && !isSwapSource
+  const showReplaceIcon = mode === 'replace' && hasPhoto
+  const showRemoveIcon = mode === 'remove' && hasPhoto
+
   return (
     <div
       className={`absolute overflow-hidden transition-all duration-150 ${
-        isSwapTarget ? 'cursor-pointer' : ''
+        clickable ? 'cursor-pointer' : ''
       }`}
       style={{
         left: `${element.x}%`,
@@ -68,26 +72,12 @@ function PhotoSlot({
         width: `${element.width}%`,
         height: `${element.height}%`,
         borderRadius: element.borderRadius,
-        zIndex: isActive ? 20 : element.zIndex,
-      }}
-      onMouseEnter={() => {
-        if (hasPhoto && !isSwapTarget) {
-          onHover({
-            spreadId,
-            slotId: element.slotId,
-            spreadIndex,
-            photoUrl: element.photoUrl!,
-            photoId: element.photoId,
-          })
-        }
-      }}
-      onMouseLeave={() => {
-        if (!isSwapTarget) onHover(null)
+        zIndex: element.zIndex,
       }}
       onClick={(e) => {
-        if (isSwapTarget && hasPhoto) {
+        if (clickable) {
           e.stopPropagation()
-          onClickForSwap(spreadId, element.slotId)
+          onClick(spreadId, element.slotId, spreadIndex)
         }
       }}
       data-slot-id={element.slotId}
@@ -111,8 +101,6 @@ function PhotoSlot({
             style={{
               objectPosition: element.objectPosition,
               opacity: imgLoaded ? 1 : 0,
-              filter: isActive ? 'brightness(1.04)' : undefined,
-              transform: isActive ? 'scale(1.02)' : undefined,
             }}
             draggable={false}
             loading="lazy"
@@ -125,18 +113,23 @@ function PhotoSlot({
         </div>
       )}
 
-      {/* Active hover ring */}
-      {isActive && (
-        <div className="absolute inset-0 rounded-[inherit] ring-2 ring-primary/60 pointer-events-none z-10" />
-      )}
-
-      {/* Swap target highlight */}
-      {isSwapTarget && hasPhoto && (
-        <div className="absolute inset-0 rounded-[inherit] ring-2 ring-amber-400/70 bg-amber-400/10 pointer-events-none z-10">
+      {isSwapSource && (
+        <div className="absolute inset-0 rounded-[inherit] ring-2 ring-primary/60 bg-primary/10 pointer-events-none z-10">
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="w-6 h-6 rounded-full bg-white/90 shadow flex items-center justify-center">
-              <Icon name="swap_horiz" size={14} className="text-amber-600" />
+              <Icon name="check" size={14} className="text-primary" />
             </div>
+          </div>
+        </div>
+      )}
+
+      {clickable && !isSwapSource && (
+        <div className="absolute inset-0 rounded-[inherit] bg-black/0 hover:bg-black/15 transition-colors duration-150 z-10 flex items-center justify-center opacity-0 hover:opacity-100">
+          <div className="w-7 h-7 rounded-full bg-white/90 shadow-md flex items-center justify-center">
+            {showSwapIcon && <Icon name="swap_horiz" size={15} className="text-deep-brown" />}
+            {showReplaceIcon && <Icon name="swap_horiz" size={15} className="text-deep-brown" />}
+            {showRemoveIcon && <Icon name="delete" size={15} className="text-red-500" />}
+            {mode === 'swap-source' && <Icon name="touch_app" size={15} className="text-deep-brown" />}
           </div>
         </div>
       )}
@@ -149,11 +142,11 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
   index,
   total,
   isCurrent,
-  activePhotoSlotId,
-  swapTargetMode,
+  activeMode,
+  swapSourceSlotId,
   thumbnailLookup,
-  onHoverPhoto,
-  onClickSlotForSwap,
+  onClickPhoto,
+  onClickSpread,
   onJumpToSpread,
   entranceDelay,
 }: Props) {
@@ -173,8 +166,15 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
   const genBgLeftUrl = design?.background.generatedBgLeftUrl
   const genBgRightUrl = design?.background.generatedBgRightUrl
 
-  const hasActiveSlot = activePhotoSlotId != null &&
-    [...leftElements, ...rightElements].some((el) => el.slotId === activePhotoSlotId)
+  const spreadClickable = isSpreadClickMode(activeMode)
+
+  const handleClick = () => {
+    if (spreadClickable) {
+      onClickSpread(spread.id, index)
+    } else if (activeMode === 'idle') {
+      onJumpToSpread(index)
+    }
+  }
 
   return (
     <motion.div
@@ -184,18 +184,16 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
       className="flex flex-col gap-2"
     >
       <motion.div
-        whileHover={swapTargetMode ? undefined : { scale: 1.012 }}
+        whileHover={{ scale: 1.012 }}
         transition={{ type: 'spring', stiffness: 400, damping: 25 }}
         className={`relative rounded-xl overflow-hidden cursor-pointer group transition-shadow duration-300 ${
-          hasActiveSlot
-            ? 'ring-2 ring-primary/40 shadow-[0_4px_24px_rgba(96,92,72,0.18)]'
+          spreadClickable
+            ? 'ring-1 ring-primary/30 shadow-[0_2px_8px_rgba(45,40,35,0.05)] hover:ring-2 hover:ring-primary/50 hover:shadow-[0_6px_24px_rgba(96,92,72,0.18)]'
             : isCurrent
               ? 'ring-2 ring-primary/30 shadow-[0_4px_20px_rgba(96,92,72,0.12)]'
               : 'ring-1 ring-black/[0.06] shadow-[0_2px_8px_rgba(45,40,35,0.05)] hover:shadow-[0_6px_20px_rgba(45,40,35,0.10)] hover:ring-black/[0.10]'
         }`}
-        onClick={() => {
-          if (!swapTargetMode) onJumpToSpread(index)
-        }}
+        onClick={handleClick}
         style={{ aspectRatio: '2 / 1' }}
       >
         {/* Background */}
@@ -247,11 +245,10 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
                 element={el}
                 spreadId={spread.id}
                 spreadIndex={index}
-                isActive={activePhotoSlotId === el.slotId}
-                isSwapTarget={swapTargetMode && el.slotId !== activePhotoSlotId}
+                mode={activeMode}
+                isSwapSource={swapSourceSlotId === el.slotId}
                 thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
-                onHover={onHoverPhoto}
-                onClickForSwap={onClickSlotForSwap}
+                onClick={onClickPhoto}
               />
             ))
           ) : (
@@ -272,11 +269,10 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
                 element={el}
                 spreadId={spread.id}
                 spreadIndex={index}
-                isActive={activePhotoSlotId === el.slotId}
-                isSwapTarget={swapTargetMode && el.slotId !== activePhotoSlotId}
+                mode={activeMode}
+                isSwapSource={swapSourceSlotId === el.slotId}
                 thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
-                onHover={onHoverPhoto}
-                onClickForSwap={onClickSlotForSwap}
+                onClick={onClickPhoto}
               />
             ))
           ) : (
@@ -289,18 +285,15 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
         </div>
 
         {/* Current badge */}
-        {isCurrent && (
+        {isCurrent && activeMode === 'idle' && (
           <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-primary/90 text-white text-[9px] font-bold z-30">
             נוכחי
           </div>
         )}
-
       </motion.div>
 
       {/* Label */}
-      <span className={`text-xs font-medium text-center ${
-        hasActiveSlot ? 'text-primary' : isCurrent ? 'text-primary/70' : 'text-secondary/50'
-      }`}>
+      <span className={`text-xs font-medium text-center ${isCurrent ? 'text-primary/70' : 'text-secondary/50'}`}>
         {label}
       </span>
     </motion.div>
