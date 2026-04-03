@@ -259,14 +259,12 @@ function PhotoThumb({
 function PersonPhotosPanel({
   person,
   storeLookup,
-  spreads,
   onPhotoSelect,
   selectedPhotoId,
   onClose,
 }: {
   person: AlbumPerson
   storeLookup: Map<string, string>
-  spreads: EditorSpread[]
   onPhotoSelect: (photoId: string, photoUrl: string) => void
   selectedPhotoId: string | null
   onClose: () => void
@@ -514,7 +512,6 @@ export default function EditorPeopleStrip() {
             key={`panel-${selectedPerson.id}`}
             person={selectedPerson}
             storeLookup={storeLookup}
-            spreads={spreads}
             onPhotoSelect={handlePhotoSelect}
             selectedPhotoId={chosenPhotoId}
             onClose={handleClose}
