@@ -27,11 +27,11 @@ async function getHuman() {
     debug: false,
     face: {
       enabled: true,
-      detector: { enabled: true, rotation: false, maxDetected: 15, minConfidence: 0.3 },
-      mesh: { enabled: false },
+      detector: { enabled: true, rotation: true, maxDetected: 20, minConfidence: 0.25 },
+      mesh: { enabled: true },
       attention: { enabled: false },
       iris: { enabled: false },
-      description: { enabled: true, minConfidence: 0.3 },
+      description: { enabled: true, minConfidence: 0.2 },
       emotion: { enabled: false },
       antispoof: { enabled: false },
       liveness: { enabled: false },
@@ -58,7 +58,7 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-const CROP_SIZE = 96
+const CROP_SIZE = 128
 
 function cropFace(
   img: HTMLImageElement,
@@ -66,7 +66,7 @@ function cropFace(
 ): string {
   const [bx, by, bw, bh] = box
 
-  const pad = Math.max(bw, bh) * 0.35
+  const pad = Math.max(bw, bh) * 0.4
   const cx = bx + bw / 2
   const cy = by + bh / 2
   const side = Math.max(bw, bh) + pad * 2
@@ -80,7 +80,7 @@ function cropFace(
   canvas.height = CROP_SIZE
   const ctx = canvas.getContext('2d')!
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CROP_SIZE, CROP_SIZE)
-  return canvas.toDataURL('image/jpeg', 0.85)
+  return canvas.toDataURL('image/jpeg', 0.88)
 }
 
 /* ─── Detection ──────────────────────────────────────────────────────── */
@@ -104,7 +104,7 @@ export async function detectFacesInPhotos(
       if (result.face) {
         for (const face of result.face) {
           if (!face.embedding || face.embedding.length === 0) continue
-          if ((face.score ?? 0) < 0.35) continue
+          if ((face.score ?? 0) < 0.3) continue
 
           const cropUrl = cropFace(img, face.box)
           all.push({
@@ -140,7 +140,18 @@ function cosineSimilarity(a: number[], b: number[]): number {
   return denom === 0 ? 0 : dot / denom
 }
 
-const SIMILARITY_THRESHOLD = 0.52
+const SIMILARITY_THRESHOLD = 0.44
+const MIN_PHOTOS_FOR_PERSON = 3
+
+function avgEmbedding(faces: DetectedFace[]): number[] {
+  const dim = faces[0].embedding.length
+  const avg = new Array(dim).fill(0)
+  for (const f of faces) {
+    for (let i = 0; i < dim; i++) avg[i] += f.embedding[i]
+  }
+  for (let i = 0; i < dim; i++) avg[i] /= faces.length
+  return avg
+}
 
 export function clusterFaces(
   faces: DetectedFace[],
@@ -155,13 +166,10 @@ export function clusterFaces(
     let bestSim = -1
 
     for (let ci = 0; ci < clusters.length; ci++) {
-      let maxSim = -1
-      for (const member of clusters[ci]) {
-        const sim = cosineSimilarity(face.embedding, member.embedding)
-        if (sim > maxSim) maxSim = sim
-      }
-      if (maxSim > bestSim) {
-        bestSim = maxSim
+      const centroid = avgEmbedding(clusters[ci])
+      const sim = cosineSimilarity(face.embedding, centroid)
+      if (sim > bestSim) {
+        bestSim = sim
         bestCluster = ci
       }
     }
@@ -173,7 +181,13 @@ export function clusterFaces(
     }
   }
 
-  return clusters.map((cluster, idx) => {
+  const people: AlbumPerson[] = []
+  const unidentifiedPhotoIds = new Set<string>()
+  let unidentifiedCrop: string | undefined
+  let unidentifiedAvatarId: string | undefined
+
+  let namedIdx = 0
+  for (const cluster of clusters) {
     const photoIds = [...new Set(cluster.map((f) => f.photoId))]
 
     const best = cluster.reduce((a, b) => {
@@ -182,15 +196,39 @@ export function clusterFaces(
       return bArea > aArea ? b : a
     })
 
-    const label = existingLabels?.get(best.photoId)
-    const displayName = label || `אדם ${idx + 1}`
+    if (photoIds.length < MIN_PHOTOS_FOR_PERSON) {
+      for (const pid of photoIds) unidentifiedPhotoIds.add(pid)
+      if (!unidentifiedCrop) {
+        unidentifiedCrop = best.cropDataUrl
+        unidentifiedAvatarId = best.photoId
+      }
+      continue
+    }
 
-    return {
+    namedIdx++
+    const label = existingLabels?.get(best.photoId)
+    const displayName = label || `אדם ${namedIdx}`
+
+    people.push({
       id: crypto.randomUUID(),
       displayName,
       photoIds,
       avatarPhotoId: best.photoId,
       avatarCropUrl: best.cropDataUrl,
-    }
-  })
+    })
+  }
+
+  people.sort((a, b) => b.photoIds.length - a.photoIds.length)
+
+  if (unidentifiedPhotoIds.size > 0) {
+    people.push({
+      id: crypto.randomUUID(),
+      displayName: 'לא מזוהה',
+      photoIds: [...unidentifiedPhotoIds],
+      avatarPhotoId: unidentifiedAvatarId || '',
+      avatarCropUrl: unidentifiedCrop,
+    })
+  }
+
+  return people
 }

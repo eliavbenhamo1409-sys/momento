@@ -8,32 +8,27 @@ import type { AlbumPerson, PhotoElement, EditorSpread } from '../../types'
 
 /* ─── Helpers ────────────────────────────────────────────────────────── */
 
-function buildPhotoUrlMap(spreads: EditorSpread[]): Map<string, string> {
+function buildPhotoIdToUrl(photos: { id: string; thumbnailUrl: string; fullUrl: string }[]): Map<string, string> {
   const map = new Map<string, string>()
-  for (const spread of spreads) {
-    if (!spread.design) continue
-    for (const el of spread.design.elements) {
-      if (el.type !== 'photo') continue
-      const pe = el as PhotoElement
-      const pid = pe.photoId?.replace('-mirror', '')
-      if (pid && pe.photoUrl && !map.has(pid)) {
-        map.set(pid, pe.photoUrl)
-      }
-    }
+  for (const p of photos) {
+    map.set(p.id, p.fullUrl || p.thumbnailUrl)
   }
   return map
 }
 
-function findSpreadIndexForPhotoId(spreads: EditorSpread[], photoId: string): number {
+function findSpreadIndexForPhotoUrl(spreads: EditorSpread[], targetUrl: string): number {
   for (let i = 0; i < spreads.length; i++) {
     const spread = spreads[i]
     if (spread.design) {
       for (const el of spread.design.elements) {
         if (el.type === 'photo') {
           const pe = el as PhotoElement
-          if (pe.photoId?.replace('-mirror', '') === photoId) return i
+          if (pe.photoUrl === targetUrl) return i
         }
       }
+    }
+    if (spread.leftPhotos.includes(targetUrl) || spread.rightPhotos.includes(targetUrl)) {
+      return i
     }
   }
   return -1
@@ -125,6 +120,7 @@ function PersonCircle({
   onFinishEditName: () => void
 }) {
   const avatarSrc = person.avatarCropUrl || fallbackUrl
+  const isUnidentified = person.displayName === 'לא מזוהה'
 
   return (
     <motion.div
@@ -144,7 +140,9 @@ function PersonCircle({
           className={`w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden transition-all duration-200 ${
             isSelected
               ? 'ring-[2.5px] ring-sage shadow-[0_0_12px_rgba(139,152,120,0.3)]'
-              : 'ring-2 ring-white/70 group-hover:ring-sage/40 shadow-sm'
+              : isUnidentified
+                ? 'ring-2 ring-black/10 group-hover:ring-black/20 shadow-sm opacity-60'
+                : 'ring-2 ring-white/70 group-hover:ring-sage/40 shadow-sm'
           }`}
         >
           {avatarSrc ? (
@@ -267,6 +265,7 @@ function PersonPhotosPanel({
 
 export default function EditorPeopleStrip() {
   const peopleRoster = useAlbumStore((s) => s.peopleRoster)
+  const storePhotos = useAlbumStore((s) => s.photos)
   const spreads = useEditorStore((s) => s.spreads)
   const setCurrentSpread = useEditorStore((s) => s.setCurrentSpread)
   const { deselectAll } = useEditorStore(useShallow((s) => ({ deselectAll: s.deselectAll })))
@@ -274,7 +273,7 @@ export default function EditorPeopleStrip() {
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [editingNameId, setEditingNameId] = useState<string | null>(null)
 
-  const photoUrlMap = useMemo(() => buildPhotoUrlMap(spreads), [spreads])
+  const photoUrlMap = useMemo(() => buildPhotoIdToUrl(storePhotos), [storePhotos])
 
   const handlePersonClick = useCallback((person: AlbumPerson) => {
     setSelectedPersonId((prev) => (prev === person.id ? null : person.id))
@@ -282,14 +281,17 @@ export default function EditorPeopleStrip() {
 
   const handlePhotoClick = useCallback(
     (photoId: string) => {
-      const idx = findSpreadIndexForPhotoId(spreads, photoId)
-      if (idx >= 0) {
-        deselectAll()
-        requestAnimationFrame(() => setCurrentSpread(idx))
+      const url = photoUrlMap.get(photoId)
+      if (url) {
+        const idx = findSpreadIndexForPhotoUrl(spreads, url)
+        if (idx >= 0) {
+          deselectAll()
+          requestAnimationFrame(() => setCurrentSpread(idx))
+        }
       }
       setSelectedPersonId(null)
     },
-    [spreads, setCurrentSpread, deselectAll],
+    [spreads, setCurrentSpread, deselectAll, photoUrlMap],
   )
 
   const handleClose = useCallback(() => setSelectedPersonId(null), [])
@@ -303,7 +305,7 @@ export default function EditorPeopleStrip() {
 
   return (
     <div className="relative shrink-0 z-20">
-      <div className="flex items-center gap-3 px-4 md:px-8 py-1.5">
+      <div className="flex items-center gap-3 px-4 md:px-8 py-1.5 overflow-x-auto scrollbar-hide">
         {peopleRoster.map((person, i) => (
           <motion.div
             key={person.id}
