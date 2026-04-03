@@ -164,10 +164,6 @@ export default function CurateScreen() {
   const hasStartedRef = useRef(false)
   const aiCuratedRef = useRef<CuratedPhotoSet | null>(null)
 
-  const photoMap = useMemo(
-    () => new Map(photos.map((p) => [p.id, p])),
-    [photos],
-  )
   const scoreMap = useMemo(
     () => new Map(scores.map((s) => [s.photoId, s])),
     [scores],
