@@ -1,0 +1,14 @@
+---
+description: Always git push after making changes
+alwaysApply: true
+---
+
+# Always Push After Changes
+
+After completing any code change (file edits, new files, deletions), you MUST:
+
+1. **Stage** all relevant changed files with `git add`
+2. **Commit** with a clear, concise Hebrew or English commit message
+3. **Push** to the remote immediately with `git push`
+
+Never leave changes uncommitted or unpushed. Every change should be pushed before ending your turn.

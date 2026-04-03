@@ -13,20 +13,20 @@ const TEMPLATES_BY_PATTERN: Record<string, string[]> = {
   '1-landscape': ['full-spread'],
   '1-square':    ['full-spread'],
 
-  '2-landscape': ['panoramic', 'two-landscapes-stacked'],
-  '2-portrait':  ['portrait-duo'],
-  '2-mixed':     ['portrait-duo', 'panoramic'],
-  '2-square':    ['portrait-duo', 'panoramic'],
+  '2-landscape': ['panoramic', 'text-heavy'],
+  '2-portrait':  ['text-heavy', 'panoramic'],
+  '2-mixed':     ['text-heavy', 'panoramic'],
+  '2-square':    ['text-heavy', 'panoramic'],
 
   '3-landscape': ['hero-right-stack-left', 'dynamic-trio', 'photo-over-photo'],
   '3-portrait':  ['portrait-trio', 'dynamic-trio', 'photo-over-photo-right'],
   '3-mixed':     ['dynamic-trio', 'hero-right-stack-left', 'photo-over-photo'],
   '3-square':    ['dynamic-trio', 'hero-right-stack-left', 'photo-over-photo'],
 
-  '4-landscape': ['grid-2x2', 'asymmetric-hero-steps', 'l-shape'],
+  '4-landscape': ['grid-2x2', 'l-shape', 'editorial-magazine'],
   '4-portrait':  ['portrait-grid-4', 'l-shape', 'balanced-4'],
-  '4-mixed':     ['asymmetric-hero-steps', 'l-shape', 'grid-2x2'],
-  '4-square':    ['grid-2x2', 'asymmetric-hero-steps', 'l-shape'],
+  '4-mixed':     ['l-shape', 'grid-2x2', 'editorial-magazine'],
+  '4-square':    ['grid-2x2', 'l-shape', 'editorial-magazine'],
 }
 
 function classifyGroup(orientations: PhotoOrientation[]): string {

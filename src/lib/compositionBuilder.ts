@@ -138,7 +138,7 @@ export function buildSpreadDesign(
 
   if (spread.quote) {
     const isCaptionTemplate = template && template.acceptsQuote && (
-      template.id.includes('caption') || template.id === 'story-spread'
+      template.id.includes('caption')
     )
     const quotePlacement = adj.quotePlacement
       ?? family.layoutBehavior.preferredQuotePlacement[0]

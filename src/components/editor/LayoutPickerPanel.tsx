@@ -24,8 +24,7 @@ function buildPreview(template: typeof LAYOUT_TEMPLATES[0]): LayoutOption['previ
 }
 
 const SPECIAL_IDS = new Set([
-  'landscape-top-2sq', '2sq-top-landscape', 'cross-diagonal',
-  'single-portrait', 'two-landscapes-stacked',
+  'single-portrait',
 ])
 
 const ALL_OPTIONS: LayoutOption[] = LAYOUT_TEMPLATES

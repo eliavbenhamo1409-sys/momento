@@ -35,41 +35,35 @@ function orientationFitScore(
 // ─── Template scoring against a group ────────────────────────────────
 
 const PORTRAIT_TEMPLATES = [
-  'portrait-duo', 'portrait-trio', 'portrait-hero-grid',
+  'portrait-trio', 'portrait-hero-grid',
   'portrait-grid-4', 'portrait-5', 'portrait-6',
   'single-portrait',
 ]
 const LANDSCAPE_TEMPLATES = [
   'full-spread',
-  'landscape-top-2sq', '2sq-top-landscape', 'two-landscapes-stacked',
 ]
 const MIXED_TEMPLATES = [
   'mixed-top-bottom', 'hero-top-grid-bottom', 'mosaic-5',
   'hero-left-grid-right', 'balanced-4', 'grid-2x2',
-  'grid-3x2', 'detail-grid', 'cross-diagonal', 'three-rows',
-  'asymmetric-hero-steps', 'l-shape', 'dynamic-trio', 'staggered-grid',
+  'grid-3x2', 'detail-grid', 'three-rows',
+  'l-shape', 'dynamic-trio',
   'photo-over-photo', 'photo-over-photo-right',
   'editorial-grid-duo', 'editorial-hero-mosaic', 'editorial-stagger-3',
-  'editorial-magazine', 'editorial-cinematic',
+  'editorial-magazine',
   'mini-collage-12', 'mini-collage-9',
-  'hero-caption-left', 'hero-caption-right', 'hero-trio-bottom',
-  'story-spread', 'editorial-asymmetric', 'mosaic-hero-accent', 'cinematic-caption',
+  'mosaic-hero-accent',
 ]
 
-const CAPTION_TEMPLATES = new Set([
-  'hero-caption-left', 'hero-caption-right', 'cinematic-caption', 'story-spread',
+const CAPTION_TEMPLATES = new Set<string>([
 ])
 
-const STORY_TEMPLATES = new Set([
-  'story-spread', 'hero-caption-left', 'hero-caption-right',
-  'cinematic-caption', 'editorial-cinematic',
+const STORY_TEMPLATES = new Set<string>([
 ])
 
 const EXTREME_ORIENTATION_TEMPLATES = new Set([
-  'portrait-duo', 'portrait-trio', 'portrait-grid-4',
+  'portrait-trio', 'portrait-grid-4',
   'portrait-5', 'portrait-6',
   'single-portrait',
-  'two-landscapes-stacked', 'landscape-top-2sq', '2sq-top-landscape',
 ])
 const MAX_EXTREME_PAGES = 2
 
@@ -261,7 +255,7 @@ export function pickBestTemplate(
       photoCount >= t.minPhotos &&
       !t.spanning,
     )
-    return safeMatch ?? getTemplate('editorial-cinematic')!
+    return safeMatch ?? getTemplate('text-heavy')!
   }
 
   let bestTemplate = candidates[0]

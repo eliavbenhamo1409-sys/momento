@@ -360,13 +360,13 @@ export function placePhotosInSpreads(
         const pos = crop ? `${Math.round(crop.focusX * 100)}% ${Math.round(crop.focusY * 100)}%` : '50% 35%'
         return {
           id: `spread-${idx}-${Date.now().toString(36)}`,
-          templateId: 'editorial-cinematic',
+          templateId: 'text-heavy',
           leftPhotos: [singleUrl],
           rightPhotos: [singleUrl],
           quote: plan.quote,
           slots: [
-            { slotId: 'l-main', photoUrl: singleUrl, objectFit: 'cover', objectPosition: pos, transform: '' },
-            { slotId: 'r-main', photoUrl: singleUrl, objectFit: 'cover', objectPosition: pos, transform: '' },
+            { slotId: 'left-photo', photoUrl: singleUrl, objectFit: 'cover', objectPosition: pos, transform: '' },
+            { slotId: 'right-photo', photoUrl: singleUrl, objectFit: 'cover', objectPosition: pos, transform: '' },
           ],
           theme: plan.theme,
         }
@@ -410,7 +410,7 @@ export function placePhotosInSpreads(
       if (forcedLeft.length > 0 && forcedRight.length > 0) {
         return {
           id: `spread-${idx}-${Date.now().toString(36)}`,
-          templateId: 'editorial-cinematic',
+          templateId: 'text-heavy',
           leftPhotos: forcedLeft,
           rightPhotos: forcedRight,
           quote: plan.quote,

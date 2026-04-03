@@ -370,7 +370,7 @@ CRITICAL RULES:
 - Each photo can only appear in ONE spread.
 - EVERY spread must have photos on BOTH the left and right pages. No empty pages allowed.
 - The number of photos assigned MUST be between the template's minPhotos and maxPhotos AND not exceed the sequence plan's maxPhotos.
-- Prefer editorial, asymmetric layouts over symmetric grids. Avoid using grid-4-4 or grid-2x2 more than once in the entire album.
+- Prefer editorial, asymmetric layouts over symmetric grids. Avoid using grid-2x2 more than once in the entire album.
 - Quote language: Hebrew. Quotes should be 1-2 sentences, emotional, and relevant to the photos' mood.
 - Max quote length: ${family.textBehavior.quoteMaxLength} characters.
 
