@@ -72,11 +72,92 @@ export async function generateAlbum(
   let curated: import('../types').CuratedPhotoSet
   let dateLookup: Map<string, Date>
 
-  if (preScored) {
+  if (preScored && preScored.allScores && preScored.allScores.length > 0) {
     allScores = preScored.allScores
     curated = preScored.curated
     dateLookup = preScored.dateLookup
     onProgress(2, 64, 'דירוג התמונות הושלם — ממשיך לשלב הסידור')
+  } else if (preScored) {
+    // Manual mode: curated set provided, but need to run scoring for face/scene detection
+    curated = preScored.curated
+    dateLookup = preScored.dateLookup
+    console.log('[אלבום חכם] מצב ידני — מריץ ניתוח תמונות לזיהוי פנים ואירועים')
+    onProgress(0, 0, 'מנתח תמונות לזיהוי פנים ואירועים')
+
+    const selectedIds = new Set(curated.selected.map((r) => r.photoId))
+    const photosToScore = photos.filter((p) => selectedIds.has(p.id))
+
+    const orientations = new Map<
+      string,
+      { orientation: PhotoOrientation; aspectRatio: number }
+    >()
+    for (const photo of photosToScore) {
+      if (photo.file) {
+        try {
+          const dims = await getImageDimensions(photo.file)
+          orientations.set(photo.id, {
+            orientation: detectOrientation(dims.width, dims.height),
+            aspectRatio: dims.width / dims.height,
+          })
+        } catch {
+          orientations.set(photo.id, {
+            orientation: detectOrientation(photo.width, photo.height),
+            aspectRatio: photo.width / photo.height,
+          })
+        }
+      } else {
+        orientations.set(photo.id, {
+          orientation: detectOrientation(photo.width, photo.height),
+          aspectRatio: photo.width / photo.height,
+        })
+      }
+    }
+
+    const batches = batchArray(photosToScore, BATCH_SIZE)
+    allScores = []
+    let batchesDone = 0
+
+    for (const batch of batches) {
+      let batchScored = false
+      for (let attempt = 0; attempt < 2 && !batchScored; attempt++) {
+        try {
+          if (attempt > 0) await sleep(1000 * attempt)
+          const scores = await analyzePhotoBatchGemini(batch, orientations)
+          allScores.push(...scores)
+          batchScored = true
+        } catch { /* retry */ }
+      }
+      if (!batchScored) {
+        try {
+          const scores = await analyzePhotoBatch(batch, orientations)
+          allScores.push(...scores)
+          batchScored = true
+        } catch { /* fallback */ }
+      }
+      if (!batchScored) {
+        for (const photo of batch) {
+          const dims = orientations.get(photo.id) ?? {
+            orientation: detectOrientation(photo.width, photo.height) as PhotoOrientation,
+            aspectRatio: photo.width / photo.height,
+          }
+          allScores.push(createDefaultScore(photo.id, dims.orientation, dims.aspectRatio))
+        }
+      }
+      batchesDone++
+      onProgress(0, Math.round((batchesDone / batches.length) * 55), `מנתח תמונות ${allScores.length}/${photosToScore.length}`)
+    }
+
+    // Update curated.selected with real AI scores
+    const realScoreMap = new Map(allScores.map((s) => [s.photoId, s]))
+    curated = {
+      ...curated,
+      selected: curated.selected.map((r) => ({
+        ...r,
+        score: realScoreMap.get(r.photoId) ?? r.score,
+      })),
+    }
+
+    onProgress(2, 64, 'ניתוח התמונות הושלם — ממשיך לשלב הסידור')
   } else {
     // ── Stage 1 (0-55%): Photo Scoring via Vision API ─────────────
 

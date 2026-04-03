@@ -84,14 +84,16 @@ export default function GenerationScreen() {
 
     const referenceDataUrls = vibeReferences.map((r) => r.dataUrl)
 
-    const hasPreScored = photoScores.length > 0 && curatedSet !== null
-    const preScored = hasPreScored ? {
-      allScores: photoScores,
-      curated: curatedSet!,
-      dateLookup: new Map(
-        Object.entries(photoDateLookup).map(([id, ts]) => [id, new Date(ts)]),
-      ),
-    } : undefined
+    const dateLookupMap = new Map(
+      Object.entries(photoDateLookup).map(([id, ts]) => [id, new Date(ts)]),
+    )
+
+    let preScored: import('../types').PreScoredData | undefined
+    if (curatedSet !== null && photoScores.length > 0) {
+      preScored = { allScores: photoScores, curated: curatedSet, dateLookup: dateLookupMap }
+    } else if (curatedSet !== null) {
+      preScored = { curated: curatedSet, dateLookup: dateLookupMap }
+    }
 
     try {
       const result = await generateAlbum(photos, config, (stage, pct, msg) => {

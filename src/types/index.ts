@@ -749,7 +749,7 @@ export interface GenerationStage {
 export type ScreenStep = 'upload' | 'curate' | 'configure' | 'setup' | 'generating' | 'editor'
 
 export interface PreScoredData {
-  allScores: PhotoScore[]
+  allScores?: PhotoScore[]
   curated: CuratedPhotoSet
   dateLookup: Map<string, Date>
 }
