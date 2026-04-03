@@ -2,7 +2,6 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useAlbumStore } from '../../store/albumStore'
 import { useEditorStore } from '../../store/editorStore'
-import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 import type { AlbumPerson, PhotoElement, EditorSpread } from '../../types'
 
@@ -337,10 +336,8 @@ export default function EditorPeopleStrip() {
   const peopleRoster = useAlbumStore((s) => s.peopleRoster)
   const storePhotos = useAlbumStore((s) => s.photos)
   const spreads = useEditorStore((s) => s.spreads)
-  const setCurrentSpread = useEditorStore((s) => s.setCurrentSpread)
   const pendingPhotoSwap = useEditorStore((s) => s.pendingPhotoSwap)
   const setPendingPhotoSwap = useEditorStore((s) => s.setPendingPhotoSwap)
-  const { deselectAll } = useEditorStore(useShallow((s) => ({ deselectAll: s.deselectAll })))
 
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
   const [editingNameId, setEditingNameId] = useState<string | null>(null)
