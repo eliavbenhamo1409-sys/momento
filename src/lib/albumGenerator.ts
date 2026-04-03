@@ -11,7 +11,8 @@ import type {
   PreScoredData,
 } from '../types'
 import { batchArray, detectOrientation, getImageDimensions, extractPhotoDate } from './photoUtils'
-import { analyzePhotoBatch, analyzePhotoBatchGemini, generateSpreadBackgrounds, consolidateAlbumPeople } from './openai'
+import { analyzePhotoBatch, analyzePhotoBatchGemini, generateSpreadBackgrounds } from './openai'
+import { detectFacesInPhotos, clusterFaces } from './faceDetection'
 import { curatePhotos, buildPageGroups } from './photoScorer'
 import {
   placePhotosInSpreads,
@@ -801,28 +802,42 @@ export async function generateAlbum(
     console.log('[אלבום חכם] ══════════ סריקת פנים — הושלמה ══════════')
   }
 
-  // ── Stage 6.5 (98-99%): People Consolidation ────────────────────
+  // ── Stage 6.5 (98-99%): Client-side Face Detection & People Clustering ──
 
-  onProgress(5, 98, 'מזהה אנשים באלבום')
+  onProgress(5, 98, 'מזהה פנים ואנשים באלבום')
   await sleep(300)
 
   let peopleRoster: import('../types').AlbumPerson[] = []
-  const facePhotosCount = allScores.filter((s) => s.faceObservations?.length).length
-  if (facePhotosCount > 0) {
-    try {
-      console.log(`[אלבום חכם] ── שלב 6.5: איחוד אנשים — ${facePhotosCount} תמונות עם פנים ──`)
-      peopleRoster = await consolidateAlbumPeople(allScores)
-      console.log(`[אלבום חכם] זוהו ${peopleRoster.length} אנשים ייחודיים`)
+  try {
+    console.log(`[אלבום חכם] ── שלב 6.5: זיהוי פנים (client-side) ──`)
+
+    const labelMap = new Map<string, string>()
+    for (const s of allScores) {
+      if (s.faceObservations?.length) {
+        labelMap.set(s.photoId, s.faceObservations[0].labelHe)
+      }
+    }
+
+    const detectedFaces = await detectFacesInPhotos(photos, (done, total) => {
+      const pct = 98 + Math.round((done / total) * 0.8)
+      onProgress(5, Math.min(pct, 99), `סורק פנים ${done}/${total}`)
+    })
+
+    console.log(`[אלבום חכם] זוהו ${detectedFaces.length} פנים ב-${photos.length} תמונות`)
+
+    if (detectedFaces.length > 0) {
+      peopleRoster = clusterFaces(detectedFaces, labelMap)
+      console.log(`[אלבום חכם] קובצו ל-${peopleRoster.length} אנשים ייחודיים`)
       for (const person of peopleRoster) {
         console.log(`  ${person.displayName}: ${person.photoIds.length} תמונות`)
       }
       onProgress(5, 99, `זוהו ${peopleRoster.length} אנשים באלבום`)
-    } catch (err) {
-      console.error('[People] Consolidation failed:', err)
-      onProgress(5, 99, 'זיהוי אנשים לא הצליח — ממשיכים')
+    } else {
+      onProgress(5, 99, 'לא זוהו פנים — ממשיכים')
     }
-  } else {
-    onProgress(5, 99, 'לא זוהו פנים — ממשיכים')
+  } catch (err) {
+    console.error('[FaceDetection] Failed:', err)
+    onProgress(5, 99, 'זיהוי פנים לא הצליח — ממשיכים')
   }
 
   // ── Stage 7 (99-100%): Final Assembly ──────────────────────────

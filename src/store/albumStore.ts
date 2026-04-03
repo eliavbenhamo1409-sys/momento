@@ -36,6 +36,7 @@ interface AlbumState {
   setPhotoScores: (scores: PhotoScore[]) => void
   setCuratedSet: (set: CuratedPhotoSet) => void
   setPeopleRoster: (roster: AlbumPerson[]) => void
+  updatePersonName: (personId: string, newName: string) => void
   setPhotoDateLookup: (lookup: Record<string, number>) => void
   resetAlbum: () => void
 }
@@ -102,6 +103,12 @@ export const useAlbumStore = create<AlbumState>((set) => ({
   setPhotoScores: (scores) => set({ photoScores: scores }),
   setCuratedSet: (curatedSet) => set({ curatedSet }),
   setPeopleRoster: (peopleRoster) => set({ peopleRoster }),
+  updatePersonName: (personId, newName) =>
+    set((s) => ({
+      peopleRoster: s.peopleRoster.map((p) =>
+        p.id === personId ? { ...p, displayName: newName } : p,
+      ),
+    })),
   setPhotoDateLookup: (photoDateLookup) => set({ photoDateLookup }),
   resetAlbum: () =>
     set({

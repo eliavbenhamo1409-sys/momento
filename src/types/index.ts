@@ -166,6 +166,7 @@ export interface AlbumPerson {
   displayName: string
   photoIds: string[]
   avatarPhotoId: string
+  avatarCropUrl?: string
   avatarObjectPosition?: string
 }
 
