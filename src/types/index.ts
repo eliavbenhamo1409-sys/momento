@@ -168,8 +168,10 @@ export interface AlbumPerson {
   avatarPhotoId: string
   avatarCropUrl?: string
   avatarObjectPosition?: string
-  /** photoId → thumbnail/full URL, embedded at detection time so the editor never needs external lookups */
+  /** photoId → thumbnailUrl for panel display */
   photoUrlLookup?: Record<string, string>
+  /** photoId → fullUrl for matching against spread slots */
+  photoFullUrlLookup?: Record<string, string>
 }
 
 // ─── AI Generation Pipeline Types ───────────────────────────────────

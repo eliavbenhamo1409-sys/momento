@@ -287,12 +287,15 @@ function PersonPhotosPanel({
     return () => clearTimeout(t)
   }, [])
 
+  const storePhotos = useAlbumStore((s) => s.photos)
+
   const handleSelect = useCallback(
     (photoId: string) => {
-      const url = getPhotoUrl(photoId, person.photoUrlLookup, storeLookup)
-      if (url) onPhotoSelect(photoId, url)
+      const fullUrl = person.photoFullUrlLookup?.[photoId]
+        || storePhotos.find((p) => p.id === photoId)?.fullUrl
+      if (fullUrl) onPhotoSelect(photoId, fullUrl)
     },
-    [person.photoUrlLookup, storeLookup, onPhotoSelect],
+    [person.photoFullUrlLookup, storePhotos, onPhotoSelect],
   )
 
   return (

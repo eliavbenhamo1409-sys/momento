@@ -4,7 +4,10 @@ import type { Photo, AlbumPerson } from '../types'
 
 export interface DetectedFace {
   photoId: string
+  /** fullUrl — matches what spreads store in pe.photoUrl */
   photoUrl: string
+  /** thumbnailUrl — lighter, used for panel display */
+  displayUrl: string
   box: [number, number, number, number]
   embedding: number[]
   cropDataUrl: string
@@ -144,7 +147,8 @@ export async function detectFacesInPhotos(
           const cropUrl = cropFace(img, face.box, scale)
           all.push({
             photoId: photo.id,
-            photoUrl: photo.thumbnailUrl || photo.fullUrl,
+            photoUrl: photo.fullUrl || photo.thumbnailUrl,
+            displayUrl: photo.thumbnailUrl || photo.fullUrl,
             box: face.box,
             embedding: face.embedding,
             cropDataUrl: cropUrl,
@@ -227,7 +231,8 @@ export function clusterFaces(
 
   const people: AlbumPerson[] = []
   const unidentifiedPhotoIds = new Set<string>()
-  const unidentifiedUrlLookup: Record<string, string> = {}
+  const unidentifiedDisplayUrls: Record<string, string> = {}
+  const unidentifiedFullUrls: Record<string, string> = {}
   let unidentifiedCrop: string | undefined
   let unidentifiedAvatarId: string | undefined
 
@@ -241,13 +246,18 @@ export function clusterFaces(
       return bArea > aArea ? b : a
     })
 
-    const urlLookup: Record<string, string> = {}
-    for (const f of cluster) urlLookup[f.photoId] = f.photoUrl
+    const displayUrls: Record<string, string> = {}
+    const fullUrls: Record<string, string> = {}
+    for (const f of cluster) {
+      displayUrls[f.photoId] = f.displayUrl
+      fullUrls[f.photoId] = f.photoUrl
+    }
 
     if (photoIds.length < MIN_PHOTOS_FOR_PERSON) {
       for (const pid of photoIds) {
         unidentifiedPhotoIds.add(pid)
-        unidentifiedUrlLookup[pid] = urlLookup[pid]
+        unidentifiedDisplayUrls[pid] = displayUrls[pid]
+        unidentifiedFullUrls[pid] = fullUrls[pid]
       }
       if (!unidentifiedCrop) {
         unidentifiedCrop = best.cropDataUrl
@@ -266,7 +276,8 @@ export function clusterFaces(
       photoIds,
       avatarPhotoId: best.photoId,
       avatarCropUrl: best.cropDataUrl,
-      photoUrlLookup: urlLookup,
+      photoUrlLookup: displayUrls,
+      photoFullUrlLookup: fullUrls,
     })
   }
 
@@ -279,7 +290,8 @@ export function clusterFaces(
       photoIds: [...unidentifiedPhotoIds],
       avatarPhotoId: unidentifiedAvatarId || '',
       avatarCropUrl: unidentifiedCrop,
-      photoUrlLookup: unidentifiedUrlLookup,
+      photoUrlLookup: unidentifiedDisplayUrls,
+      photoFullUrlLookup: unidentifiedFullUrls,
     })
   }
 
