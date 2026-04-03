@@ -1,13 +1,11 @@
 import { useCallback, useRef, useState, useEffect, useMemo } from 'react'
-import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useAlbumStore } from '../../store/albumStore'
 import { useUIStore } from '../../store/uiStore'
 import { useShallow } from 'zustand/react/shallow'
-import OverviewSpreadCard, { type DragPayload, type SlotSelection } from './OverviewSpreadCard'
-import OverviewPhotoToolbar from './OverviewPhotoToolbar'
-import OverviewBgPicker from './OverviewBgPicker'
+import OverviewSpreadCard, { type HoveredPhoto } from './OverviewSpreadCard'
+import OverviewSidebar from './OverviewSidebar'
 import Icon from '../shared/Icon'
 
 const OVERLAY_SPRING = { type: 'spring' as const, stiffness: 500, damping: 35, mass: 0.8 }
@@ -40,11 +38,10 @@ export default function AlbumOverview() {
   })))
   const toggleOverview = useEditorStore((s) => s.toggleOverview)
   const setCurrentSpread = useEditorStore((s) => s.setCurrentSpread)
-  const deleteSpread = useEditorStore((s) => s.deleteSpread)
-  const swapPhotosAcrossSpreads = useEditorStore((s) => s.swapPhotosAcrossSpreads)
-  const movePhotoToEmptySlot = useEditorStore((s) => s.movePhotoToEmptySlot)
   const replacePhotoInSlotBySpread = useEditorStore((s) => s.replacePhotoInSlotBySpread)
   const removePhotoFromSlotBySpread = useEditorStore((s) => s.removePhotoFromSlotBySpread)
+  const swapPhotosAcrossSpreads = useEditorStore((s) => s.swapPhotosAcrossSpreads)
+  const movePhotoToEmptySlot = useEditorStore((s) => s.movePhotoToEmptySlot)
   const addToast = useUIStore((s) => s.addToast)
 
   const thumbnailLookup = useMemo(() => {
@@ -63,18 +60,55 @@ export default function AlbumOverview() {
     })
   }, [])
 
-  // ── Selection state ──
-  const [selectedSlot, setSelectedSlot] = useState<SlotSelection | null>(null)
-  const replaceFileRef = useRef<HTMLInputElement>(null)
+  // ── Hover-based photo selection ──
+  const [hoveredPhoto, setHoveredPhoto] = useState<HoveredPhoto | null>(null)
+  const hoverLockRef = useRef(false)
 
-  const handleSelectSlot = useCallback((selection: SlotSelection | null) => {
-    setSelectedSlot((prev) => {
-      if (prev && selection && prev.spreadId === selection.spreadId && prev.slotId === selection.slotId) {
-        return null
-      }
-      return selection
-    })
+  const handleHoverPhoto = useCallback((photo: HoveredPhoto | null) => {
+    if (hoverLockRef.current) return
+    setHoveredPhoto(photo)
   }, [])
+
+  // ── Swap mode ──
+  const [swapSource, setSwapSource] = useState<{ spreadId: string; slotId: string } | null>(null)
+
+  const handleStartSwap = useCallback(() => {
+    if (!hoveredPhoto) return
+    setSwapSource({ spreadId: hoveredPhoto.spreadId, slotId: hoveredPhoto.slotId })
+    hoverLockRef.current = true
+    addToast('בחר תמונה יעד להחלפה', 'info')
+  }, [hoveredPhoto, addToast])
+
+  const handleClickSlotForSwap = useCallback((targetSpreadId: string, targetSlotId: string) => {
+    if (!swapSource) return
+    if (swapSource.spreadId === targetSpreadId && swapSource.slotId === targetSlotId) return
+
+    const tgtSpread = useEditorStore.getState().spreads.find((s) => s.id === targetSpreadId)
+    const tgtEl = tgtSpread?.design?.elements.find(
+      (el) => el.type === 'photo' && el.slotId === targetSlotId,
+    )
+    const tgtHasPhoto = tgtEl && 'photoUrl' in tgtEl && tgtEl.photoUrl
+
+    if (tgtHasPhoto) {
+      swapPhotosAcrossSpreads(swapSource.spreadId, swapSource.slotId, targetSpreadId, targetSlotId)
+      addToast('התמונות הוחלפו בהצלחה', 'success')
+    } else {
+      movePhotoToEmptySlot(swapSource.spreadId, swapSource.slotId, targetSpreadId, targetSlotId)
+      addToast('התמונה הועברה בהצלחה', 'success')
+    }
+
+    setSwapSource(null)
+    hoverLockRef.current = false
+    setHoveredPhoto(null)
+  }, [swapSource, swapPhotosAcrossSpreads, movePhotoToEmptySlot, addToast])
+
+  const cancelSwap = useCallback(() => {
+    setSwapSource(null)
+    hoverLockRef.current = false
+  }, [])
+
+  // ── Replace photo ──
+  const replaceFileRef = useRef<HTMLInputElement>(null)
 
   const handleReplace = useCallback(() => {
     replaceFileRef.current?.click()
@@ -82,156 +116,51 @@ export default function AlbumOverview() {
 
   const handleReplaceFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0]
-    if (raw && selectedSlot) {
+    if (raw && hoveredPhoto) {
       const { convertImageFile } = await import('../../lib/photoUtils')
       const f = await convertImageFile(raw).catch(() => raw)
-      replacePhotoInSlotBySpread(selectedSlot.spreadId, selectedSlot.slotId, f)
+      replacePhotoInSlotBySpread(hoveredPhoto.spreadId, hoveredPhoto.slotId, f)
       addToast('התמונה הוחלפה בהצלחה', 'success')
     }
     e.target.value = ''
-  }, [selectedSlot, replacePhotoInSlotBySpread, addToast])
+  }, [hoveredPhoto, replacePhotoInSlotBySpread, addToast])
 
+  // ── Remove photo ──
   const handleRemove = useCallback(() => {
-    if (!selectedSlot) return
-    removePhotoFromSlotBySpread(selectedSlot.spreadId, selectedSlot.slotId)
-    setSelectedSlot(null)
+    if (!hoveredPhoto) return
+    removePhotoFromSlotBySpread(hoveredPhoto.spreadId, hoveredPhoto.slotId)
+    setHoveredPhoto(null)
     addToast('התמונה הוסרה', 'success')
-  }, [selectedSlot, removePhotoFromSlotBySpread, addToast])
+  }, [hoveredPhoto, removePhotoFromSlotBySpread, addToast])
 
-  const handleNavigateFromToolbar = useCallback(() => {
-    if (!selectedSlot) return
-    setCurrentSpread(selectedSlot.spreadIndex)
+  // ── Navigate to spread ──
+  const handleNavigate = useCallback(() => {
+    if (!hoveredPhoto) return
+    setCurrentSpread(hoveredPhoto.spreadIndex)
     toggleOverview()
-  }, [selectedSlot, setCurrentSpread, toggleOverview])
-
-  // ── Background picker state ──
-  const [bgPicker, setBgPicker] = useState<{ spreadId: string; rect: DOMRect } | null>(null)
-
-  const handleOpenBgPicker = useCallback((spreadId: string, rect: DOMRect) => {
-    setBgPicker({ spreadId, rect })
-  }, [])
-
-  const handleCloseBgPicker = useCallback(() => {
-    setBgPicker(null)
-  }, [])
-
-  // ── Drag state (refs for zero-rerender drag tracking) ──
-  const [isDragging, setIsDragging] = useState(false)
-  const [dropTarget, setDropTarget] = useState<{ spreadId: string; slotId: string } | null>(null)
-  const dragRef = useRef<DragPayload | null>(null)
-  const ghostRef = useRef<HTMLDivElement>(null)
-  const ghostOffset = useRef({ x: 0, y: 0 })
-
-  const handleDragStart = useCallback((payload: DragPayload, rect: DOMRect) => {
-    setSelectedSlot(null)
-    dragRef.current = payload
-    ghostOffset.current = { x: rect.width / 2, y: rect.height / 2 }
-    setIsDragging(true)
-  }, [])
-
-  const dropTargetRef = useRef<{ spreadId: string; slotId: string } | null>(null)
-
-  useEffect(() => {
-    if (!isDragging) return
-
-    function findSlotUnderPointer(x: number, y: number) {
-      const elements = document.elementsFromPoint(x, y)
-      for (const el of elements) {
-        const slotId = (el as HTMLElement).dataset?.slotId
-        const spreadId = (el as HTMLElement).dataset?.spreadId
-        if (slotId && spreadId) return { spreadId, slotId }
-      }
-      return null
-    }
-
-    const onMove = (e: PointerEvent) => {
-      if (ghostRef.current) {
-        ghostRef.current.style.transform = `translate(${e.clientX - ghostOffset.current.x}px, ${e.clientY - ghostOffset.current.y}px)`
-      }
-      const hit = findSlotUnderPointer(e.clientX, e.clientY)
-      const prev = dropTargetRef.current
-      if (hit?.slotId !== prev?.slotId || hit?.spreadId !== prev?.spreadId) {
-        dropTargetRef.current = hit
-        setDropTarget(hit)
-      }
-    }
-
-    const onUp = (e: PointerEvent) => {
-      const source = dragRef.current
-      const target = findSlotUnderPointer(e.clientX, e.clientY)
-
-      if (source && target && !(source.spreadId === target.spreadId && source.slotId === target.slotId)) {
-        const tgtSpread = useEditorStore.getState().spreads.find((s) => s.id === target.spreadId)
-        const tgtEl = tgtSpread?.design?.elements.find(
-          (el) => el.type === 'photo' && el.slotId === target.slotId,
-        )
-        const tgtHasPhoto = tgtEl && 'photoUrl' in tgtEl && tgtEl.photoUrl
-
-        if (tgtHasPhoto) {
-          swapPhotosAcrossSpreads(source.spreadId, source.slotId, target.spreadId, target.slotId)
-          addToast('התמונות הוחלפו בהצלחה', 'success')
-        } else {
-          movePhotoToEmptySlot(source.spreadId, source.slotId, target.spreadId, target.slotId)
-          addToast('התמונה הועברה בהצלחה', 'success')
-        }
-      }
-
-      dragRef.current = null
-      dropTargetRef.current = null
-      setIsDragging(false)
-      setDropTarget(null)
-    }
-
-    window.addEventListener('pointermove', onMove, { passive: true })
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
-    return () => {
-      window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
-    }
-  }, [isDragging, swapPhotosAcrossSpreads, movePhotoToEmptySlot, addToast])
+  }, [hoveredPhoto, setCurrentSpread, toggleOverview])
 
   const handleJumpToSpread = useCallback((index: number) => {
     setCurrentSpread(index)
     toggleOverview()
   }, [setCurrentSpread, toggleOverview])
 
-  const handleDelete = useCallback((spreadId: string) => {
-    if (spreads.length <= 1) {
-      addToast('לא ניתן למחוק את העמוד האחרון')
-      return
-    }
-    deleteSpread(spreadId)
-    addToast('העמוד נמחק')
-  }, [spreads.length, deleteSpread, addToast])
-
-  const handleGenerateBg = useCallback((spreadIndex: number) => {
-    setCurrentSpread(spreadIndex)
-    toggleOverview()
-    setTimeout(() => {
-      useEditorStore.setState({ sidebarMode: 'ai' })
-    }, 100)
-  }, [setCurrentSpread, toggleOverview])
-
+  // ── Keyboard ──
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault()
-        if (selectedSlot) { setSelectedSlot(null); return }
-        if (bgPicker) { setBgPicker(null); return }
+        if (swapSource) { cancelSwap(); return }
         toggleOverview()
       }
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [toggleOverview, selectedSlot, bgPicker])
+  }, [toggleOverview, swapSource, cancelSwap])
 
-  const handleBackdropClick = useCallback(() => {
-    if (selectedSlot) { setSelectedSlot(null); return }
-    if (bgPicker) { setBgPicker(null); return }
-    toggleOverview()
-  }, [selectedSlot, bgPicker, toggleOverview])
+  const hintText = swapSource
+    ? 'לחץ על תמונה יעד להחלפה · Esc לביטול'
+    : 'העבר עכבר על תמונה לפעולות · לחץ על עמוד לניווט · Esc לסגירה'
 
   return (
     <motion.div
@@ -249,7 +178,10 @@ export default function AlbumOverview() {
         exit={{ backdropFilter: 'blur(0px)' }}
         transition={{ duration: 0.25 }}
         className="absolute inset-0 bg-[#EEECEA]/95"
-        onClick={handleBackdropClick}
+        onClick={() => {
+          if (swapSource) { cancelSwap(); return }
+          toggleOverview()
+        }}
       />
 
       {/* Header */}
@@ -269,6 +201,18 @@ export default function AlbumOverview() {
           <span className="text-sm text-secondary/50 font-medium">
             {spreads.length} דפים
           </span>
+          {swapSource && (
+            <motion.button
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              type="button"
+              onClick={cancelSwap}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-700 text-[11px] font-semibold hover:bg-amber-100 transition-colors"
+            >
+              <Icon name="close" size={14} />
+              ביטול העברה
+            </motion.button>
+          )}
         </div>
         <motion.button
           type="button"
@@ -282,14 +226,14 @@ export default function AlbumOverview() {
         </motion.button>
       </motion.header>
 
-      {/* Grid */}
+      {/* Grid -- adjusted padding-right for sidebar */}
       <motion.div
-        className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-6"
+        className="relative z-10 flex-1 overflow-y-auto px-4 md:px-8 md:pr-[230px] py-6"
         initial={{ opacity: 0 }}
         animate={{ opacity: gridReady ? 1 : 0 }}
         transition={{ duration: 0.25 }}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-w-[90rem] mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[72rem] mx-auto">
           {spreads.map((spread, i) => (
             <LazyCard key={spread.id} index={i}>
               <OverviewSpreadCard
@@ -297,22 +241,32 @@ export default function AlbumOverview() {
                 index={i}
                 total={spreads.length}
                 isCurrent={i === currentSpreadIndex}
-                dropTargetSlotId={dropTarget?.slotId ?? null}
-                dropTargetSpreadId={dropTarget?.spreadId ?? null}
-                selectedSlot={selectedSlot}
+                activePhotoSlotId={hoveredPhoto?.spreadId === spread.id ? hoveredPhoto.slotId : null}
+                swapTargetMode={!!swapSource}
                 thumbnailLookup={thumbnailLookup}
-                onDragStart={handleDragStart}
+                onHoverPhoto={handleHoverPhoto}
+                onClickSlotForSwap={handleClickSlotForSwap}
                 onJumpToSpread={handleJumpToSpread}
-                onDeleteSpread={handleDelete}
-                onGenerateBg={handleGenerateBg}
-                onOpenBgPicker={handleOpenBgPicker}
-                onSelectSlot={handleSelectSlot}
                 entranceDelay={i < 8 ? i * 0.04 : 0}
               />
             </LazyCard>
           ))}
         </div>
       </motion.div>
+
+      {/* Sidebar */}
+      <AnimatePresence>
+        <OverviewSidebar
+          key="overview-sidebar"
+          selectedPhoto={hoveredPhoto}
+          spreadsCount={spreads.length}
+          onReplace={handleReplace}
+          onRemove={handleRemove}
+          onNavigate={handleNavigate}
+          onStartSwap={handleStartSwap}
+          onClose={toggleOverview}
+        />
+      </AnimatePresence>
 
       {/* Hidden file input for photo replacement */}
       <input
@@ -323,56 +277,6 @@ export default function AlbumOverview() {
         onChange={handleReplaceFile}
       />
 
-      {/* Photo action toolbar */}
-      <AnimatePresence>
-        {selectedSlot && (
-          <OverviewPhotoToolbar
-            key="photo-toolbar"
-            anchorRect={selectedSlot.rect}
-            onReplace={handleReplace}
-            onRemove={handleRemove}
-            onNavigate={handleNavigateFromToolbar}
-            onClose={() => setSelectedSlot(null)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Background color picker */}
-      <AnimatePresence>
-        {bgPicker && (
-          <OverviewBgPicker
-            key="bg-picker"
-            spreadId={bgPicker.spreadId}
-            anchorRect={bgPicker.rect}
-            onClose={handleCloseBgPicker}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Drag ghost */}
-      {isDragging && dragRef.current?.photoUrl && createPortal(
-        <div
-          ref={ghostRef}
-          className="fixed top-0 left-0 z-[999] pointer-events-none"
-          style={{ willChange: 'transform' }}
-        >
-          <motion.div
-            initial={{ scale: 0.9, opacity: 0.8 }}
-            animate={{ scale: 1.05, opacity: 0.95, rotate: 2 }}
-            transition={OVERLAY_SPRING}
-            className="w-24 h-20 rounded-lg overflow-hidden shadow-[0_12px_40px_rgba(45,40,35,0.25)] border-2 border-white"
-          >
-            <img
-              src={dragRef.current.photoUrl}
-              alt=""
-              className="w-full h-full object-cover"
-              draggable={false}
-            />
-          </motion.div>
-        </div>,
-        document.body,
-      )}
-
       {/* Hint bar */}
       <motion.div
         initial={{ opacity: 0, y: 16 }}
@@ -380,7 +284,7 @@ export default function AlbumOverview() {
         transition={{ ...OVERLAY_SPRING, delay: 0.15 }}
         className="relative z-10 text-center py-3 text-[11px] text-secondary/40 font-medium border-t border-black/[0.04]"
       >
-        לחץ על תמונה לעריכה · גרור תמונות בין עמודים · לחיצה כפולה לניווט · Esc לסגירה
+        {hintText}
       </motion.div>
     </motion.div>
   )
