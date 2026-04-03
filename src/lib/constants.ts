@@ -122,6 +122,21 @@ export const SETUP_QUESTIONS = [
   },
 ] as const
 
+export const PREDEFINED_BG_COLORS: { label: string; value: string; gradient: string }[] = [
+  { label: 'לבן', value: '#ffffff', gradient: 'linear-gradient(135deg, #ffffff 0%, #f5f0eb 100%)' },
+  { label: 'קרם', value: '#f5f0eb', gradient: 'linear-gradient(135deg, #faf7f2 0%, #ede5d8 100%)' },
+  { label: 'בז׳', value: '#e8dfd3', gradient: 'linear-gradient(135deg, #efe8de 0%, #d9cfc0 100%)' },
+  { label: 'מרווה', value: '#c5cfc0', gradient: 'linear-gradient(135deg, #d4dccf 0%, #b0bfa8 100%)' },
+  { label: 'אפרסק', value: '#f0d9c8', gradient: 'linear-gradient(135deg, #f7e5d7 0%, #e4c4a8 100%)' },
+  { label: 'תכלת רך', value: '#d4dfe8', gradient: 'linear-gradient(135deg, #e0e9f0 0%, #c0d0de 100%)' },
+  { label: 'לבנדר', value: '#ddd4e8', gradient: 'linear-gradient(135deg, #e8e0f0 0%, #ccc0de 100%)' },
+  { label: 'ורוד רך', value: '#edd6d8', gradient: 'linear-gradient(135deg, #f5e0e2 0%, #e0c4c8 100%)' },
+  { label: 'חול', value: '#d4c8b0', gradient: 'linear-gradient(135deg, #e0d4bc 0%, #c0b498 100%)' },
+  { label: 'אפור רך', value: '#e0ddd8', gradient: 'linear-gradient(135deg, #eae8e4 0%, #d0cdc8 100%)' },
+  { label: 'שמפניה', value: '#f0e8d0', gradient: 'linear-gradient(135deg, #f8f0db 0%, #e5d8b8 100%)' },
+  { label: 'שחור', value: '#2d2824', gradient: 'linear-gradient(135deg, #3a3530 0%, #1e1a16 100%)' },
+]
+
 export const SAMPLE_PHOTOS = Array.from({ length: 24 }, (_, i) => ({
   id: `photo-${i + 1}`,
   thumbnailUrl: `https://picsum.photos/seed/momento${i + 1}/200/200`,

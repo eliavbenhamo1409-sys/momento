@@ -109,6 +109,10 @@ interface EditorState {
   swapPhotosAcrossSpreads: (srcSpreadId: string, srcSlotId: string, tgtSpreadId: string, tgtSlotId: string) => void
   movePhotoToEmptySlot: (srcSpreadId: string, srcSlotId: string, tgtSpreadId: string, tgtSlotId: string) => void
   setPendingPhotoSwap: (source: { spreadId: string; slotId: string } | null) => void
+  replacePhotoInSlotBySpread: (spreadId: string, slotId: string, file: File) => void
+  removePhotoFromSlotBySpread: (spreadId: string, slotId: string) => void
+  setSpreadBgColor: (spreadId: string, color: string) => void
+  setAllSpreadsBgColor: (color: string) => void
 }
 
 export const useEditorStore = create<EditorState>((set) => ({
@@ -789,6 +793,65 @@ export const useEditorStore = create<EditorState>((set) => ({
     }),
 
   setPendingPhotoSwap: (source) => set({ pendingPhotoSwap: source }),
+
+  replacePhotoInSlotBySpread: (spreadId, slotId, file) =>
+    set((s) => {
+      const idx = s.spreads.findIndex((sp) => sp.id === spreadId)
+      if (idx === -1) return s
+      const spread = s.spreads[idx]
+      if (!spread?.design) return s
+
+      const url = URL.createObjectURL(file)
+      const elements = spread.design.elements.map((el) => {
+        if (el.type !== 'photo' || el.slotId !== slotId) return el
+        const photo = el as PhotoElement
+        if (photo.photoUrl?.startsWith('blob:')) URL.revokeObjectURL(photo.photoUrl)
+        return { ...photo, photoUrl: url, photoId: `user-${Date.now()}` }
+      })
+
+      const spreads = [...s.spreads]
+      spreads[idx] = { ...spread, design: { ...spread.design, elements } }
+      return { spreads }
+    }),
+
+  removePhotoFromSlotBySpread: (spreadId, slotId) =>
+    set((s) => {
+      const idx = s.spreads.findIndex((sp) => sp.id === spreadId)
+      if (idx === -1) return s
+      const spread = s.spreads[idx]
+      if (!spread?.design) return s
+
+      const elements = spread.design.elements.map((el) => {
+        if (el.type !== 'photo' || el.slotId !== slotId) return el
+        const photo = el as PhotoElement
+        if (photo.photoUrl?.startsWith('blob:')) URL.revokeObjectURL(photo.photoUrl)
+        return { ...photo, photoUrl: null, photoId: '' }
+      })
+
+      const spreads = [...s.spreads]
+      spreads[idx] = { ...spread, design: { ...spread.design, elements } }
+      return { spreads }
+    }),
+
+  setSpreadBgColor: (spreadId, color) =>
+    set((s) => {
+      const idx = s.spreads.findIndex((sp) => sp.id === spreadId)
+      if (idx === -1) return s
+      const spread = s.spreads[idx]
+      if (!spread?.design) return s
+
+      const spreads = [...s.spreads]
+      spreads[idx] = { ...spread, design: { ...spread.design, background: { ...spread.design.background, color } } }
+      return { spreads }
+    }),
+
+  setAllSpreadsBgColor: (color) =>
+    set((s) => ({
+      spreads: s.spreads.map((sp) => {
+        if (!sp.design) return sp
+        return { ...sp, design: { ...sp.design, background: { ...sp.design.background, color } } }
+      }),
+    })),
 }))
 
 // Preserve state across Vite HMR so the user's work isn't lost when code changes

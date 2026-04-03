@@ -168,10 +168,8 @@ export interface AlbumPerson {
   avatarPhotoId: string
   avatarCropUrl?: string
   avatarObjectPosition?: string
-  /** photoId → thumbnailUrl for panel display */
+  /** photoId → fullUrl (works for both display and spread slot matching) */
   photoUrlLookup?: Record<string, string>
-  /** photoId → fullUrl for matching against spread slots */
-  photoFullUrlLookup?: Record<string, string>
 }
 
 // ─── AI Generation Pipeline Types ───────────────────────────────────

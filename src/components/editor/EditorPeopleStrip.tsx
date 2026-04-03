@@ -287,15 +287,12 @@ function PersonPhotosPanel({
     return () => clearTimeout(t)
   }, [])
 
-  const storePhotos = useAlbumStore((s) => s.photos)
-
   const handleSelect = useCallback(
     (photoId: string) => {
-      const fullUrl = person.photoFullUrlLookup?.[photoId]
-        || storePhotos.find((p) => p.id === photoId)?.fullUrl
-      if (fullUrl) onPhotoSelect(photoId, fullUrl)
+      const url = getPhotoUrl(photoId, person.photoUrlLookup, storeLookup)
+      if (url) onPhotoSelect(photoId, url)
     },
-    [person.photoFullUrlLookup, storePhotos, onPhotoSelect],
+    [person.photoUrlLookup, storeLookup, onPhotoSelect],
   )
 
   return (
@@ -413,8 +410,8 @@ export default function EditorPeopleStrip() {
   const storeLookup = useMemo(() => {
     const map = new Map<string, string>()
     for (const p of storePhotos) {
-      if (p.thumbnailUrl) map.set(p.id, p.thumbnailUrl)
-      else if (p.fullUrl) map.set(p.id, p.fullUrl)
+      if (p.fullUrl) map.set(p.id, p.fullUrl)
+      else if (p.thumbnailUrl) map.set(p.id, p.thumbnailUrl)
     }
     return map
   }, [storePhotos])
