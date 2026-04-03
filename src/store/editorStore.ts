@@ -111,6 +111,7 @@ interface EditorState {
   setPendingPhotoSwap: (source: { spreadId: string; slotId: string } | null) => void
   replacePhotoInSlotBySpread: (spreadId: string, slotId: string, file: File) => void
   removePhotoFromSlotBySpread: (spreadId: string, slotId: string) => void
+  removePhotoSlotBySpread: (spreadId: string, slotId: string) => void
   setSpreadBgColor: (spreadId: string, color: string) => void
   setAllSpreadsBgColor: (color: string) => void
 }
@@ -828,6 +829,25 @@ export const useEditorStore = create<EditorState>((set) => ({
         return { ...photo, photoUrl: null, photoId: '' }
       })
 
+      const spreads = [...s.spreads]
+      spreads[idx] = { ...spread, design: { ...spread.design, elements } }
+      return { spreads }
+    }),
+
+  removePhotoSlotBySpread: (spreadId, slotId) =>
+    set((s) => {
+      const idx = s.spreads.findIndex((sp) => sp.id === spreadId)
+      if (idx === -1) return s
+      const spread = s.spreads[idx]
+      if (!spread?.design) return s
+
+      const el = spread.design.elements.find((e) => e.type === 'photo' && e.slotId === slotId)
+      if (!el) return s
+      if ('photoUrl' in el && (el as PhotoElement).photoUrl?.startsWith('blob:')) {
+        URL.revokeObjectURL((el as PhotoElement).photoUrl!)
+      }
+
+      const elements = spread.design.elements.filter((e) => !(e.type === 'photo' && e.slotId === slotId))
       const spreads = [...s.spreads]
       spreads[idx] = { ...spread, design: { ...spread.design, elements } }
       return { spreads }

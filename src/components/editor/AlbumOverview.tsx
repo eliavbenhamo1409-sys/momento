@@ -55,6 +55,7 @@ export default function AlbumOverview() {
   const movePhotoToEmptySlot = useEditorStore((s) => s.movePhotoToEmptySlot)
   const deleteSpread = useEditorStore((s) => s.deleteSpread)
   const setSpreadBgColor = useEditorStore((s) => s.setSpreadBgColor)
+  const removePhotoSlotBySpread = useEditorStore((s) => s.removePhotoSlotBySpread)
   const addToast = useUIStore((s) => s.addToast)
 
   const thumbnailLookup = useMemo(() => {
@@ -168,6 +169,11 @@ export default function AlbumOverview() {
     pendingReplace.current = null
     e.target.value = ''
   }, [replacePhotoInSlotBySpread, addToast])
+
+  const handleRemoveSlot = useCallback((spreadId: string, slotId: string) => {
+    removePhotoSlotBySpread(spreadId, slotId)
+    addToast('המשבצת הוסרה', 'success')
+  }, [removePhotoSlotBySpread, addToast])
 
   const handleJumpToSpread = useCallback((index: number) => {
     setCurrentSpread(index)
@@ -301,6 +307,7 @@ export default function AlbumOverview() {
                 thumbnailLookup={thumbnailLookup}
                 onClickPhoto={handleClickPhoto}
                 onClickSpread={handleClickSpread}
+                onRemoveSlot={handleRemoveSlot}
                 onJumpToSpread={handleJumpToSpread}
                 entranceDelay={i < 8 ? i * 0.04 : 0}
               />

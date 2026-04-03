@@ -21,6 +21,7 @@ interface Props {
   thumbnailLookup: Record<string, string>
   onClickPhoto: (spreadId: string, slotId: string, spreadIndex: number) => void
   onClickSpread: (spreadId: string, spreadIndex: number) => void
+  onRemoveSlot: (spreadId: string, slotId: string) => void
   onJumpToSpread: (index: number) => void
   entranceDelay: number
 }
@@ -43,6 +44,7 @@ function PhotoSlot({
   isSwapSource,
   thumbnailUrl,
   onClick,
+  onRemoveSlot,
 }: {
   element: PhotoElement
   spreadId: string
@@ -51,6 +53,7 @@ function PhotoSlot({
   isSwapSource: boolean
   thumbnailUrl: string | null
   onClick: (spreadId: string, slotId: string, spreadIndex: number) => void
+  onRemoveSlot: (spreadId: string, slotId: string) => void
 }) {
   const hasPhoto = !!element.photoUrl
   const [imgLoaded, setImgLoaded] = useState(false)
@@ -63,7 +66,7 @@ function PhotoSlot({
 
   return (
     <div
-      className={`absolute overflow-hidden transition-all duration-150 ${
+      className={`absolute overflow-hidden transition-all duration-150 group/slot ${
         clickable ? 'cursor-pointer' : ''
       }`}
       style={{
@@ -110,6 +113,14 @@ function PhotoSlot({
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-black/[0.03] border border-dashed border-black/[0.08] rounded-[inherit]">
           <Icon name="add_photo_alternate" size={14} className="text-secondary/25" />
+          {/* Red X to remove empty slot on hover */}
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); onRemoveSlot(spreadId, element.slotId) }}
+            className="absolute top-1 left-1 w-5 h-5 rounded-full bg-error/80 hover:bg-error flex items-center justify-center shadow-sm opacity-0 group-hover/slot:opacity-100 transition-all duration-200 z-20"
+          >
+            <Icon name="close" size={11} className="text-white" />
+          </button>
         </div>
       )}
 
@@ -147,6 +158,7 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
   thumbnailLookup,
   onClickPhoto,
   onClickSpread,
+  onRemoveSlot,
   onJumpToSpread,
   entranceDelay,
 }: Props) {
@@ -249,6 +261,7 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
                 isSwapSource={swapSourceSlotId === el.slotId}
                 thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
                 onClick={onClickPhoto}
+                onRemoveSlot={onRemoveSlot}
               />
             ))
           ) : (
@@ -273,6 +286,7 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
                 isSwapSource={swapSourceSlotId === el.slotId}
                 thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
                 onClick={onClickPhoto}
+                onRemoveSlot={onRemoveSlot}
               />
             ))
           ) : (
