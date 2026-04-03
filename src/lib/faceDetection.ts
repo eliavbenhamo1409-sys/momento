@@ -4,6 +4,7 @@ import type { Photo, AlbumPerson } from '../types'
 
 export interface DetectedFace {
   photoId: string
+  photoUrl: string
   box: [number, number, number, number]
   embedding: number[]
   cropDataUrl: string
@@ -143,6 +144,7 @@ export async function detectFacesInPhotos(
           const cropUrl = cropFace(img, face.box, scale)
           all.push({
             photoId: photo.id,
+            photoUrl: photo.thumbnailUrl || photo.fullUrl,
             box: face.box,
             embedding: face.embedding,
             cropDataUrl: cropUrl,
@@ -225,6 +227,7 @@ export function clusterFaces(
 
   const people: AlbumPerson[] = []
   const unidentifiedPhotoIds = new Set<string>()
+  const unidentifiedUrlLookup: Record<string, string> = {}
   let unidentifiedCrop: string | undefined
   let unidentifiedAvatarId: string | undefined
 
@@ -238,8 +241,14 @@ export function clusterFaces(
       return bArea > aArea ? b : a
     })
 
+    const urlLookup: Record<string, string> = {}
+    for (const f of cluster) urlLookup[f.photoId] = f.photoUrl
+
     if (photoIds.length < MIN_PHOTOS_FOR_PERSON) {
-      for (const pid of photoIds) unidentifiedPhotoIds.add(pid)
+      for (const pid of photoIds) {
+        unidentifiedPhotoIds.add(pid)
+        unidentifiedUrlLookup[pid] = urlLookup[pid]
+      }
       if (!unidentifiedCrop) {
         unidentifiedCrop = best.cropDataUrl
         unidentifiedAvatarId = best.photoId
@@ -257,6 +266,7 @@ export function clusterFaces(
       photoIds,
       avatarPhotoId: best.photoId,
       avatarCropUrl: best.cropDataUrl,
+      photoUrlLookup: urlLookup,
     })
   }
 
@@ -269,6 +279,7 @@ export function clusterFaces(
       photoIds: [...unidentifiedPhotoIds],
       avatarPhotoId: unidentifiedAvatarId || '',
       avatarCropUrl: unidentifiedCrop,
+      photoUrlLookup: unidentifiedUrlLookup,
     })
   }
 

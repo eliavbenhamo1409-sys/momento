@@ -7,14 +7,6 @@ import type { AlbumPerson, PhotoElement, EditorSpread } from '../../types'
 
 /* ─── Helpers ────────────────────────────────────────────────────────── */
 
-function buildPhotoIdToUrl(photos: { id: string; thumbnailUrl: string; fullUrl: string }[]): Map<string, string> {
-  const map = new Map<string, string>()
-  for (const p of photos) {
-    map.set(p.id, p.thumbnailUrl || p.fullUrl)
-  }
-  return map
-}
-
 function findSlotForPhotoUrl(
   spreads: EditorSpread[],
   targetUrl: string,
@@ -32,6 +24,19 @@ function findSlotForPhotoUrl(
     }
   }
   return null
+}
+
+/**
+ * Build a comprehensive URL lookup for a person by merging:
+ * 1. person.photoUrlLookup (embedded at detection time — primary)
+ * 2. album store photos (fallback for any missing IDs)
+ */
+function getPhotoUrl(
+  photoId: string,
+  personLookup: Record<string, string> | undefined,
+  storeLookup: Map<string, string>,
+): string | undefined {
+  return personLookup?.[photoId] || storeLookup.get(photoId)
 }
 
 /* ─── Editable Name ──────────────────────────────────────────────────── */
@@ -104,7 +109,6 @@ function EditableName({
 
 function PersonCircle({
   person,
-  fallbackUrl,
   isSelected,
   onClick,
   editingNameId,
@@ -112,14 +116,13 @@ function PersonCircle({
   onFinishEditName,
 }: {
   person: AlbumPerson
-  fallbackUrl: string | undefined
   isSelected: boolean
   onClick: () => void
   editingNameId: string | null
   onStartEditName: (id: string) => void
   onFinishEditName: () => void
 }) {
-  const avatarSrc = person.avatarCropUrl || fallbackUrl
+  const avatarSrc = person.avatarCropUrl
   const isUnidentified = person.displayName === 'לא מזוהה'
 
   return (
@@ -207,7 +210,7 @@ function SwapActiveBanner({ onCancel }: { onCancel: () => void }) {
   )
 }
 
-/* ─── Photo Thumbnail (pure CSS transitions, no per-element Framer) ── */
+/* ─── Photo Thumbnail ─────────────────────────────────────────────────── */
 
 function PhotoThumb({
   photoId,
@@ -255,26 +258,29 @@ function PhotoThumb({
 
 function PersonPhotosPanel({
   person,
-  photoUrlMap,
+  storeLookup,
+  spreads,
   onPhotoSelect,
   selectedPhotoId,
   onClose,
 }: {
   person: AlbumPerson
-  photoUrlMap: Map<string, string>
-  onPhotoSelect: (photoId: string) => void
+  storeLookup: Map<string, string>
+  spreads: EditorSpread[]
+  onPhotoSelect: (photoId: string, photoUrl: string) => void
   selectedPhotoId: string | null
   onClose: () => void
 }) {
-  const photos = useMemo(
-    () =>
-      person.photoIds
-        .map((id) => ({ id, url: photoUrlMap.get(id) }))
-        .filter((p): p is { id: string; url: string } => !!p.url),
-    [person.photoIds, photoUrlMap],
-  )
+  const photos = useMemo(() => {
+    const result: { id: string; url: string }[] = []
+    for (const id of person.photoIds) {
+      const url = getPhotoUrl(id, person.photoUrlLookup, storeLookup)
+      if (url) result.push({ id, url })
+    }
+    return result
+  }, [person, storeLookup])
 
-  const avatarSrc = person.avatarCropUrl || photoUrlMap.get(person.avatarPhotoId)
+  const avatarSrc = person.avatarCropUrl
 
   const [phase, setPhase] = useState<'loading' | 'revealed'>('loading')
 
@@ -282,6 +288,14 @@ function PersonPhotosPanel({
     const t = setTimeout(() => setPhase('revealed'), 350)
     return () => clearTimeout(t)
   }, [])
+
+  const handleSelect = useCallback(
+    (photoId: string) => {
+      const url = getPhotoUrl(photoId, person.photoUrlLookup, storeLookup)
+      if (url) onPhotoSelect(photoId, url)
+    },
+    [person.photoUrlLookup, storeLookup, onPhotoSelect],
+  )
 
   return (
     <motion.div
@@ -367,7 +381,7 @@ function PersonPhotosPanel({
                   isChosen={selectedPhotoId === photo.id}
                   isRevealed={phase === 'revealed'}
                   revealDelay={Math.min(i * 20, 400)}
-                  onSelect={onPhotoSelect}
+                  onSelect={handleSelect}
                 />
               ))}
             </div>
@@ -395,7 +409,14 @@ export default function EditorPeopleStrip() {
 
   const lastSwapPersonRef = useRef<string | null>(null)
 
-  const photoUrlMap = useMemo(() => buildPhotoIdToUrl(storePhotos), [storePhotos])
+  const storeLookup = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const p of storePhotos) {
+      if (p.thumbnailUrl) map.set(p.id, p.thumbnailUrl)
+      else if (p.fullUrl) map.set(p.id, p.fullUrl)
+    }
+    return map
+  }, [storePhotos])
 
   const handlePersonClick = useCallback((person: AlbumPerson) => {
     setSelectedPersonId((prev) => (prev === person.id ? null : person.id))
@@ -404,24 +425,30 @@ export default function EditorPeopleStrip() {
   }, [setPendingPhotoSwap])
 
   const handlePhotoSelect = useCallback(
-    (photoId: string) => {
-      const url = photoUrlMap.get(photoId)
-      if (!url) return
-
+    (photoId: string, photoUrl: string) => {
       if (chosenPhotoId === photoId) {
         setChosenPhotoId(null)
         setPendingPhotoSwap(null)
         return
       }
 
-      const slot = findSlotForPhotoUrl(spreads, url)
-      if (!slot) return
+      const slot = findSlotForPhotoUrl(spreads, photoUrl)
+      if (!slot) {
+        const storePhoto = storePhotos.find((p) => p.id === photoId)
+        const altUrl = storePhoto?.fullUrl
+        const altSlot = altUrl ? findSlotForPhotoUrl(spreads, altUrl) : null
+        if (!altSlot) return
+        lastSwapPersonRef.current = selectedPersonId
+        setChosenPhotoId(photoId)
+        setPendingPhotoSwap({ spreadId: altSlot.spreadId, slotId: altSlot.slotId })
+        return
+      }
 
       lastSwapPersonRef.current = selectedPersonId
       setChosenPhotoId(photoId)
       setPendingPhotoSwap({ spreadId: slot.spreadId, slotId: slot.slotId })
     },
-    [spreads, photoUrlMap, chosenPhotoId, selectedPersonId, setPendingPhotoSwap],
+    [spreads, storePhotos, chosenPhotoId, selectedPersonId, setPendingPhotoSwap],
   )
 
   const handleCancelSwap = useCallback(() => {
@@ -471,7 +498,6 @@ export default function EditorPeopleStrip() {
           >
             <PersonCircle
               person={person}
-              fallbackUrl={photoUrlMap.get(person.avatarPhotoId)}
               isSelected={selectedPersonId === person.id}
               onClick={() => handlePersonClick(person)}
               editingNameId={editingNameId}
@@ -487,7 +513,8 @@ export default function EditorPeopleStrip() {
           <PersonPhotosPanel
             key={`panel-${selectedPerson.id}`}
             person={selectedPerson}
-            photoUrlMap={photoUrlMap}
+            storeLookup={storeLookup}
+            spreads={spreads}
             onPhotoSelect={handlePhotoSelect}
             selectedPhotoId={chosenPhotoId}
             onClose={handleClose}
