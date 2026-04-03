@@ -43,10 +43,14 @@ async function getHuman() {
   } as import('@vladmandic/human').Config)
 
   await humanInstance.load()
+  await humanInstance.warmup()
   return humanInstance
 }
 
 /* ─── Image helpers ──────────────────────────────────────────────────── */
+
+const DETECT_MAX_DIM = 1280
+const CROP_SIZE = 128
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -58,13 +62,34 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-const CROP_SIZE = 128
+/**
+ * Resize an image for WebGL detection — caps at DETECT_MAX_DIM on longest side.
+ * Returns the canvas and the scale factor used.
+ */
+function resizeForDetection(img: HTMLImageElement): { canvas: HTMLCanvasElement; scale: number } {
+  const { naturalWidth: w, naturalHeight: h } = img
+  const scale = Math.min(1, DETECT_MAX_DIM / Math.max(w, h))
+  const cw = Math.round(w * scale)
+  const ch = Math.round(h * scale)
 
+  const canvas = document.createElement('canvas')
+  canvas.width = cw
+  canvas.height = ch
+  const ctx = canvas.getContext('2d')!
+  ctx.drawImage(img, 0, 0, cw, ch)
+  return { canvas, scale }
+}
+
+/**
+ * Crop face region from the ORIGINAL (non-resized) image.
+ * `box` is in resized coords, `scale` maps back to original.
+ */
 function cropFace(
-  img: HTMLImageElement,
+  origImg: HTMLImageElement,
   box: [number, number, number, number],
+  scale: number,
 ): string {
-  const [bx, by, bw, bh] = box
+  const [bx, by, bw, bh] = box.map((v) => v / scale)
 
   const pad = Math.max(bw, bh) * 0.4
   const cx = bx + bw / 2
@@ -72,14 +97,14 @@ function cropFace(
   const side = Math.max(bw, bh) + pad * 2
   const sx = Math.max(0, cx - side / 2)
   const sy = Math.max(0, cy - side / 2)
-  const sw = Math.min(side, img.naturalWidth - sx)
-  const sh = Math.min(side, img.naturalHeight - sy)
+  const sw = Math.min(side, origImg.naturalWidth - sx)
+  const sh = Math.min(side, origImg.naturalHeight - sy)
 
   const canvas = document.createElement('canvas')
   canvas.width = CROP_SIZE
   canvas.height = CROP_SIZE
   const ctx = canvas.getContext('2d')!
-  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, CROP_SIZE, CROP_SIZE)
+  ctx.drawImage(origImg, sx, sy, sw, sh, 0, 0, CROP_SIZE, CROP_SIZE)
   return canvas.toDataURL('image/jpeg', 0.88)
 }
 
@@ -92,6 +117,10 @@ export async function detectFacesInPhotos(
   const human = await getHuman()
   const all: DetectedFace[] = []
 
+  let loadFailures = 0
+  let detectFailures = 0
+  let noEmbeddings = 0
+
   for (let i = 0; i < photos.length; i++) {
     const photo = photos[i]
     const url = photo.fullUrl || photo.thumbnailUrl
@@ -99,14 +128,19 @@ export async function detectFacesInPhotos(
 
     try {
       const img = await loadImage(url)
-      const result = await human.detect(img)
+      const { canvas, scale } = resizeForDetection(img)
 
-      if (result.face) {
+      const result = await human.detect(canvas)
+
+      if (result.face && result.face.length > 0) {
         for (const face of result.face) {
-          if (!face.embedding || face.embedding.length === 0) continue
+          if (!face.embedding || face.embedding.length === 0) {
+            noEmbeddings++
+            continue
+          }
           if ((face.score ?? 0) < 0.3) continue
 
-          const cropUrl = cropFace(img, face.box)
+          const cropUrl = cropFace(img, face.box, scale)
           all.push({
             photoId: photo.id,
             box: face.box,
@@ -114,13 +148,21 @@ export async function detectFacesInPhotos(
             cropDataUrl: cropUrl,
           })
         }
+      } else {
+        detectFailures++
       }
     } catch (err) {
+      loadFailures++
       console.warn(`[FaceDetection] Failed for photo ${photo.id}:`, err)
     }
 
     onProgress?.(i + 1, photos.length)
   }
+
+  console.log(
+    `[FaceDetection] Summary: ${all.length} faces from ${photos.length} photos ` +
+    `(${loadFailures} load failures, ${detectFailures} no-face, ${noEmbeddings} no-embedding)`
+  )
 
   return all
 }
