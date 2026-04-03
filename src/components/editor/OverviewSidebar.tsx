@@ -1,10 +1,9 @@
-import { useRef, useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useUIStore } from '../../store/uiStore'
 import { PREDEFINED_BG_COLORS } from '../../lib/constants'
 import Icon from '../shared/Icon'
-import type { PhotoElement } from '../../types'
 
 const PANEL_SPRING = { type: 'spring' as const, stiffness: 500, damping: 35, mass: 0.7 }
 
