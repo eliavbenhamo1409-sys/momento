@@ -87,7 +87,7 @@ export default function AlbumOverview() {
   }, [])
 
   // ── Photo click handler — dispatches based on active mode ──
-  const handleClickPhoto = useCallback((spreadId: string, slotId: string, spreadIndex: number) => {
+  const handleClickPhoto = useCallback((spreadId: string, slotId: string, _spreadIndex: number) => {
     switch (mode) {
       case 'replace': {
         pendingReplace.current = { spreadId, slotId }

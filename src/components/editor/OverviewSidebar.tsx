@@ -133,10 +133,10 @@ function BgColorPanel({ onSelectColor, onApplyAll, onClose }: {
 
 export default function OverviewSidebar({
   activeMode,
-  spreadsCount,
+  spreadsCount: _spreadsCount,
   onSetMode,
   onSelectBgColor,
-  onClose,
+  onClose: _onClose,
 }: Props) {
   const addSpread = useEditorStore((s) => s.addSpread)
   const setAllSpreadsBgColor = useEditorStore((s) => s.setAllSpreadsBgColor)
