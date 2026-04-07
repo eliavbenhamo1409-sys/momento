@@ -74,6 +74,11 @@ export interface SpreadDesignBackground {
   /** AI-generated background for right page only */
   generatedBgRightUrl?: string
   generatedBgRightOpacity?: number
+  /**
+   * Stacking vs spread elements (photos, text). Default 0 = behind typical element z (2+).
+   * Raised with שכבות panel so AI/gradient/blur can sit above or below content.
+   */
+  backgroundStackZIndex?: number
 }
 
 export interface SpreadDesign {

@@ -70,12 +70,17 @@ function Separator() {
 }
 
 function LayersPanel({ onClose }: { onClose: () => void }) {
-  const elements = useEditorStore((s) => {
-    const spread = s.spreads[s.currentSpreadIndex]
-    return spread?.design?.elements ?? []
-  })
+  const design = useEditorStore((s) => s.spreads[s.currentSpreadIndex]?.design)
+  const elements = design?.elements ?? []
   const moveLayer = useEditorStore((s) => s.moveElementLayer)
+  const moveBackgroundStackZ = useEditorStore((s) => s.moveBackgroundStackZ)
   const selectPhoto = useEditorStore((s) => s.selectPhoto)
+
+  const bgZ = design?.background.backgroundStackZIndex ?? 0
+  const bg = design?.background
+  const bgThumb =
+    bg?.generatedBgUrl || bg?.generatedBgLeftUrl || bg?.generatedBgRightUrl || null
+  const bgSwatch = bg?.color ?? '#f5f0eb'
 
   return (
     <motion.div
@@ -103,6 +108,64 @@ function LayersPanel({ onClose }: { onClose: () => void }) {
           <Icon name="close" size={16} />
         </button>
       </div>
+
+      {design && (
+        <>
+          <p className="text-[9px] text-secondary/50 leading-snug mb-2 px-0.5">
+            הרקע (צבע, AI, טקסטורות) משתתף בסדר השכבות מול תמונות וטקסט. החצים מזיזים אותו קדימה או אחורה.
+          </p>
+          <div
+            className="flex items-center gap-2 px-2 py-2 rounded-xl bg-surface-container-low/70 border border-black/[0.05] mb-2"
+            role="group"
+            aria-label="שכבת רקע"
+          >
+            {bgThumb ? (
+              <div className="w-8 h-8 rounded-md overflow-hidden shrink-0 bg-surface-container-low ring-1 ring-black/[0.06]">
+                <img src={bgThumb} alt="" className="w-full h-full object-cover" />
+              </div>
+            ) : (
+              <div
+                className="w-8 h-8 rounded-md shrink-0 ring-1 ring-black/[0.08]"
+                style={{ backgroundColor: bgSwatch }}
+                aria-hidden
+              />
+            )}
+            <div className="flex flex-col flex-1 min-w-0 gap-0.5">
+              <span className="text-[11px] font-semibold text-on-surface truncate">רקע</span>
+              <span className="text-[9px] text-secondary/45 tabular-nums">עומק {bgZ}</span>
+            </div>
+            <div className="flex gap-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => moveBackgroundStackZ('up')}
+                disabled={bgZ >= 80}
+                title="הרקע קדימה (מעל שכבות עם עומק נמוך יותר)"
+                aria-label="הזז רקע קדימה"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-secondary/60 hover:bg-white/80 border border-transparent hover:border-black/[0.06] disabled:opacity-25 transition-colors"
+              >
+                <Icon name="arrow_upward" size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => moveBackgroundStackZ('down')}
+                disabled={bgZ <= 0}
+                title="הרקע אחורה (מתחת לשכבות עם עומק גבוה יותר)"
+                aria-label="הזז רקע אחורה"
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-secondary/60 hover:bg-white/80 border border-transparent hover:border-black/[0.06] disabled:opacity-25 transition-colors"
+              >
+                <Icon name="arrow_downward" size={14} />
+              </button>
+            </div>
+          </div>
+
+          <div
+            className="text-[9px] font-bold text-secondary/40 uppercase tracking-wide mb-1.5 px-1"
+            style={{ fontFamily: 'var(--font-family-headline)' }}
+          >
+            תוכן העמוד
+          </div>
+        </>
+      )}
 
       <div className="flex flex-col gap-1">
         {[...elements].reverse().map((el, revIdx) => {

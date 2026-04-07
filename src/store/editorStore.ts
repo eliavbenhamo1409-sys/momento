@@ -89,6 +89,8 @@ interface EditorState {
   updatePhotoScale: (slotId: string, scale: number) => void
   updatePhotoPadding: (slotId: string, padding: number) => void
   moveElementLayer: (elementIndex: number, direction: 'up' | 'down') => void
+  /** Nudge design background stack vs elements (z-index). */
+  moveBackgroundStackZ: (direction: 'up' | 'down') => void
   removePhotoFromSlot: (slotId: string) => void
   changeSpreadTemplate: (templateId: string) => void
   addTextToSpread: (text: string, fontFamily: string) => void
@@ -417,6 +419,29 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const spreads = [...s.spreads]
       spreads[idx] = { ...spread, design: { ...spread.design, elements } }
+      return { spreads }
+    }),
+
+  moveBackgroundStackZ: (direction) =>
+    set((s) => {
+      const idx = s.currentSpreadIndex
+      const spread = s.spreads[idx]
+      if (!spread?.design) return s
+
+      const bg = spread.design.background
+      let z = bg.backgroundStackZIndex ?? 0
+      const maxZ = 80
+      if (direction === 'up') z = Math.min(z + 1, maxZ)
+      else z = Math.max(z - 1, 0)
+
+      const spreads = [...s.spreads]
+      spreads[idx] = {
+        ...spread,
+        design: {
+          ...spread.design,
+          background: { ...bg, backgroundStackZIndex: z },
+        },
+      }
       return { spreads }
     }),
 

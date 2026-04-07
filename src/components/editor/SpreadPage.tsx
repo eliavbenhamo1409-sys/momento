@@ -47,8 +47,12 @@ function PageBackground({
 
   if (design) {
     const bg = design.background
+    const stackZ = bg.backgroundStackZIndex ?? 0
     return (
-      <>
+      <div
+        className="absolute inset-0 pointer-events-none overflow-hidden"
+        style={{ zIndex: stackZ }}
+      >
         {bg.generatedBgUrl && (
           <div
             className="absolute inset-0 z-0 pointer-events-none overflow-hidden"
@@ -168,7 +172,7 @@ function PageBackground({
             }}
           />
         )}
-      </>
+      </div>
     )
   }
 
