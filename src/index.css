@@ -309,6 +309,12 @@ body {
 .shadow-overview-card-hover   { box-shadow: 0 6px 20px rgba(45,40,35,0.10); }
 .shadow-overview-card-active  { box-shadow: 0 4px 20px rgba(96,92,72,0.12); }
 
+/* ── cover-active: hide flipbook so dot-grid background shows ──── */
+.book-cover-active .album-flipbook {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ── page-flip library overrides ────────────────────────────────── */
 .album-flipbook .stf__parent {
   position: relative !important;

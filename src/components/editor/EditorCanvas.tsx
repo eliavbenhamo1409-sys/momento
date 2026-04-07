@@ -1909,7 +1909,7 @@ export default function EditorCanvas() {
 
       <div
         dir="rtl"
-        className="flex items-center justify-center gap-2 sm:gap-4 md:gap-5 w-full max-w-[min(94vw,78rem)] mx-auto relative z-10"
+        className={`flex items-center justify-center gap-2 sm:gap-4 md:gap-5 w-full max-w-[min(94vw,78rem)] mx-auto relative z-10${coverView !== 'none' ? ' book-cover-active' : ''}`}
       >
         <SpreadNavArrow
           direction="prev"
