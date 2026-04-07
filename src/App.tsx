@@ -15,6 +15,9 @@ import TermsPage from './screens/TermsPage'
 import CookiesPage from './screens/CookiesPage'
 import AuthModal from './components/auth/AuthModal'
 import ToastContainer from './components/shared/ToastContainer'
+import AdminLayout from './admin/AdminLayout'
+import AdminDashboard from './admin/AdminDashboard'
+import AdminOrderDetail from './admin/AdminOrderDetail'
 
 export default function App() {
   const location = useLocation()
@@ -37,6 +40,11 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiesPage />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="orders" element={<AdminDashboard />} />
+            <Route path="orders/:orderId" element={<AdminOrderDetail />} />
+          </Route>
         </Routes>
       </AnimatePresence>
       <AuthModal />
