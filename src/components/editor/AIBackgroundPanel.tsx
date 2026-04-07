@@ -387,90 +387,139 @@ export default function AIBackgroundPanel({
               )}
             </motion.button>
 
-            {/* Album-wide actions */}
-            <div className="mb-4 rounded-xl border border-black/[0.06] bg-surface-container-low/40 p-3 flex flex-col gap-2">
-              <span
-                className="text-[9px] font-bold text-secondary/50 tracking-wide"
-                style={{ fontFamily: 'var(--font-family-headline)' }}
+            {/* Hint before any preview — sets expectation */}
+            {!previewUrl && (
+              <p
+                className={`text-[10px] leading-relaxed text-center px-1 mb-1 ${
+                  isGenerating ? 'text-secondary/40' : 'text-secondary/55'
+                }`}
               >
-                כל האלבום
-              </span>
-              <motion.button
-                type="button"
-                whileHover={{ scale: !previewUrl || isBusy ? 1 : 1.01 }}
-                whileTap={{ scale: !previewUrl || isBusy ? 1 : 0.99 }}
-                onClick={handleApplySameToAll}
-                disabled={!previewUrl || isBusy}
-                className="w-full py-2 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-2 bg-white border border-black/[0.08] text-on-surface shadow-sm hover:bg-surface-container-high/50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
-              >
-                <Icon name="copy_all" size={16} className="text-primary/80" />
-                החל את אותו הרקע על כל הדפים
-              </motion.button>
-              <p className="text-[9px] text-secondary/45 leading-snug px-0.5 -mt-1 mb-0">
-                משכפל את תצוגת המקדימה הנוכחית לכל הדפים (אותה תמונה בדיוק).
+                {isGenerating
+                  ? 'יוצרים תצוגה מקדימה… מיד אחריה יופיעו כאן אפשרויות להחלה על כל האלבום.'
+                  : 'לאחר יצירת תצוגה מקדימה יופיעו כאן שתי אפשרויות: להעתיק את אותו הרקע לכל הדפים, או ליצור רקע ייחודי בכל דף לפי אותו תיאור.'}
               </p>
-              <motion.button
-                type="button"
-                whileHover={{ scale: !prompt.trim() || isBusy ? 1 : 1.01 }}
-                whileTap={{ scale: !prompt.trim() || isBusy ? 1 : 0.99 }}
-                onClick={handleApplyStyledToAll}
-                disabled={!prompt.trim() || isBusy}
-                className="w-full py-2 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-2 bg-gradient-to-r from-primary/12 to-primary/8 text-primary border border-primary/20 hover:from-primary/18 hover:to-primary/12 transition-colors disabled:opacity-40 disabled:pointer-events-none"
-              >
-                <Icon name="auto_awesome" size={16} />
-                {isBatchStyling && batchProgress
-                  ? `יוצר רקעים… ${batchProgress.done}/${batchProgress.total}`
-                  : 'צור רקע בסגנון זה לכל הדפים (שונה בכל דף)'}
-              </motion.button>
-              <p className="text-[9px] text-secondary/45 leading-snug px-0.5 -mt-1">
-                לפי התיאור למעלה — יצירה נפרדת לכל דף, באותו סגנון וצבעוניות אך קומפוזיציה שונה.
-              </p>
-            </div>
+            )}
 
-            {/* Preview */}
+            {/* Preview + actions (album-wide only after image exists) */}
             <AnimatePresence>
               {previewUrl && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -4 }}
-                  className="flex flex-col gap-3"
+                  className="flex flex-col gap-4"
                 >
-                  <span className="text-[10px] text-secondary/50 font-semibold tracking-wide">תצוגה מקדימה — הדף הנבחר</span>
-                  <div
-                    className="w-full rounded-xl overflow-hidden shadow-md border border-black/[0.04]"
-                    style={{ aspectRatio: selectedTarget.ratio === '16:9' ? '16/9' : '1/1' }}
+                  <div className="flex flex-col gap-1.5">
+                    <span
+                      className="text-[11px] font-bold text-on-surface/90"
+                      style={{ fontFamily: 'var(--font-family-headline)' }}
+                    >
+                      תצוגה מקדימה
+                    </span>
+                    <p className="text-[10px] text-secondary/50 leading-snug">
+                      לדף שבחרת במבט על. לחיצה על דף אחר ברשת מעדכנת את היעד.
+                    </p>
+                    <div
+                      className="w-full rounded-xl overflow-hidden shadow-md border border-black/[0.06] mt-1"
+                      style={{ aspectRatio: selectedTarget.ratio === '16:9' ? '16/9' : '1/1' }}
+                    >
+                      <img
+                        src={previewUrl}
+                        alt="תצוגת רקע שנוצרה ב-AI"
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Step 1 — current spread */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-[10px] font-semibold text-secondary/60 uppercase tracking-wide">
+                      שלב 1 · רק הדף הזה
+                    </span>
+                    <div className="flex gap-2">
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: isBusy ? 1 : 1.02 }}
+                        whileTap={{ scale: isBusy ? 1 : 0.98 }}
+                        onClick={handleApply}
+                        disabled={isBusy}
+                        aria-label="החל את הרקע המוצג רק על הדף הנבחר"
+                        className="flex-1 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm disabled:opacity-40"
+                      >
+                        <Icon name="check" size={16} />
+                        החל על הדף הזה בלבד
+                      </motion.button>
+                      <motion.button
+                        type="button"
+                        whileHover={{ scale: isBusy ? 1 : 1.02 }}
+                        whileTap={{ scale: isBusy ? 1 : 0.98 }}
+                        onClick={handleGenerate}
+                        disabled={isBusy}
+                        aria-label="צור תצוגה מקדימה חדשה עם אותו תיאור"
+                        className="px-4 py-2.5 bg-surface-container-low rounded-xl text-sm font-semibold text-secondary/70 flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors disabled:opacity-40 shrink-0"
+                      >
+                        <Icon name="refresh" size={16} />
+                        מחדש
+                      </motion.button>
+                    </div>
+                  </div>
+
+                  <div className="h-px bg-gradient-to-l from-transparent via-black/[0.08] to-transparent" aria-hidden />
+
+                  {/* Step 2 — whole album (revealed only with preview) */}
+                  <section
+                    role="region"
+                    aria-labelledby="ai-bg-album-wide-heading"
+                    className="rounded-2xl border border-sage/15 bg-gradient-to-br from-sage/[0.06] to-transparent px-3.5 py-3 flex flex-col gap-2.5"
                   >
-                    <img
-                      src={previewUrl}
-                      alt="רקע שנוצר"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex gap-2">
+                    <h4
+                      id="ai-bg-album-wide-heading"
+                      className="text-[11px] font-bold text-deep-brown"
+                      style={{ fontFamily: 'var(--font-family-headline)' }}
+                    >
+                      שלב 2 · כל שאר הדפים
+                    </h4>
+                    <p className="text-[10px] text-secondary/60 leading-relaxed">
+                      יש לכם רקע לדוגמה. בחרו איך להרחיב לשאר האלבום (אפשר גם את שני הסוגים בזה אחר זה):
+                    </p>
                     <motion.button
                       type="button"
-                      whileHover={{ scale: isBusy ? 1 : 1.02 }}
-                      whileTap={{ scale: isBusy ? 1 : 0.98 }}
-                      onClick={handleApply}
+                      whileHover={{ scale: isBusy ? 1 : 1.01 }}
+                      whileTap={{ scale: isBusy ? 1 : 0.99 }}
+                      onClick={handleApplySameToAll}
                       disabled={isBusy}
-                      className="flex-1 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm disabled:opacity-40"
+                      aria-describedby="ai-bg-same-all-desc"
+                      className="w-full py-2.5 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 bg-white border border-black/[0.08] text-deep-brown shadow-[0_2px_12px_rgba(45,40,35,0.06)] hover:border-sage/25 hover:bg-white transition-all disabled:opacity-40 disabled:pointer-events-none text-right px-3"
                     >
-                      <Icon name="check" size={16} />
-                      החל רקע לדף זה
+                      <Icon name="copy_all" size={18} className="text-sage shrink-0" aria-hidden />
+                      <span className="flex-1 leading-snug">אותה תמונה בדיוק לכל הדפים</span>
                     </motion.button>
+                    <p id="ai-bg-same-all-desc" className="text-[9px] text-secondary/45 leading-snug -mt-1 mb-0 px-0.5">
+                      העתקה פשוטה של התצוגה המקדימה — מהיר ואחיד.
+                    </p>
                     <motion.button
                       type="button"
-                      whileHover={{ scale: isBusy ? 1 : 1.02 }}
-                      whileTap={{ scale: isBusy ? 1 : 0.98 }}
-                      onClick={handleGenerate}
-                      disabled={isBusy}
-                      className="px-4 py-2.5 bg-surface-container-low rounded-xl text-sm font-semibold text-secondary/70 flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors disabled:opacity-40"
+                      whileHover={{ scale: !prompt.trim() || isBusy ? 1 : 1.01 }}
+                      whileTap={{ scale: !prompt.trim() || isBusy ? 1 : 0.99 }}
+                      onClick={handleApplyStyledToAll}
+                      disabled={!prompt.trim() || isBusy}
+                      aria-describedby="ai-bg-styled-all-desc"
+                      className="w-full py-2.5 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 bg-sage text-white shadow-[0_4px_16px_rgba(142,137,115,0.28)] hover:bg-sage/92 transition-all disabled:opacity-40 disabled:pointer-events-none text-right px-3"
                     >
-                      <Icon name="refresh" size={16} />
-                      חדש
+                      <Icon name="auto_awesome" size={18} className="shrink-0 opacity-95" aria-hidden />
+                      <span className="flex-1 leading-snug">
+                        {isBatchStyling && batchProgress
+                          ? `יוצר רקעים… ${batchProgress.done} מתוך ${batchProgress.total}`
+                          : 'רקע אחר בכל דף — באותו סגנון (AI)'}
+                      </span>
                     </motion.button>
-                  </div>
+                    <p id="ai-bg-styled-all-desc" className="text-[9px] text-secondary/45 leading-snug -mt-1 px-0.5">
+                      לפי התיאור בשדה למעלה: יצירה נפרדת לכל דף, מגוון בקומפוזיציה.
+                      {!prompt.trim() && (
+                        <span className="block mt-1 text-amber-800/80">נדרש תיאור בשדה למעלה.</span>
+                      )}
+                    </p>
+                  </section>
                 </motion.div>
               )}
             </AnimatePresence>
