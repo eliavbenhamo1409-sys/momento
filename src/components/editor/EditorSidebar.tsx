@@ -286,7 +286,7 @@ export default function EditorSidebar() {
 
   return (
     <aside
-      className="fixed z-[45] pointer-events-none md:right-6 md:top-[43%] md:-translate-y-1/2 max-md:bottom-20 max-md:left-1/2 max-md:-translate-x-1/2"
+      className="fixed z-[45] pointer-events-none md:right-6 md:top-[48%] md:-translate-y-1/2 max-md:bottom-20 max-md:left-1/2 max-md:-translate-x-1/2"
       aria-label="כלי עריכה"
     >
       <motion.nav

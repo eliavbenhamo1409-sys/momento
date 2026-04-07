@@ -131,8 +131,10 @@ export default function EditorScreen() {
     <PageTransition>
       <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#EEECEA] relative">
         <DotGrid paused={isOverviewOpen || isPreviewOpen} />
-        <EditorTopBar />
-        <EditorPeopleStrip />
+        <div className="shrink-0 relative z-20">
+          <EditorTopBar />
+          <EditorPeopleStrip />
+        </div>
 
         <AnimatePresence>
           {!contentReady && (

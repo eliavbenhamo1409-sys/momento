@@ -39,135 +39,49 @@ function getPhotoUrl(
   return personLookup?.[photoId] || storeLookup.get(photoId)
 }
 
-/* ─── Editable Name ──────────────────────────────────────────────────── */
-
-function EditableName({
-  personId,
-  name,
-  isEditing,
-  onStartEdit,
-  onFinishEdit,
-}: {
-  personId: string
-  name: string
-  isEditing: boolean
-  onStartEdit: () => void
-  onFinishEdit: () => void
-}) {
-  const inputRef = useRef<HTMLInputElement>(null)
-  const updatePersonName = useAlbumStore((s) => s.updatePersonName)
-
-  useEffect(() => {
-    if (isEditing && inputRef.current) {
-      inputRef.current.focus()
-      inputRef.current.select()
-    }
-  }, [isEditing])
-
-  const handleBlur = useCallback(() => {
-    const val = inputRef.current?.value.trim()
-    if (val && val !== name) updatePersonName(personId, val)
-    onFinishEdit()
-  }, [personId, name, updatePersonName, onFinishEdit])
-
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent) => {
-      if (e.key === 'Enter') handleBlur()
-      if (e.key === 'Escape') onFinishEdit()
-    },
-    [handleBlur, onFinishEdit],
-  )
-
-  if (isEditing) {
-    return (
-      <input
-        ref={inputRef}
-        defaultValue={name}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        className="w-full text-[10px] leading-tight font-medium text-center bg-white/90 rounded px-1 py-0.5 outline-none ring-1 ring-sage/40 text-deep-brown"
-        style={{ maxWidth: 64 }}
-      />
-    )
-  }
-
-  return (
-    <span
-      onClick={(e) => {
-        e.stopPropagation()
-        onStartEdit()
-      }}
-      className="text-[10px] leading-tight font-medium max-w-[56px] truncate text-secondary/70 hover:text-sage cursor-text transition-colors"
-      title="לחץ לשינוי שם"
-    >
-      {name}
-    </span>
-  )
-}
-
 /* ─── Person Avatar (circle) ─────────────────────────────────────────── */
 
 function PersonCircle({
   person,
   isSelected,
   onClick,
-  editingNameId,
-  onStartEditName,
-  onFinishEditName,
 }: {
   person: AlbumPerson
   isSelected: boolean
   onClick: () => void
-  editingNameId: string | null
-  onStartEditName: (id: string) => void
-  onFinishEditName: () => void
 }) {
   const avatarSrc = person.avatarCropUrl
   const isUnidentified = person.displayName === 'לא מזוהה'
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.7 }}
-      animate={{ opacity: 1, scale: 1 }}
-      className="relative shrink-0 flex flex-col items-center gap-0.5 group"
+    <button
+      type="button"
+      onClick={onClick}
+      className="btn-press relative shrink-0 outline-none"
+      title={person.displayName}
     >
-      <button
-        type="button"
-        onClick={onClick}
-        className="btn-press relative outline-none"
+      <div
+        className={`w-7 h-7 md:w-8 md:h-8 rounded-full overflow-hidden transition-[ring-color,box-shadow] ${
+          isSelected
+            ? 'ring-2 ring-sage shadow-[0_0_8px_rgba(139,152,120,0.3)]'
+            : isUnidentified
+              ? 'ring-[1.5px] ring-black/10 hover:ring-black/20 shadow-sm opacity-60'
+              : 'ring-[1.5px] ring-white/70 hover:ring-sage/40 shadow-sm'
+        }`}
       >
-        <div
-          className={`w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden transition-[ring-color,box-shadow] ${
-            isSelected
-              ? 'ring-[2.5px] ring-sage shadow-[0_0_12px_rgba(139,152,120,0.3)]'
-              : isUnidentified
-                ? 'ring-2 ring-black/10 group-hover:ring-black/20 shadow-sm opacity-60'
-                : 'ring-2 ring-white/70 group-hover:ring-sage/40 shadow-sm'
-          }`}
-        >
-          {avatarSrc ? (
-            <img src={avatarSrc} alt={person.displayName} className="w-full h-full object-cover" />
-          ) : (
-            <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
-              <Icon name="person" size={18} className="text-secondary/40" />
-            </div>
-          )}
-        </div>
+        {avatarSrc ? (
+          <img src={avatarSrc} alt={person.displayName} className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
+            <Icon name="person" size={14} className="text-secondary/40" />
+          </div>
+        )}
+      </div>
 
-        <span className="absolute -bottom-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-deep-brown/80 text-white text-[9px] font-bold leading-none shadow-sm">
-          {person.photoIds.length}
-        </span>
-      </button>
-
-      <EditableName
-        personId={person.id}
-        name={person.displayName}
-        isEditing={editingNameId === person.id}
-        onStartEdit={() => onStartEditName(person.id)}
-        onFinishEdit={onFinishEditName}
-      />
-    </motion.div>
+      <span className="absolute -bottom-0.5 -right-0.5 min-w-[14px] h-[14px] px-0.5 flex items-center justify-center rounded-full bg-deep-brown/80 text-white text-[8px] font-bold leading-none shadow-sm">
+        {person.photoIds.length}
+      </span>
+    </button>
   )
 }
 
@@ -180,7 +94,7 @@ function SwapActiveBanner({ onCancel }: { onCancel: () => void }) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -6 }}
       transition={{ duration: 0.2 }}
-      className="absolute top-full left-0 right-0 z-30 mt-1 px-4 md:px-8"
+      className="absolute top-full left-0 right-0 z-30 mt-1 px-4 md:px-8 pointer-events-auto"
     >
       <div className="flex items-center justify-between gap-3 px-4 py-2 bg-sage/10 backdrop-blur-md rounded-xl ring-1 ring-sage/20">
         <div className="flex items-center gap-2">
@@ -297,7 +211,7 @@ function PersonPhotosPanel({
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ type: 'tween', duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-      className="absolute top-full left-0 right-0 z-30 mt-2 will-change-[opacity,height] overflow-hidden"
+      className="absolute top-full left-0 right-0 z-30 mt-2 will-change-[opacity,height] overflow-hidden pointer-events-auto"
     >
       <div className="mx-4 md:mx-8 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_12px_48px_rgba(45,40,35,0.14)] ring-1 ring-black/[0.04] overflow-hidden">
         {/* Header */}
@@ -398,7 +312,6 @@ export default function EditorPeopleStrip() {
   const setPendingPhotoSwap = useEditorStore((s) => s.setPendingPhotoSwap)
 
   const [selectedPersonId, setSelectedPersonId] = useState<string | null>(null)
-  const [editingNameId, setEditingNameId] = useState<string | null>(null)
   const [chosenPhotoId, setChosenPhotoId] = useState<string | null>(null)
 
   const lastSwapPersonRef = useRef<string | null>(null)
@@ -473,32 +386,21 @@ export default function EditorPeopleStrip() {
     lastSwapPersonRef.current = null
   }, [setPendingPhotoSwap])
 
-  const handleStartEditName = useCallback((id: string) => setEditingNameId(id), [])
-  const handleFinishEditName = useCallback(() => setEditingNameId(null), [])
 
   if (!peopleRoster || peopleRoster.length === 0) return null
 
   const selectedPerson = peopleRoster.find((p) => p.id === selectedPersonId)
 
   return (
-    <div className="relative shrink-0 z-20">
-      <div className="flex items-center gap-3 px-4 md:px-8 py-1.5 overflow-x-auto scrollbar-hide">
-        {peopleRoster.map((person, i) => (
-          <motion.div
+    <div className="absolute inset-0 z-30 pointer-events-none flex items-center justify-center">
+      <div className="pointer-events-auto flex items-center gap-1.5 px-3 overflow-x-auto scrollbar-hide" style={{ maxWidth: '50vw' }}>
+        {peopleRoster.map((person) => (
+          <PersonCircle
             key={person.id}
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05, type: 'spring', stiffness: 300, damping: 22 }}
-          >
-            <PersonCircle
-              person={person}
-              isSelected={selectedPersonId === person.id}
-              onClick={() => handlePersonClick(person)}
-              editingNameId={editingNameId}
-              onStartEditName={handleStartEditName}
-              onFinishEditName={handleFinishEditName}
-            />
-          </motion.div>
+            person={person}
+            isSelected={selectedPersonId === person.id}
+            onClick={() => handlePersonClick(person)}
+          />
         ))}
       </div>
 
