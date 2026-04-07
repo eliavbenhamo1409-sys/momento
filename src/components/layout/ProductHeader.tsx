@@ -8,9 +8,10 @@ interface Props {
   showBack?: boolean
   backTo?: string
   backLabel?: string
+  onBack?: () => void
 }
 
-export default function ProductHeader({ showBack, backTo, backLabel }: Props) {
+export default function ProductHeader({ showBack, backTo, backLabel, onBack }: Props) {
   const navigate = useNavigate()
   const isLoggedIn = useUIStore((s) => s.isLoggedIn)
   const userName = useUIStore((s) => s.userName)
@@ -44,7 +45,7 @@ export default function ProductHeader({ showBack, backTo, backLabel }: Props) {
           <>
             <div className="h-5 w-px bg-outline-variant/30" />
             <button
-              onClick={() => navigate(backTo || '/')}
+              onClick={() => onBack ? onBack() : navigate(backTo || '/')}
               className="flex items-center gap-1 text-warm-gray hover:text-deep-brown text-sm transition-colors"
             >
               <Icon name="arrow_forward" size={18} />

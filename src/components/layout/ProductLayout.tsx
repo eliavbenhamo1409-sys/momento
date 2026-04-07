@@ -10,6 +10,7 @@ interface Props {
   showBack?: boolean
   backTo?: string
   backLabel?: string
+  onBack?: () => void
   className?: string
 }
 
@@ -20,11 +21,12 @@ export default function ProductLayout({
   showBack,
   backTo,
   backLabel,
+  onBack,
   className = '',
 }: Props) {
   return (
     <div className="h-screen w-screen overflow-hidden flex flex-col bg-soft-cream">
-      <ProductHeader showBack={showBack} backTo={backTo} backLabel={backLabel} />
+      <ProductHeader showBack={showBack} backTo={backTo} backLabel={backLabel} onBack={onBack} />
       {showSteps && currentStep && <StepIndicator current={currentStep} />}
       <main className={`flex-1 overflow-hidden ${className}`}>
         {children}
