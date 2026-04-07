@@ -864,6 +864,38 @@ Do NOT include any text, frames, photo placeholders, or UI elements.`
   }
 }
 
+/**
+ * Generates one background per spread index (only indices listed — e.g. spreads with design).
+ * Same user theme, composition variation per page for a cohesive but non-identical album.
+ */
+export async function generateCustomBackgroundsPerSpread(
+  userPrompt: string,
+  aspectRatio: '16:9' | '1:1',
+  spreadIndices: number[],
+  getPagePhotosForSpread: (spreadIndex: number) => Promise<string[]>,
+  onProgress?: (done: number, total: number) => void,
+): Promise<Array<{ spreadIndex: number; url: string | null }>> {
+  const out: Array<{ spreadIndex: number; url: string | null }> = []
+  const total = spreadIndices.length
+
+  for (let k = 0; k < spreadIndices.length; k++) {
+    const i = spreadIndices[k]!
+    const variationNote = `
+
+IMPORTANT — UNIQUE SPREAD (${k + 1} of ${total}):
+This background is one of many in the same printed photo album. Create a DISTINCT composition (different framing, focal point, or details) while preserving the SAME overall aesthetic, palette, and mood as the user's description.
+Vary the scene naturally (e.g. different angle, time of day nuance, or arrangement) — do not output a near-duplicate of other spreads, yet the album must feel visually unified.`
+
+    const fullPrompt = `${userPrompt.trim()}${variationNote}`
+    const pagePhotos = await getPagePhotosForSpread(i)
+    const url = await generateCustomBackground(fullPrompt, aspectRatio, pagePhotos)
+    out.push({ spreadIndex: i, url })
+    onProgress?.(k + 1, total)
+  }
+
+  return out
+}
+
 export async function editPhotoWithAI(
   userPrompt: string,
   photoDataUrl: string,

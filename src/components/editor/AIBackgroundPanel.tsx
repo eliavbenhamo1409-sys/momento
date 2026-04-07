@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useUIStore } from '../../store/uiStore'
-import { generateCustomBackground, imageUrlToDataUrl } from '../../lib/openai'
+import { generateCustomBackground, generateCustomBackgroundsPerSpread, imageUrlToDataUrl } from '../../lib/openai'
 import { PREDEFINED_BG_COLORS } from '../../lib/constants'
 import Icon from '../shared/Icon'
 
@@ -35,18 +35,23 @@ export default function AIBackgroundPanel({
   defaultTab?: AIBackgroundTab
 }) {
   const setSpreadGeneratedBg = useEditorStore((s) => s.setSpreadGeneratedBg)
+  const applySpreadGeneratedBgToAll = useEditorStore((s) => s.applySpreadGeneratedBgToAll)
+  const batchApplySpreadGeneratedBgs = useEditorStore((s) => s.batchApplySpreadGeneratedBgs)
   const addToast = useUIStore((s) => s.addToast)
   const [activeTab, setActiveTab] = useState<AIBackgroundTab>(defaultTab)
   const [prompt, setPrompt] = useState('')
   const [target, setTarget] = useState<Target>('spread')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isBatchStyling, setIsBatchStyling] = useState(false)
+  const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   const selectedTarget = TARGETS.find((t) => t.id === target)!
+  const isBusy = isGenerating || isBatchStyling
 
-  const collectPagePhotos = useCallback(async (): Promise<string[]> => {
-    const { spreads, currentSpreadIndex } = useEditorStore.getState()
-    const spread = spreads[currentSpreadIndex]
+  const collectPagePhotosForSpread = useCallback(async (spreadIndex: number): Promise<string[]> => {
+    const { spreads } = useEditorStore.getState()
+    const spread = spreads[spreadIndex]
     if (!spread?.design) return []
 
     const photoEls = spread.design.elements.filter(
@@ -63,6 +68,11 @@ export default function AIBackgroundPanel({
     const dataUrls = await Promise.all(urls.map((u) => imageUrlToDataUrl(u)))
     return dataUrls.filter((u): u is string => u !== null)
   }, [target])
+
+  const collectPagePhotos = useCallback(async (): Promise<string[]> => {
+    const idx = useEditorStore.getState().currentSpreadIndex
+    return collectPagePhotosForSpread(idx)
+  }, [collectPagePhotosForSpread])
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -94,6 +104,58 @@ export default function AIBackgroundPanel({
     setSpreadGeneratedBg(previewUrl, target, 1)
     addToast('הרקע הוחל בהצלחה', 'success')
     onClose()
+  }
+
+  const handleApplySameToAll = () => {
+    if (!previewUrl) return
+    applySpreadGeneratedBgToAll(previewUrl, target, 1)
+    addToast('אותו הרקע הוחל על כל הדפים', 'success')
+    onClose()
+  }
+
+  const handleApplyStyledToAll = async () => {
+    if (!prompt.trim()) {
+      addToast('כתבו תיאור לרקע לפני יצירה לכל הדפים')
+      return
+    }
+    const { spreads } = useEditorStore.getState()
+    const indices = spreads.map((sp, i) => (sp.design ? i : -1)).filter((i) => i >= 0)
+    if (indices.length === 0) {
+      addToast('אין דפים לעדכון')
+      return
+    }
+
+    setIsBatchStyling(true)
+    setBatchProgress({ done: 0, total: indices.length })
+    try {
+      const rows = await generateCustomBackgroundsPerSpread(
+        prompt,
+        selectedTarget.ratio,
+        indices,
+        collectPagePhotosForSpread,
+        (done, total) => setBatchProgress({ done, total }),
+      )
+      const items = rows
+        .filter((r): r is { spreadIndex: number; url: string } => r.url != null)
+        .map((r) => ({ spreadIndex: r.spreadIndex, bgUrl: r.url, target, opacity: 1 }))
+      if (items.length === 0) {
+        addToast('לא נוצרו רקעים, נסו שוב', 'error')
+        return
+      }
+      batchApplySpreadGeneratedBgs(items)
+      addToast(
+        items.length === indices.length
+          ? 'נוצר רקע ייחודי בסגנון זה לכל דף'
+          : 'חלק מהרקעים נוצרו — בדקו את הדפים',
+        'success',
+      )
+      onClose()
+    } catch {
+      addToast('שגיאה ביצירת הרקעים', 'error')
+    } finally {
+      setIsBatchStyling(false)
+      setBatchProgress(null)
+    }
   }
 
   const handleApplyColor = (color: string, applyToAll = false) => {
@@ -253,6 +315,8 @@ export default function AIBackgroundPanel({
               {TARGETS.map((t) => (
                 <button
                   key={t.id}
+                  type="button"
+                  disabled={isBusy}
                   onClick={() => setTarget(t.id)}
                   className={`flex-1 flex flex-col items-center gap-1 py-2 rounded-xl text-[10px] font-semibold transition-all duration-200 ${
                     target === t.id
@@ -273,6 +337,8 @@ export default function AIBackgroundPanel({
                 {QUICK_PROMPTS.map((qp) => (
                   <button
                     key={qp.label}
+                    type="button"
+                    disabled={isBusy}
                     onClick={() => setPrompt(qp.prompt)}
                     className={`px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
                       prompt === qp.prompt
@@ -293,18 +359,18 @@ export default function AIBackgroundPanel({
                 onChange={(e) => setPrompt(e.target.value)}
                 placeholder="תארו את הרקע שתרצו... למשל: חוף ים עם קונכיות ומים שקטים"
                 rows={3}
-                disabled={isGenerating}
+                disabled={isBusy}
                 className="w-full bg-surface-container-low border-none rounded-xl text-sm px-3 py-2.5 placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all outline-none resize-none disabled:opacity-50"
               />
             </div>
 
             {/* Generate button */}
             <motion.button
-              whileHover={{ scale: isGenerating ? 1 : 1.02 }}
-              whileTap={{ scale: isGenerating ? 1 : 0.98 }}
+              whileHover={{ scale: isBusy ? 1 : 1.02 }}
+              whileTap={{ scale: isBusy ? 1 : 0.98 }}
               onClick={handleGenerate}
-              disabled={isGenerating || !prompt.trim()}
-              className="w-full py-2.5 bg-gradient-to-r from-primary to-primary/80 text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-all mb-4 shadow-sm"
+              disabled={isBusy || !prompt.trim()}
+              className="w-full py-2.5 bg-gradient-to-r from-primary to-primary/80 text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-all mb-3 shadow-sm"
             >
               {isGenerating ? (
                 <>
@@ -321,6 +387,46 @@ export default function AIBackgroundPanel({
               )}
             </motion.button>
 
+            {/* Album-wide actions */}
+            <div className="mb-4 rounded-xl border border-black/[0.06] bg-surface-container-low/40 p-3 flex flex-col gap-2">
+              <span
+                className="text-[9px] font-bold text-secondary/50 tracking-wide"
+                style={{ fontFamily: 'var(--font-family-headline)' }}
+              >
+                כל האלבום
+              </span>
+              <motion.button
+                type="button"
+                whileHover={{ scale: !previewUrl || isBusy ? 1 : 1.01 }}
+                whileTap={{ scale: !previewUrl || isBusy ? 1 : 0.99 }}
+                onClick={handleApplySameToAll}
+                disabled={!previewUrl || isBusy}
+                className="w-full py-2 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-2 bg-white border border-black/[0.08] text-on-surface shadow-sm hover:bg-surface-container-high/50 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+              >
+                <Icon name="copy_all" size={16} className="text-primary/80" />
+                החל את אותו הרקע על כל הדפים
+              </motion.button>
+              <p className="text-[9px] text-secondary/45 leading-snug px-0.5 -mt-1 mb-0">
+                משכפל את תצוגת המקדימה הנוכחית לכל הדפים (אותה תמונה בדיוק).
+              </p>
+              <motion.button
+                type="button"
+                whileHover={{ scale: !prompt.trim() || isBusy ? 1 : 1.01 }}
+                whileTap={{ scale: !prompt.trim() || isBusy ? 1 : 0.99 }}
+                onClick={handleApplyStyledToAll}
+                disabled={!prompt.trim() || isBusy}
+                className="w-full py-2 rounded-xl text-[11px] font-semibold flex items-center justify-center gap-2 bg-gradient-to-r from-primary/12 to-primary/8 text-primary border border-primary/20 hover:from-primary/18 hover:to-primary/12 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+              >
+                <Icon name="auto_awesome" size={16} />
+                {isBatchStyling && batchProgress
+                  ? `יוצר רקעים… ${batchProgress.done}/${batchProgress.total}`
+                  : 'צור רקע בסגנון זה לכל הדפים (שונה בכל דף)'}
+              </motion.button>
+              <p className="text-[9px] text-secondary/45 leading-snug px-0.5 -mt-1">
+                לפי התיאור למעלה — יצירה נפרדת לכל דף, באותו סגנון וצבעוניות אך קומפוזיציה שונה.
+              </p>
+            </div>
+
             {/* Preview */}
             <AnimatePresence>
               {previewUrl && (
@@ -330,7 +436,7 @@ export default function AIBackgroundPanel({
                   exit={{ opacity: 0, y: -4 }}
                   className="flex flex-col gap-3"
                 >
-                  <span className="text-[10px] text-secondary/50 font-semibold tracking-wide">תצוגה מקדימה</span>
+                  <span className="text-[10px] text-secondary/50 font-semibold tracking-wide">תצוגה מקדימה — הדף הנבחר</span>
                   <div
                     className="w-full rounded-xl overflow-hidden shadow-md border border-black/[0.04]"
                     style={{ aspectRatio: selectedTarget.ratio === '16:9' ? '16/9' : '1/1' }}
@@ -343,20 +449,23 @@ export default function AIBackgroundPanel({
                   </div>
                   <div className="flex gap-2">
                     <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      type="button"
+                      whileHover={{ scale: isBusy ? 1 : 1.02 }}
+                      whileTap={{ scale: isBusy ? 1 : 0.98 }}
                       onClick={handleApply}
-                      className="flex-1 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm"
+                      disabled={isBusy}
+                      className="flex-1 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm disabled:opacity-40"
                     >
                       <Icon name="check" size={16} />
-                      החל רקע
+                      החל רקע לדף זה
                     </motion.button>
                     <motion.button
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      type="button"
+                      whileHover={{ scale: isBusy ? 1 : 1.02 }}
+                      whileTap={{ scale: isBusy ? 1 : 0.98 }}
                       onClick={handleGenerate}
-                      disabled={isGenerating}
-                      className="px-4 py-2.5 bg-surface-container-low rounded-xl text-sm font-semibold text-secondary/70 flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors"
+                      disabled={isBusy}
+                      className="px-4 py-2.5 bg-surface-container-low rounded-xl text-sm font-semibold text-secondary/70 flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors disabled:opacity-40"
                     >
                       <Icon name="refresh" size={16} />
                       חדש

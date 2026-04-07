@@ -95,6 +95,12 @@ interface EditorState {
   updateTextElement: (elementIndex: number, updates: Partial<QuoteElement>) => void
   removeTextElement: (elementIndex: number) => void
   setSpreadGeneratedBg: (bgUrl: string, target: 'spread' | 'left' | 'right', opacity?: number) => void
+  /** Same generated image on every spread that has a design */
+  applySpreadGeneratedBgToAll: (bgUrl: string, target: 'spread' | 'left' | 'right', opacity?: number) => void
+  /** Apply different URLs per spread index (only indices with design are updated) */
+  batchApplySpreadGeneratedBgs: (
+    items: Array<{ spreadIndex: number; bgUrl: string; target: 'spread' | 'left' | 'right'; opacity?: number }>,
+  ) => void
   removePhotoSlot: (elementIndex: number) => void
   assignSlotImageFromFile: (
     spreadId: string,
@@ -574,6 +580,51 @@ export const useEditorStore = create<EditorState>((set) => ({
 
       const spreads = [...s.spreads]
       spreads[idx] = { ...spread, design: { ...spread.design, background: bg } }
+      return { spreads }
+    }),
+
+  applySpreadGeneratedBgToAll: (bgUrl, target, opacity = 1) =>
+    set((s) => ({
+      spreads: s.spreads.map((spread) => {
+        if (!spread.design) return spread
+        const bg = { ...spread.design.background }
+        if (target === 'spread') {
+          bg.generatedBgUrl = bgUrl
+          bg.generatedBgOpacity = opacity
+        } else if (target === 'left') {
+          bg.generatedBgLeftUrl = bgUrl
+          bg.generatedBgLeftOpacity = opacity
+        } else {
+          bg.generatedBgRightUrl = bgUrl
+          bg.generatedBgRightOpacity = opacity
+        }
+        return { ...spread, design: { ...spread.design, background: bg } }
+      }),
+    })),
+
+  batchApplySpreadGeneratedBgs: (items) =>
+    set((s) => {
+      if (items.length === 0) return s
+      const spreads = [...s.spreads]
+      for (const it of items) {
+        const idx = it.spreadIndex
+        if (idx < 0 || idx >= spreads.length) continue
+        const spread = spreads[idx]
+        if (!spread?.design) continue
+        const op = it.opacity ?? 1
+        const bg = { ...spread.design.background }
+        if (it.target === 'spread') {
+          bg.generatedBgUrl = it.bgUrl
+          bg.generatedBgOpacity = op
+        } else if (it.target === 'left') {
+          bg.generatedBgLeftUrl = it.bgUrl
+          bg.generatedBgLeftOpacity = op
+        } else {
+          bg.generatedBgRightUrl = it.bgUrl
+          bg.generatedBgRightOpacity = op
+        }
+        spreads[idx] = { ...spread, design: { ...spread.design, background: bg } }
+      }
       return { spreads }
     }),
 
