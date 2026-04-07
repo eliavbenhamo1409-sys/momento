@@ -120,12 +120,14 @@ export function BookCoverFrame({ material }: { material: CoverMaterial | undefin
  * Animated book-close overlay.
  *
  * Phase 1 — "flip": one half of the spread rotates 180° around the spine
- *   (CSS 3D rotateY with perspective, same technique as the page-flip library).
- * Phase 2 — "settle": the resulting cover square slides to the centre of the
- *   spread container.
+ *   using CSS 3D perspective + rotateY. The flipping element has NO front
+ *   face — the actual flipbook page (with photos) shows through from 0–90°.
+ *   Past 90° the back face reveals the cover material. All cover layers
+ *   fade in around the 90° mark so the crossfade is seamless.
  *
- * The component is an absolute overlay at z-20 inside the scaleX(-1) book
- * container. It does NOT touch the HTMLFlipBook or its animation callbacks.
+ * Phase 2 — "settle": the resulting cover square slides to the centre.
+ *
+ * Completely separate from the page-flip system — no flip code is touched.
  */
 export function BookCoverOverlay({
   material,
@@ -141,6 +143,8 @@ export function BookCoverOverlay({
 
   const FLIP_S = 0.75
   const SETTLE_S = 0.45
+  const COVER_DELAY = FLIP_S * 0.42
+  const COVER_FADE = FLIP_S * 0.48
 
   useEffect(() => {
     const timers = [
@@ -173,13 +177,25 @@ export function BookCoverOverlay({
       transition={{ duration: 0.3 }}
       style={{ perspective: phase === 'flip' ? 2500 : undefined }}
     >
-      {/* Opaque backdrop — hides flipbook pages behind the animation */}
-      <div className="absolute inset-0" style={{ backgroundColor: '#fff' }} />
-
-      {/* Cover material revealed on the origin side as the page lifts away */}
+      {/* White backdrop — starts transparent so real flipbook pages show
+          through, fades in around the 90° mark of the flip. */}
       <motion.div
-        animate={{ opacity: phase === 'flip' ? 1 : 0 }}
-        transition={{ duration: 0.3 }}
+        className="absolute inset-0"
+        style={{ backgroundColor: '#fff' }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: COVER_DELAY, duration: COVER_FADE }}
+      />
+
+      {/* Origin-side cover — fades in mid-flip as the page lifts away,
+          then fades out during the settle phase. */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: phase === 'settle' || phase === 'done' ? 0 : 1 }}
+        transition={{
+          delay: phase === 'flip' ? COVER_DELAY : 0,
+          duration: phase === 'flip' ? COVER_FADE : 0.3,
+        }}
         style={{
           position: 'absolute', top: 0, height: '100%', width: '50%',
           ...(isFront ? { left: 0 } : { right: 0 }),
@@ -188,14 +204,20 @@ export function BookCoverOverlay({
         }}
       />
 
-      {/* Main cover — sits at the landing position, then slides to centre */}
+      {/* Main cover — fades in mid-flip at the landing position,
+          then slides to centre during the settle phase. */}
       <motion.div
+        initial={{ opacity: 0, left: isFront ? '50%' : '0%' }}
         animate={{
+          opacity: 1,
           left: phase !== 'flip' ? '25%' : (isFront ? '50%' : '0%'),
         }}
         transition={{
-          duration: phase === 'settle' ? SETTLE_S : 0,
-          ease: [0.22, 1, 0.36, 1],
+          opacity: { delay: COVER_DELAY, duration: COVER_FADE },
+          left: {
+            duration: phase === 'settle' ? SETTLE_S : 0,
+            ease: [0.22, 1, 0.36, 1],
+          },
         }}
         style={{
           position: 'absolute', top: 0, width: '50%', height: '100%',
@@ -212,7 +234,6 @@ export function BookCoverOverlay({
           className="absolute bottom-0 left-0 right-0 h-px"
           style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.08), transparent)' }}
         />
-        {/* Spine-edge shadow on the cover */}
         <div
           style={{
             position: 'absolute', top: 0, bottom: 0, width: 6,
@@ -224,7 +245,9 @@ export function BookCoverOverlay({
         />
       </motion.div>
 
-      {/* 3D flipping page — rotateY around the spine edge */}
+      {/* 3D flipping element — ONLY has a back face (cover material).
+          No front face: the real flipbook page with photos shows through
+          from 0–90°. Past 90° the back face becomes visible. */}
       <motion.div
         ref={flipRef}
         initial={{ rotateY: 0 }}
@@ -238,13 +261,6 @@ export function BookCoverOverlay({
           zIndex: 5,
         }}
       >
-        {/* Front face — white page surface */}
-        <div style={{
-          position: 'absolute', inset: 0,
-          backfaceVisibility: 'hidden',
-          backgroundColor: '#FFFFFF',
-        }} />
-        {/* Back face — cover material (visible past 90°) */}
         <div style={{
           position: 'absolute', inset: 0,
           backfaceVisibility: 'hidden',
@@ -253,7 +269,7 @@ export function BookCoverOverlay({
         }} />
       </motion.div>
 
-      {/* Dynamic shadow cast onto the landing side during the flip */}
+      {/* Flip shadow on the landing side */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: phase === 'flip' ? 0.12 : 0 }}
