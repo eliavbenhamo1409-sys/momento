@@ -228,7 +228,7 @@ export function BookCoverOverlay({
       <motion.div
         ref={flipRef}
         initial={{ rotateY: 0 }}
-        animate={{ rotateY: isFront ? -180 : 180 }}
+        animate={{ rotateY: isFront ? 180 : -180 }}
         transition={{ duration: FLIP_S, ease: [0.4, 0, 0.2, 1] }}
         style={{
           position: 'absolute', top: 0, height: '100%', width: '50%',
