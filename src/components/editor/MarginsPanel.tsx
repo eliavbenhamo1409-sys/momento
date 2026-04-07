@@ -28,66 +28,71 @@ const CORNER_PRESETS = [
   { label: 'מלא', value: 24 },
 ]
 
-function MarginsMiniPreview({
-  pageMarginPercent,
-  framePaddingPx,
-  cornerRadiusPx,
-}: {
-  pageMarginPercent: number
-  framePaddingPx: number
-  cornerRadiusPx: number
-}) {
-  const m = Math.max(0, Math.min(20, pageMarginPercent))
-  const f = Math.max(0, framePaddingPx)
-  const frameVis = Math.min(6, 1 + f * 0.35)
-  const rMini = Math.max(0, Math.min(10, cornerRadiusPx * 0.38))
+const MICRO_BOX = 'shrink-0 w-[42px] h-[52px] rounded-[10px] overflow-hidden border border-black/[0.06] shadow-[inset_0_1px_3px_rgba(45,40,35,0.06)]'
+const PHOTO_GRAD = 'bg-gradient-to-br from-stone-400/60 to-stone-500/50'
+const ANIM_EASE = [0.4, 0, 0.2, 1] as const
+const ANIM_DURATION = 2.6
 
+function FrameMicroAnim() {
   return (
-    <motion.div
-      className="shrink-0 flex flex-col items-center gap-2"
-      initial={false}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-    >
-      <span
-        className="text-[9px] font-semibold text-secondary/45 uppercase tracking-wide"
-        style={{ fontFamily: 'var(--font-family-body)' }}
-      >
-        תצוגה
-      </span>
-      <div
-        className="rounded-xl overflow-hidden shadow-[inset_0_1px_3px_rgba(45,40,35,0.08)] border border-black/[0.07] box-border"
-        style={{
-          width: 72,
-          height: 92,
-          background: 'linear-gradient(160deg, #f3f0ea 0%, #e8e4dc 100%)',
-          padding: `${m}%`,
-        }}
-      >
-        <div className="w-full h-full min-h-0 flex">
-          <div
-            className="flex-1 rounded-md bg-white flex gap-0.5 min-h-0 min-w-0 shadow-[0_1px_4px_rgba(45,40,35,0.06)]"
-            style={{
-              padding: `${frameVis}px`,
-              gap: 2,
+    <div className={MICRO_BOX} style={{ background: '#ede9e1' }}>
+      <div className="w-full h-full flex gap-[2px] p-[2px]">
+        {[0, 1].map((i) => (
+          <motion.div
+            key={i}
+            className="flex-1 bg-white overflow-hidden"
+            style={{ minWidth: 0, minHeight: 0 }}
+            animate={{ padding: [0, 5, 0] }}
+            transition={{
+              duration: ANIM_DURATION,
+              repeat: Infinity,
+              ease: ANIM_EASE,
+              delay: i * 0.12,
             }}
           >
-            <motion.div
-              className="flex-1 min-w-0 min-h-0 bg-gradient-to-br from-stone-400/55 to-stone-500/45"
-              layout
-              style={{ borderRadius: rMini }}
-              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-            />
-            <motion.div
-              className="flex-1 min-w-0 min-h-0 bg-gradient-to-br from-stone-400/55 to-stone-500/45"
-              layout
-              style={{ borderRadius: rMini }}
-              transition={{ type: 'spring', stiffness: 420, damping: 32 }}
-            />
-          </div>
-        </div>
+            <div className={`w-full h-full ${PHOTO_GRAD}`} />
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function MarginMicroAnim() {
+  return (
+    <motion.div
+      className={MICRO_BOX}
+      style={{ background: 'linear-gradient(160deg, #f3f0ea, #e8e4dc)' }}
+      animate={{ padding: ['1px', '8px', '1px'] }}
+      transition={{ duration: ANIM_DURATION, repeat: Infinity, ease: ANIM_EASE }}
+    >
+      <div className="w-full h-full flex gap-[1px] overflow-hidden">
+        <div className={`flex-1 min-w-0 min-h-0 ${PHOTO_GRAD}`} />
+        <div className={`flex-1 min-w-0 min-h-0 ${PHOTO_GRAD}`} />
       </div>
     </motion.div>
+  )
+}
+
+function CornerMicroAnim() {
+  return (
+    <div className={MICRO_BOX} style={{ background: '#ede9e1' }}>
+      <div className="w-full h-full flex gap-[2px] p-[3px]">
+        {[0, 1].map((i) => (
+          <motion.div
+            key={i}
+            className={`flex-1 min-w-0 min-h-0 ${PHOTO_GRAD}`}
+            animate={{ borderRadius: ['0px', '12px', '0px'] }}
+            transition={{
+              duration: ANIM_DURATION,
+              repeat: Infinity,
+              ease: ANIM_EASE,
+              delay: i * 0.12,
+            }}
+          />
+        ))}
+      </div>
+    </div>
   )
 }
 
@@ -101,6 +106,7 @@ function SliderRow({
   presets,
   unit,
   onChange,
+  microPreview,
 }: {
   label: string
   icon: string
@@ -111,71 +117,78 @@ function SliderRow({
   presets: { label: string; value: number }[]
   unit: string
   onChange: (v: number) => void
+  microPreview?: React.ReactNode
 }) {
   const pct = ((value - min) / (max - min)) * 100
 
   return (
-    <div className="flex flex-col gap-2.5">
-      <div className="flex items-center gap-2">
-        <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary/12 to-primary/4 flex items-center justify-center">
-          <Icon name={icon} size={14} className="text-primary" />
-        </div>
-        <span className="text-[11px] font-semibold text-on-surface">{label}</span>
-        <span className="text-[10px] text-secondary/60 mr-auto font-mono tabular-nums">
-          {value}{unit}
-        </span>
-      </div>
-
-      <div className="relative">
-        <input
-          type="range"
-          min={min}
-          max={max}
-          step={step}
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full h-1.5 rounded-full appearance-none cursor-pointer
-                     [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
-                     [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-deep-brown [&::-webkit-slider-thumb]:border-2
-                     [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer
-                     [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-150
-                     [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:active:scale-95"
-          style={{
-            background: `linear-gradient(to left, var(--color-primary) ${pct}%, rgba(0,0,0,0.06) ${pct}%)`,
-          }}
-        />
-        {presets.length > 0 && (
-          <div className="absolute top-0 left-0 right-0 h-1.5 pointer-events-none flex items-center">
-            {presets.map((p) => {
-              const pos = ((p.value - min) / (max - min)) * 100
-              return (
-                <div
-                  key={p.value}
-                  className="absolute w-0.5 h-2.5 rounded-full bg-black/10"
-                  style={{ right: `calc(${pos}% - 1px)` }}
-                />
-              )
-            })}
+    <div className="flex gap-3 items-center">
+      <div className="flex flex-col gap-2.5 flex-1 min-w-0">
+        <div className="flex items-center gap-2">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-primary/12 to-primary/4 flex items-center justify-center">
+            <Icon name={icon} size={14} className="text-primary" />
           </div>
-        )}
+          <span className="text-[11px] font-semibold text-on-surface">{label}</span>
+          <span className="text-[10px] text-secondary/60 mr-auto font-mono tabular-nums">
+            {value}{unit}
+          </span>
+        </div>
+
+        <div className="relative">
+          <input
+            type="range"
+            min={min}
+            max={max}
+            step={step}
+            value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="w-full h-1.5 rounded-full appearance-none cursor-pointer
+                       [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4
+                       [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-deep-brown [&::-webkit-slider-thumb]:border-2
+                       [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:cursor-pointer
+                       [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:duration-150
+                       [&::-webkit-slider-thumb]:hover:scale-110 [&::-webkit-slider-thumb]:active:scale-95"
+            style={{
+              background: `linear-gradient(to left, var(--color-primary) ${pct}%, rgba(0,0,0,0.06) ${pct}%)`,
+            }}
+          />
+          {presets.length > 0 && (
+            <div className="absolute top-0 left-0 right-0 h-1.5 pointer-events-none flex items-center">
+              {presets.map((p) => {
+                const pos = ((p.value - min) / (max - min)) * 100
+                return (
+                  <div
+                    key={p.value}
+                    className="absolute w-0.5 h-2.5 rounded-full bg-black/10"
+                    style={{ right: `calc(${pos}% - 1px)` }}
+                  />
+                )
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="flex gap-1">
+          {presets.map((p) => (
+            <button
+              key={p.value}
+              type="button"
+              onClick={() => onChange(p.value)}
+              className={`flex-1 text-[9px] font-semibold py-1.5 rounded-lg transition-colors ${
+                value === p.value
+                  ? 'bg-deep-brown text-white shadow-sm scale-[1.02]'
+                  : 'bg-surface-container-low/60 text-secondary/60 hover:bg-surface-container-high hover:text-on-surface'
+              }`}
+            >
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex gap-1">
-        {presets.map((p) => (
-          <button
-            key={p.value}
-            type="button"
-            onClick={() => onChange(p.value)}
-            className={`flex-1 text-[9px] font-semibold py-1.5 rounded-lg transition-colors ${
-              value === p.value
-                ? 'bg-deep-brown text-white shadow-sm scale-[1.02]'
-                : 'bg-surface-container-low/60 text-secondary/60 hover:bg-surface-container-high hover:text-on-surface'
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
+      {microPreview && (
+        <div className="shrink-0 self-center">{microPreview}</div>
+      )}
     </div>
   )
 }
@@ -270,56 +283,49 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
         </button>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-4 sm:items-start sm:gap-5">
-        <div className="flex flex-col gap-5 flex-1 min-w-0 order-2 sm:order-1">
-          <SliderRow
-            label="מסגרת לבנה סביב כל תמונה"
-            icon="crop_square"
-            value={framePx}
-            min={0}
-            max={28}
-            step={1}
-            presets={FRAME_PRESETS}
-            unit="px"
-            onChange={handleFrameChange}
-          />
+      <div className="flex flex-col gap-5">
+        <SliderRow
+          label="מסגרת לבנה סביב כל תמונה"
+          icon="crop_square"
+          value={framePx}
+          min={0}
+          max={28}
+          step={1}
+          presets={FRAME_PRESETS}
+          unit="px"
+          onChange={handleFrameChange}
+          microPreview={<FrameMicroAnim />}
+        />
 
-          <div className="h-px bg-gradient-to-l from-transparent via-black/6 to-transparent" />
+        <div className="h-px bg-gradient-to-l from-transparent via-black/6 to-transparent" />
 
-          <SliderRow
-            label="שוליים מקצה העמוד (כל הפריסה)"
-            icon="crop_free"
-            value={margin}
-            min={0}
-            max={16}
-            step={0.5}
-            presets={MARGIN_PRESETS}
-            unit="%"
-            onChange={handleMarginChange}
-          />
+        <SliderRow
+          label="שוליים מקצה העמוד (כל הפריסה)"
+          icon="crop_free"
+          value={margin}
+          min={0}
+          max={16}
+          step={0.5}
+          presets={MARGIN_PRESETS}
+          unit="%"
+          onChange={handleMarginChange}
+          microPreview={<MarginMicroAnim />}
+        />
 
-          <div className="h-px bg-gradient-to-l from-transparent via-black/6 to-transparent" />
+        <div className="h-px bg-gradient-to-l from-transparent via-black/6 to-transparent" />
 
-          <SliderRow
-            label="עיגול פינות כל המסגרות"
-            icon="rounded_corner"
-            value={cornerPx}
-            min={0}
-            max={24}
-            step={1}
-            presets={CORNER_PRESETS}
-            unit="px"
-            onChange={handleCornerChange}
-          />
-        </div>
-
-        <div className="order-1 sm:order-2 flex justify-center sm:pt-1">
-          <MarginsMiniPreview
-            pageMarginPercent={margin}
-            framePaddingPx={framePx}
-            cornerRadiusPx={cornerPx}
-          />
-        </div>
+        <SliderRow
+          label="עיגול פינות כל המסגרות"
+          icon="rounded_corner"
+          value={cornerPx}
+          min={0}
+          max={24}
+          step={1}
+          presets={CORNER_PRESETS}
+          unit="px"
+          onChange={handleCornerChange}
+          microPreview={<CornerMicroAnim />}
+        />
       </div>
 
       <div className="mt-5 flex gap-2">

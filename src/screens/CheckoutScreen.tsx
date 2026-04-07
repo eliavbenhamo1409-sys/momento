@@ -46,6 +46,19 @@ export default function CheckoutScreen() {
   const spreadCount = spreads.length
   const pageCount = spreadCount * 2
 
+  const coverUrl = useMemo(() => {
+    for (const s of spreads) {
+      if (s.design) {
+        for (const el of s.design.elements) {
+          if (el.type === 'photo' && el.photoUrl) return el.photoUrl
+        }
+      }
+      const first = s.leftPhotos?.find(Boolean) ?? s.rightPhotos?.find(Boolean)
+      if (first) return first
+    }
+    return null
+  }, [spreads])
+
   const [currentStep, setCurrentStep] = useState<CheckoutStep>('details')
   const [phase, setPhase] = useState<ExportPhase>({ step: 'idle' })
   const [isExporting, setIsExporting] = useState(false)
@@ -226,11 +239,17 @@ export default function CheckoutScreen() {
 
                     <div className="flex gap-5 mb-5">
                       <div className="w-24 h-28 sm:w-28 sm:h-32 rounded-xl overflow-hidden bg-surface-container shrink-0 ring-1 ring-black/[0.04]">
-                        <img
-                          src="https://picsum.photos/seed/checkout-cover/300/400"
-                          alt="כריכת האלבום"
-                          className="w-full h-full object-cover"
-                        />
+                        {coverUrl ? (
+                          <img
+                            src={coverUrl}
+                            alt="כריכת האלבום"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-warm-gray/40">
+                            <Icon name="menu_book" size={32} />
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3
