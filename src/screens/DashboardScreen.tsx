@@ -10,7 +10,8 @@ import Skeleton from '../components/shared/Skeleton'
 import Icon from '../components/shared/Icon'
 import { useUIStore } from '../store/uiStore'
 import { listUserAlbums, deleteAlbum, type AlbumRow } from '../lib/albumService'
-import { MOCK_ORDERS } from '../lib/constants'
+import { listUserOrders, type OrderWithAlbum } from '../lib/orderService'
+import { ALBUM_SIZES } from '../lib/constants'
 
 type Tab = 'projects' | 'orders'
 
@@ -38,9 +39,29 @@ function albumToProject(album: AlbumRow) {
   }
 }
 
+function orderRowToCardData(o: OrderWithAlbum) {
+  const cfg = o.album_config as unknown as Record<string, unknown> | null
+  const sizeId = (cfg?.size as string) ?? '30x30'
+  const sizeLabel = ALBUM_SIZES.find((s) => s.id === sizeId)?.closedDimensions ?? sizeId
+  const pages = (cfg?.pages as number) ?? 0
+
+  return {
+    id: o.id,
+    orderNumber: o.order_number,
+    title: o.album_title,
+    coverUrl: o.album_cover_url ?? 'https://picsum.photos/seed/order-fallback/400/300',
+    status: o.status,
+    size: sizeLabel,
+    pages,
+    price: o.total_price,
+    orderedAt: o.created_at,
+  }
+}
+
 export default function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('projects')
   const [albums, setAlbums] = useState<AlbumRow[]>([])
+  const [orders, setOrders] = useState<OrderWithAlbum[]>([])
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
   const navigate = useNavigate()
@@ -49,15 +70,19 @@ export default function DashboardScreen() {
   const isLoggedIn = useUIStore((s) => s.isLoggedIn)
   const openAuthModal = useUIStore((s) => s.openAuthModal)
 
-  const fetchAlbums = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (!userId) return
     setLoading(true)
     setFetchError(false)
     try {
-      const data = await listUserAlbums(userId)
-      setAlbums(data)
+      const [albumData, orderData] = await Promise.all([
+        listUserAlbums(userId),
+        listUserOrders(userId),
+      ])
+      setAlbums(albumData)
+      setOrders(orderData)
     } catch (err) {
-      console.error('Failed to fetch albums:', err)
+      console.error('Failed to fetch data:', err)
       setFetchError(true)
     } finally {
       setLoading(false)
@@ -70,8 +95,8 @@ export default function DashboardScreen() {
       openAuthModal('login', '/dashboard')
       return
     }
-    fetchAlbums()
-  }, [isLoggedIn, fetchAlbums, openAuthModal])
+    fetchData()
+  }, [isLoggedIn, fetchData, openAuthModal])
 
   const handleDelete = async (albumId: string) => {
     if (!confirm('למחוק את האלבום?')) return
@@ -84,6 +109,7 @@ export default function DashboardScreen() {
   }
 
   const projects = albums.map(albumToProject)
+  const orderCards = orders.map(orderRowToCardData)
   const greeting = getGreeting()
 
   return (
@@ -150,7 +176,7 @@ export default function DashboardScreen() {
           >
             {[
               { id: 'projects' as Tab, label: 'האלבומים שלי', icon: 'palette', count: projects.length },
-              { id: 'orders' as Tab, label: 'הזמנות', icon: 'local_shipping', count: MOCK_ORDERS.length },
+              { id: 'orders' as Tab, label: 'הזמנות', icon: 'local_shipping', count: orderCards.length },
             ].map((tab) => (
               <button
                 key={tab.id}
@@ -212,7 +238,7 @@ export default function DashboardScreen() {
                     <span className="material-symbols-outlined text-3xl text-warm-gray/50">cloud_off</span>
                     <p className="text-sm text-warm-gray font-medium">לא הצלחנו לטעון את האלבומים</p>
                     <button
-                      onClick={fetchAlbums}
+                      onClick={fetchData}
                       className="px-5 py-2 rounded-full bg-sage text-white text-sm font-medium hover:bg-sage/90 transition-colors"
                     >
                       נסה שוב
@@ -242,9 +268,9 @@ export default function DashboardScreen() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.35 }}
               >
-                {MOCK_ORDERS.length > 0 ? (
+                {orderCards.length > 0 ? (
                   <div className="flex flex-col gap-4">
-                    {MOCK_ORDERS.map((order, i) => (
+                    {orderCards.map((order, i) => (
                       <OrderCard key={order.id} order={order} index={i} />
                     ))}
                   </div>

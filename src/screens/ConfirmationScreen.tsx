@@ -1,12 +1,37 @@
-import { useNavigate } from 'react-router'
+import { useEffect, useState } from 'react'
+import { useNavigate, useLocation } from 'react-router'
 import { motion } from 'motion/react'
 import PageTransition from '../components/shared/PageTransition'
 import ProductLayout from '../components/layout/ProductLayout'
 import Icon from '../components/shared/Icon'
+import { getOrder, type OrderRow } from '../lib/orderService'
 
 export default function ConfirmationScreen() {
   const navigate = useNavigate()
-  const orderNum = `AL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`
+  const location = useLocation()
+  const state = location.state as { orderId?: string; orderNumber?: string } | null
+
+  const [order, setOrder] = useState<OrderRow | null>(null)
+  const [loading, setLoading] = useState(!!state?.orderId)
+
+  const orderNumber = order?.order_number ?? state?.orderNumber ?? `AL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}`
+  const totalPrice = order?.total_price
+
+  useEffect(() => {
+    if (!state?.orderId) return
+    let cancelled = false
+
+    getOrder(state.orderId)
+      .then((row) => {
+        if (!cancelled && row) setOrder(row)
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => { cancelled = true }
+  }, [state?.orderId])
 
   return (
     <PageTransition>
@@ -49,8 +74,19 @@ export default function ConfirmationScreen() {
               transition={{ delay: 0.8 }}
               className="px-5 py-2 rounded-full bg-sage/10 text-sage text-sm font-medium"
             >
-              מספר הזמנה: #{orderNum}
+              {loading ? '...' : `מספר הזמנה: #${orderNumber}`}
             </motion.span>
+
+            {totalPrice != null && (
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.88 }}
+                className="text-sm text-warm-gray"
+              >
+                סה"כ שולם: ₪{totalPrice}
+              </motion.span>
+            )}
 
             <motion.p
               initial={{ opacity: 0 }}

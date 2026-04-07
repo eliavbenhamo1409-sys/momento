@@ -1,11 +1,5 @@
-/**
- * Spread Export Module
- *
- * Captures rendered spread DOM nodes as high-quality JPG images
- * using html2canvas for DOM-to-image conversion.
- */
-
 import html2canvas from 'html2canvas'
+import { ALBUM_SIZES } from './constants'
 
 export interface ExportOptions {
   quality?: number
@@ -19,9 +13,25 @@ const DEFAULT_OPTIONS: Required<ExportOptions> = {
   backgroundColor: '#FFFFFF',
 }
 
+const TARGET_DPI = 300
+const CM_PER_INCH = 2.54
+
 /**
- * Exports a single spread DOM element to a JPG data URL.
+ * Computes the html2canvas scale factor needed to produce a 300 DPI output
+ * for a given album size. The rendered DOM element width is compared to the
+ * target pixel width derived from the album's physical open dimensions.
  */
+export function calc300DpiScale(renderedWidthPx: number, albumSizeId: string): number {
+  const size = ALBUM_SIZES.find((s) => s.id === albumSizeId)
+  if (!size || renderedWidthPx <= 0) return DEFAULT_OPTIONS.scale
+
+  const targetWidthPx = (size.openW / CM_PER_INCH) * TARGET_DPI
+  const scale = targetWidthPx / renderedWidthPx
+
+  const MAX_SCALE = 12
+  return Math.min(scale, MAX_SCALE)
+}
+
 export async function exportSpreadToDataUrl(
   element: HTMLElement,
   options?: ExportOptions,
@@ -39,9 +49,6 @@ export async function exportSpreadToDataUrl(
   return canvas.toDataURL('image/jpeg', opts.quality)
 }
 
-/**
- * Exports a single spread DOM element and triggers a file download.
- */
 export async function downloadSpreadAsJpg(
   element: HTMLElement,
   filename: string,
@@ -55,9 +62,6 @@ export async function downloadSpreadAsJpg(
   link.click()
 }
 
-/**
- * Exports a single spread to a Blob.
- */
 export async function exportSpreadToBlob(
   element: HTMLElement,
   options?: ExportOptions,
@@ -84,10 +88,6 @@ export async function exportSpreadToBlob(
   })
 }
 
-/**
- * Exports all spreads in the album. Expects an array of DOM refs.
- * Returns an array of data URLs.
- */
 export async function exportAlbumSpreads(
   elements: HTMLElement[],
   options?: ExportOptions,
@@ -98,4 +98,33 @@ export async function exportAlbumSpreads(
     results.push(dataUrl)
   }
   return results
+}
+
+/**
+ * Exports all spread elements as 300 DPI JPEG blobs.
+ * Calculates the correct scale factor based on album physical dimensions.
+ * Calls onProgress(index, total) after each spread is rendered.
+ */
+export async function exportAllSpreadsAsBlobs(
+  elements: HTMLElement[],
+  albumSizeId: string,
+  onProgress?: (index: number, total: number) => void,
+): Promise<Blob[]> {
+  const blobs: Blob[] = []
+
+  for (let i = 0; i < elements.length; i++) {
+    const el = elements[i]
+    const scale = calc300DpiScale(el.offsetWidth, albumSizeId)
+
+    const blob = await exportSpreadToBlob(el, {
+      scale,
+      quality: 0.92,
+      backgroundColor: '#FFFFFF',
+    })
+
+    blobs.push(blob)
+    onProgress?.(i + 1, elements.length)
+  }
+
+  return blobs
 }

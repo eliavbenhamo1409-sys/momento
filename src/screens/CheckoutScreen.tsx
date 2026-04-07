@@ -1,22 +1,49 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { motion } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import PageTransition from '../components/shared/PageTransition'
 import ProductLayout from '../components/layout/ProductLayout'
 import LoadingButton from '../components/shared/LoadingButton'
 import Icon from '../components/shared/Icon'
+import OffScreenSpreadRenderer from '../components/export/OffScreenSpreadRenderer'
 import { useAlbumStore } from '../store/albumStore'
+import { useEditorStore } from '../store/editorStore'
+import { useUIStore } from '../store/uiStore'
 import { calcAlbumPrice, ALBUM_SIZES } from '../lib/constants'
+import { exportSpreadToBlob, calc300DpiScale } from '../lib/exportSpread'
+import {
+  createOrder,
+  updateOrderExport,
+  updateAlbumStatus,
+  uploadExportPage,
+  type ShippingAddress,
+} from '../lib/orderService'
+
+type ExportPhase =
+  | { step: 'idle' }
+  | { step: 'creating-order' }
+  | { step: 'exporting'; current: number; total: number }
+  | { step: 'uploading'; current: number; total: number }
+  | { step: 'finalizing' }
+  | { step: 'error'; message: string }
 
 export default function CheckoutScreen() {
   const navigate = useNavigate()
   const config = useAlbumStore((s) => s.config)
   const albumTitle = useAlbumStore((s) => s.albumTitle)
   const albumId = useAlbumStore((s) => s.albumId)
+  const spreads = useEditorStore((s) => s.spreads)
+  const userId = useUIStore((s) => s.userId)
   const sizeObj = ALBUM_SIZES.find((s) => s.id === config.size)
   const totalPrice = useMemo(() => calcAlbumPrice(config.size, config.pages), [config.size, config.pages])
-  const [isProcessing, setIsProcessing] = useState(false)
+
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [phase, setPhase] = useState<ExportPhase>({ step: 'idle' })
+  const [isExporting, setIsExporting] = useState(false)
+
+  const exportBlobsRef = useRef<Blob[]>([])
+  const orderIdRef = useRef<string | null>(null)
+  const orderNumberRef = useRef<string | null>(null)
 
   const [form, setForm] = useState({
     name: '',
@@ -47,13 +74,84 @@ export default function CheckoutScreen() {
     return Object.keys(errs).length === 0
   }
 
+  const handleSpreadReady = useCallback(async (_index: number, element: HTMLDivElement) => {
+    const scale = calc300DpiScale(element.offsetWidth, config.size)
+    const blob = await exportSpreadToBlob(element, {
+      scale,
+      quality: 0.92,
+      backgroundColor: '#FFFFFF',
+    })
+    exportBlobsRef.current.push(blob)
+    setPhase({ step: 'exporting', current: exportBlobsRef.current.length, total: spreads.length })
+  }, [config.size, spreads.length])
+
+  const handleExportComplete = useCallback(async () => {
+    const blobs = exportBlobsRef.current
+    const oId = orderIdRef.current
+    if (!oId || !userId) return
+
+    setPhase({ step: 'uploading', current: 0, total: blobs.length })
+
+    try {
+      const paths: string[] = []
+      for (let i = 0; i < blobs.length; i++) {
+        const path = await uploadExportPage(userId, oId, i, blobs[i])
+        paths.push(path)
+        setPhase({ step: 'uploading', current: i + 1, total: blobs.length })
+      }
+
+      setPhase({ step: 'finalizing' })
+      await updateOrderExport(oId, paths)
+
+      if (albumId) {
+        await updateAlbumStatus(albumId, 'ordered')
+      }
+
+      navigate('/confirmation', { state: { orderId: oId, orderNumber: orderNumberRef.current } })
+    } catch (err) {
+      setPhase({ step: 'error', message: err instanceof Error ? err.message : 'שגיאה בהעלאת קבצים' })
+      setIsExporting(false)
+    }
+  }, [userId, albumId, navigate])
+
+  const handleExportError = useCallback((error: Error) => {
+    setPhase({ step: 'error', message: error.message })
+    setIsExporting(false)
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!validate()) return
-    setIsProcessing(true)
-    await new Promise((r) => setTimeout(r, 2000))
-    navigate('/confirmation')
+    if (!userId || !albumId) {
+      setPhase({ step: 'error', message: 'יש להתחבר כדי להשלים הזמנה' })
+      return
+    }
+
+    setIsExporting(true)
+    setPhase({ step: 'creating-order' })
+
+    try {
+      const shipping: ShippingAddress = {
+        name: form.name,
+        address: form.address,
+        city: form.city,
+        zip: form.zip,
+        phone: form.phone,
+      }
+
+      const order = await createOrder(userId, albumId, shipping, totalPrice, config)
+      orderIdRef.current = order.id
+      orderNumberRef.current = order.order_number
+
+      exportBlobsRef.current = []
+      setPhase({ step: 'exporting', current: 0, total: spreads.length })
+    } catch (err) {
+      setPhase({ step: 'error', message: err instanceof Error ? err.message : 'שגיאה ביצירת הזמנה' })
+      setIsExporting(false)
+    }
   }
+
+  const isProcessing = phase.step !== 'idle' && phase.step !== 'error'
 
   const inputClass = (field: string) =>
     `w-full px-4 py-2.5 rounded-lg bg-surface-container-lowest border text-sm outline-none transition-all ${
@@ -200,9 +298,88 @@ export default function CheckoutScreen() {
               >
                 {`השלם הזמנה — ₪${totalPrice}`}
               </LoadingButton>
+
+              {phase.step === 'error' && (
+                <motion.p
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="text-sm text-error text-center"
+                >
+                  {phase.message}
+                </motion.p>
+              )}
             </motion.form>
           </div>
         </div>
+
+        {/* Processing Overlay */}
+        <AnimatePresence>
+          {isProcessing && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-white/80 backdrop-blur-sm"
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                className="bg-white rounded-2xl shadow-[0_12px_48px_rgba(45,40,35,0.12)] p-8 max-w-sm w-full mx-4 text-center"
+              >
+                <div className="w-14 h-14 mx-auto mb-5 rounded-full bg-primary-fixed/20 flex items-center justify-center">
+                  <div className="w-7 h-7 border-[2.5px] border-primary/20 border-t-primary rounded-full animate-spin" />
+                </div>
+
+                <h3
+                  className="text-xl font-semibold mb-2"
+                  style={{ fontFamily: 'var(--font-family-headline)' }}
+                >
+                  {phase.step === 'creating-order' && 'יוצר הזמנה...'}
+                  {phase.step === 'exporting' && 'מייצא עמודים'}
+                  {phase.step === 'uploading' && 'מעלה קבצים'}
+                  {phase.step === 'finalizing' && 'משלים הזמנה...'}
+                </h3>
+
+                <p className="text-sm text-warm-gray mb-4">
+                  {phase.step === 'creating-order' && 'רגע אחד...'}
+                  {phase.step === 'exporting' && `עמוד ${(phase as { current: number; total: number }).current} מתוך ${(phase as { current: number; total: number }).total}`}
+                  {phase.step === 'uploading' && `קובץ ${(phase as { current: number; total: number }).current} מתוך ${(phase as { current: number; total: number }).total}`}
+                  {phase.step === 'finalizing' && 'כמעט שם...'}
+                </p>
+
+                {(phase.step === 'exporting' || phase.step === 'uploading') && (
+                  <div className="w-full h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+                    <motion.div
+                      className="h-full bg-primary rounded-full"
+                      initial={{ width: '0%' }}
+                      animate={{
+                        width: `${Math.round(
+                          ((phase as { current: number; total: number }).current /
+                            (phase as { current: number; total: number }).total) *
+                            100,
+                        )}%`,
+                      }}
+                      transition={{ duration: 0.3, ease: 'easeOut' }}
+                    />
+                  </div>
+                )}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Off-screen renderer — mounted only during export phase */}
+        {isExporting && phase.step === 'exporting' && (
+          <OffScreenSpreadRenderer
+            spreads={spreads}
+            albumSizeId={config.size}
+            onSpreadReady={handleSpreadReady}
+            onComplete={handleExportComplete}
+            onError={handleExportError}
+          />
+        )}
       </ProductLayout>
     </PageTransition>
   )
