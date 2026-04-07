@@ -297,6 +297,14 @@ body {
   outline-color: var(--color-primary-container);
 }
 
+/* Sidebar buttons — instant feedback */
+.overview-sidebar-btn {
+  transition: background-color 0s, color 0s, box-shadow 0.08s ease;
+}
+.overview-sidebar-btn:active {
+  transform: scale(0.96);
+}
+
 .shadow-overview-card         { box-shadow: 0 2px 8px rgba(45,40,35,0.05); }
 .shadow-overview-card-hover   { box-shadow: 0 6px 20px rgba(45,40,35,0.10); }
 .shadow-overview-card-active  { box-shadow: 0 4px 20px rgba(96,92,72,0.12); }

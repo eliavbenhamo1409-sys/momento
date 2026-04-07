@@ -31,12 +31,10 @@ function SidebarBtn({
   onClick: () => void
 }) {
   return (
-    <motion.button
+    <button
       type="button"
-      whileHover={{ scale: 1.04 }}
-      whileTap={{ scale: 0.94 }}
       onClick={onClick}
-      className={`w-full rounded-2xl flex items-center gap-3 py-2.5 px-3 transition-all duration-200 outline-none text-right ${
+      className={`overview-sidebar-btn w-full rounded-2xl flex items-center gap-3 py-2.5 px-3 outline-none text-right ${
         danger
           ? active
             ? 'bg-error text-on-error shadow-sm'
@@ -52,7 +50,7 @@ function SidebarBtn({
       }`}>
         {label}
       </span>
-    </motion.button>
+    </button>
   )
 }
 
