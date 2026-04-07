@@ -35,18 +35,16 @@ export default function EmptyState({ icon, title, description, actionLabel, onAc
       <p className="text-sm text-warm-gray mb-6 max-w-xs">{description}</p>
 
       {actionLabel && onAction && (
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
+        <button
           onClick={onAction}
-          className="px-6 py-3 rounded-xl text-sm font-semibold text-white transition-shadow"
+          className="btn-press px-6 py-3 rounded-xl text-sm font-semibold text-white transition-shadow"
           style={{
             background: 'linear-gradient(135deg, #8E8973 0%, #7B7660 100%)',
             boxShadow: '0 4px 16px rgba(142,137,115,0.25)',
           }}
         >
           {actionLabel}
-        </motion.button>
+        </button>
       )}
     </motion.div>
   )

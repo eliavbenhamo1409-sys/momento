@@ -221,9 +221,9 @@ export default function AIBackgroundPanel({
 
       {/* Tab switcher */}
       <div className="flex gap-1 mb-4 p-1 bg-surface-container-low rounded-xl">
-        <button
+          <button
           onClick={() => setActiveTab('gallery')}
-          className={`flex-1 py-2 rounded-lg text-[11px] font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 rounded-lg text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === 'gallery'
               ? 'bg-white text-on-surface shadow-sm'
               : 'text-secondary/50 hover:text-on-surface'
@@ -234,7 +234,7 @@ export default function AIBackgroundPanel({
         </button>
         <button
           onClick={() => setActiveTab('ai')}
-          className={`flex-1 py-2 rounded-lg text-[11px] font-semibold transition-all duration-200 flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-2 rounded-lg text-[11px] font-semibold transition-colors flex items-center justify-center gap-1.5 ${
             activeTab === 'ai'
               ? 'bg-white text-on-surface shadow-sm'
               : 'text-secondary/50 hover:text-on-surface'
@@ -261,12 +261,10 @@ export default function AIBackgroundPanel({
               </span>
               <div className="grid grid-cols-4 gap-2">
                 {PREDEFINED_BG_COLORS.map((bg) => (
-                  <motion.button
+                  <button
                     key={bg.value}
-                    whileHover={{ scale: 1.06 }}
-                    whileTap={{ scale: 0.94 }}
                     onClick={() => { handleApplyColor(bg.value); setLastAppliedColor(bg.value) }}
-                    className={`flex flex-col items-center gap-1 group ${lastAppliedColor === bg.value ? 'ring-2 ring-primary ring-offset-1 ring-offset-white rounded-xl' : ''}`}
+                    className={`btn-press flex flex-col items-center gap-1 group ${lastAppliedColor === bg.value ? 'ring-2 ring-primary ring-offset-1 ring-offset-white rounded-xl' : ''}`}
                   >
                     <div
                       className="w-full aspect-square rounded-xl border border-black/[0.06] shadow-sm group-hover:shadow-md transition-shadow"
@@ -275,22 +273,18 @@ export default function AIBackgroundPanel({
                     <span className="text-[9px] text-secondary/50 font-medium group-hover:text-on-surface transition-colors">
                       {bg.label}
                     </span>
-                  </motion.button>
+                  </button>
                 ))}
               </div>
 
               {lastAppliedColor && (
-                <motion.button
-                  initial={{ opacity: 0, y: 4 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={() => handleApplyColor(lastAppliedColor, true)}
-                  className="w-full mt-3 py-2 bg-primary/10 hover:bg-primary/15 text-primary rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors"
+                  className="btn-press w-full mt-3 py-2 bg-primary/10 hover:bg-primary/15 text-primary rounded-xl text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors"
                 >
                   <Icon name="select_all" size={14} />
                   החל על כל האלבום
-                </motion.button>
+                </button>
               )}
             </div>
 
@@ -365,12 +359,10 @@ export default function AIBackgroundPanel({
             </div>
 
             {/* Generate button */}
-            <motion.button
-              whileHover={{ scale: isBusy ? 1 : 1.02 }}
-              whileTap={{ scale: isBusy ? 1 : 0.98 }}
+            <button
               onClick={handleGenerate}
               disabled={isBusy || !prompt.trim()}
-              className="w-full py-2.5 bg-gradient-to-r from-primary to-primary/80 text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-all mb-3 shadow-sm"
+              className="btn-press w-full py-2.5 bg-gradient-to-r from-primary to-primary/80 text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-colors mb-3 shadow-sm"
             >
               {isGenerating ? (
                 <>
@@ -385,7 +377,7 @@ export default function AIBackgroundPanel({
                   צור רקע
                 </>
               )}
-            </motion.button>
+            </button>
 
             {/* Hint before any preview — sets expectation */}
             {!previewUrl && (
@@ -437,30 +429,26 @@ export default function AIBackgroundPanel({
                       שלב 1 · רק הדף הזה
                     </span>
                     <div className="flex gap-2">
-                      <motion.button
+                      <button
                         type="button"
-                        whileHover={{ scale: isBusy ? 1 : 1.02 }}
-                        whileTap={{ scale: isBusy ? 1 : 0.98 }}
                         onClick={handleApply}
                         disabled={isBusy}
                         aria-label="החל את הרקע המוצג רק על הדף הנבחר"
-                        className="flex-1 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm disabled:opacity-40"
+                        className="btn-press flex-1 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-sm disabled:opacity-40"
                       >
                         <Icon name="check" size={16} />
                         החל על הדף הזה בלבד
-                      </motion.button>
-                      <motion.button
+                      </button>
+                      <button
                         type="button"
-                        whileHover={{ scale: isBusy ? 1 : 1.02 }}
-                        whileTap={{ scale: isBusy ? 1 : 0.98 }}
                         onClick={handleGenerate}
                         disabled={isBusy}
                         aria-label="צור תצוגה מקדימה חדשה עם אותו תיאור"
-                        className="px-4 py-2.5 bg-surface-container-low rounded-xl text-sm font-semibold text-secondary/70 flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors disabled:opacity-40 shrink-0"
+                        className="btn-press px-4 py-2.5 bg-surface-container-low rounded-xl text-sm font-semibold text-secondary/70 flex items-center justify-center gap-1.5 hover:bg-surface-container-high transition-colors disabled:opacity-40 shrink-0"
                       >
                         <Icon name="refresh" size={16} />
                         מחדש
-                      </motion.button>
+                      </button>
                     </div>
                   </div>
 
@@ -482,29 +470,25 @@ export default function AIBackgroundPanel({
                     <p className="text-[10px] text-secondary/60 leading-relaxed">
                       יש לכם רקע לדוגמה. בחרו איך להרחיב לשאר האלבום (אפשר גם את שני הסוגים בזה אחר זה):
                     </p>
-                    <motion.button
+                    <button
                       type="button"
-                      whileHover={{ scale: isBusy ? 1 : 1.01 }}
-                      whileTap={{ scale: isBusy ? 1 : 0.99 }}
                       onClick={handleApplySameToAll}
                       disabled={isBusy}
                       aria-describedby="ai-bg-same-all-desc"
-                      className="w-full py-2.5 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 bg-white border border-black/[0.08] text-deep-brown shadow-[0_2px_12px_rgba(45,40,35,0.06)] hover:border-sage/25 hover:bg-white transition-all disabled:opacity-40 disabled:pointer-events-none text-right px-3"
+                      className="btn-press w-full py-2.5 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 bg-white border border-black/[0.08] text-deep-brown shadow-[0_2px_12px_rgba(45,40,35,0.06)] hover:border-sage/25 hover:bg-white transition-colors disabled:opacity-40 disabled:pointer-events-none text-right px-3"
                     >
                       <Icon name="copy_all" size={18} className="text-sage shrink-0" aria-hidden />
                       <span className="flex-1 leading-snug">אותה תמונה בדיוק לכל הדפים</span>
-                    </motion.button>
+                    </button>
                     <p id="ai-bg-same-all-desc" className="text-[9px] text-secondary/45 leading-snug -mt-1 mb-0 px-0.5">
                       העתקה פשוטה של התצוגה המקדימה — מהיר ואחיד.
                     </p>
-                    <motion.button
+                    <button
                       type="button"
-                      whileHover={{ scale: !prompt.trim() || isBusy ? 1 : 1.01 }}
-                      whileTap={{ scale: !prompt.trim() || isBusy ? 1 : 0.99 }}
                       onClick={handleApplyStyledToAll}
                       disabled={!prompt.trim() || isBusy}
                       aria-describedby="ai-bg-styled-all-desc"
-                      className="w-full py-2.5 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 bg-sage text-white shadow-[0_4px_16px_rgba(142,137,115,0.28)] hover:bg-sage/92 transition-all disabled:opacity-40 disabled:pointer-events-none text-right px-3"
+                      className="btn-press w-full py-2.5 rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 bg-sage text-white shadow-[0_4px_16px_rgba(142,137,115,0.28)] hover:bg-sage/92 transition-colors disabled:opacity-40 disabled:pointer-events-none text-right px-3"
                     >
                       <Icon name="auto_awesome" size={18} className="shrink-0 opacity-95" aria-hidden />
                       <span className="flex-1 leading-snug">
@@ -512,7 +496,7 @@ export default function AIBackgroundPanel({
                           ? `יוצר רקעים… ${batchProgress.done} מתוך ${batchProgress.total}`
                           : 'רקע אחר בכל דף — באותו סגנון (AI)'}
                       </span>
-                    </motion.button>
+                    </button>
                     <p id="ai-bg-styled-all-desc" className="text-[9px] text-secondary/45 leading-snug -mt-1 px-0.5">
                       לפי התיאור בשדה למעלה: יצירה נפרדת לכל דף, מגוון בקומפוזיציה.
                       {!prompt.trim() && (

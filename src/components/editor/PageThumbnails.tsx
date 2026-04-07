@@ -55,16 +55,14 @@ export default function PageThumbnails() {
 
         <div className="w-px h-4 bg-outline-variant/15 shrink-0" />
 
-        <motion.button
+        <button
           type="button"
-          whileHover={{ scale: 1.08 }}
-          whileTap={{ scale: 0.92 }}
           onClick={handleAdd}
-          className="w-7 h-7 rounded-full bg-primary/[0.06] hover:bg-primary/[0.12] flex items-center justify-center cursor-pointer transition-colors"
+          className="btn-press w-7 h-7 rounded-full bg-primary/[0.06] hover:bg-primary/[0.12] flex items-center justify-center cursor-pointer transition-colors"
           aria-label="הוסף עמוד"
         >
           <Icon name="add" size={16} className="text-primary/70" />
-        </motion.button>
+        </button>
       </motion.div>
     </div>
   )

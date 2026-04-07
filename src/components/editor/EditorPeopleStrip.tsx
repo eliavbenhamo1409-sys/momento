@@ -132,15 +132,13 @@ function PersonCircle({
       animate={{ opacity: 1, scale: 1 }}
       className="relative shrink-0 flex flex-col items-center gap-0.5 group"
     >
-      <motion.button
+      <button
         type="button"
-        whileHover={{ scale: 1.1 }}
-        whileTap={{ scale: 0.93 }}
         onClick={onClick}
-        className="relative outline-none"
+        className="btn-press relative outline-none"
       >
         <div
-          className={`w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden transition-all duration-200 ${
+          className={`w-10 h-10 md:w-11 md:h-11 rounded-full overflow-hidden transition-[ring-color,box-shadow] ${
             isSelected
               ? 'ring-[2.5px] ring-sage shadow-[0_0_12px_rgba(139,152,120,0.3)]'
               : isUnidentified
@@ -160,7 +158,7 @@ function PersonCircle({
         <span className="absolute -bottom-0.5 -right-0.5 min-w-[16px] h-4 px-1 flex items-center justify-center rounded-full bg-deep-brown/80 text-white text-[9px] font-bold leading-none shadow-sm">
           {person.photoIds.length}
         </span>
-      </motion.button>
+      </button>
 
       <EditableName
         personId={person.id}
@@ -196,15 +194,13 @@ function SwapActiveBanner({ onCancel }: { onCancel: () => void }) {
             לחצו על תמונה באלבום כדי להחליף
           </span>
         </div>
-        <motion.button
+        <button
           type="button"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
           onClick={onCancel}
-          className="text-[11px] font-medium text-secondary/50 hover:text-deep-brown px-2 py-0.5 rounded-md hover:bg-white/60 transition-colors"
+          className="btn-press text-[11px] font-medium text-secondary/50 hover:text-deep-brown px-2 py-0.5 rounded-md hover:bg-white/60 transition-colors"
         >
           ביטול
-        </motion.button>
+        </button>
       </div>
     </motion.div>
   )

@@ -110,9 +110,9 @@ export default function QuestionFlow() {
       {/* ── Background Mode Toggle ───────────────────────── */}
 
       <div className="flex gap-3 mb-6">
-        <button
+          <button
           onClick={() => setConfigField('backgroundMode', 'white')}
-          className={`flex-1 rounded-xl p-4 border-2 transition-all duration-200 text-right ${
+          className={`flex-1 rounded-xl p-4 border-2 transition-colors text-right ${
             bgMode === 'white'
               ? 'border-sage bg-sage/[0.04] shadow-md shadow-sage/10'
               : 'border-outline-variant/15 bg-surface-container-lowest hover:border-outline-variant/30'
@@ -133,7 +133,7 @@ export default function QuestionFlow() {
 
         <button
           onClick={() => setConfigField('backgroundMode', 'ai-generated')}
-          className={`flex-1 rounded-xl p-4 border-2 transition-all duration-200 text-right ${
+          className={`flex-1 rounded-xl p-4 border-2 transition-colors text-right ${
             bgMode === 'ai-generated'
               ? 'border-sage bg-sage/[0.04] shadow-md shadow-sage/10'
               : 'border-outline-variant/15 bg-surface-container-lowest hover:border-outline-variant/30'
@@ -193,7 +193,7 @@ export default function QuestionFlow() {
                 <button
                   key={chip.label}
                   onClick={() => setConfigField('vibeText', chip.text)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200 ${
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                     vibeText === chip.text
                       ? 'bg-sage/15 text-sage border border-sage/30'
                       : 'bg-surface-container-low text-warm-gray border border-transparent hover:bg-sage/8 hover:text-sage/80'
@@ -243,21 +243,20 @@ export default function QuestionFlow() {
                 </AnimatePresence>
 
                 {vibeReferences.length < MAX_REFERENCES && (
-                  <motion.button
-                    layout
+                  <button
                     onClick={() => fileInputRef.current?.click()}
                     onDragOver={(e) => { e.preventDefault(); setIsDragging(true) }}
                     onDragLeave={() => setIsDragging(false)}
-                    onDrop={handleDrop}
-                    className={`w-16 h-16 rounded-lg border-2 border-dashed flex flex-col items-center justify-center
-                      transition-all duration-200 shrink-0 cursor-pointer
+                    onDrop={handleDrop as unknown as React.DragEventHandler<HTMLButtonElement>}
+                    className={`btn-press w-16 h-16 rounded-lg border-2 border-dashed flex flex-col items-center justify-center
+                      transition-colors shrink-0 cursor-pointer
                       ${isDragging
-                        ? 'border-sage bg-sage/10 scale-105'
+                        ? 'border-sage bg-sage/10'
                         : 'border-outline-variant/25 bg-surface-container-lowest hover:border-sage/40 hover:bg-sage/[0.03]'
                       }`}
                   >
                     <Icon name="add" size={20} className={isDragging ? 'text-sage' : 'text-warm-gray/35'} />
-                  </motion.button>
+                  </button>
                 )}
               </div>
 
@@ -356,11 +355,9 @@ function FamilyCard({
   const icon = FAMILY_ICONS[family.id] ?? 'palette'
 
   return (
-    <motion.button
-      whileHover={{ scale: 1.015 }}
-      whileTap={{ scale: 0.985 }}
+    <button
       onClick={onSelect}
-      className={`relative text-right rounded-xl p-4 transition-all duration-200 border-2 ${
+      className={`btn-press relative text-right rounded-xl p-4 transition-colors border-2 ${
         isSelected
           ? 'border-sage bg-sage/[0.04] shadow-md shadow-sage/10'
           : 'border-outline-variant/15 bg-surface-container-lowest hover:border-outline-variant/30 hover:shadow-sm'
@@ -418,6 +415,6 @@ function FamilyCard({
           </span>
         ))}
       </div>
-    </motion.button>
+    </button>
   )
 }

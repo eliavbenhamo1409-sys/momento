@@ -41,10 +41,8 @@ export default function ProjectCard({ project, index, onDelete }: Props) {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: 0.06 * index }}
-      whileHover={{ y: -4 }}
-      whileTap={{ scale: 0.98 }}
       onClick={() => navigate(`/editor/${project.id}`)}
-      className="group cursor-pointer rounded-2xl overflow-hidden"
+      className="btn-press group cursor-pointer rounded-2xl overflow-hidden hover:-translate-y-1 transition-transform"
       style={{
         background: 'rgba(255,255,255,0.7)',
         backdropFilter: 'blur(8px)',
@@ -81,11 +79,10 @@ export default function ProjectCard({ project, index, onDelete }: Props) {
         </div>
 
         {onDelete && (
-          <motion.button
-            whileTap={{ scale: 0.9 }}
+          <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-error/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-sm disabled:opacity-50"
+            className="btn-press absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm hover:bg-error/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm disabled:opacity-50"
           >
             {isDeleting ? (
               <span
@@ -95,7 +92,7 @@ export default function ProjectCard({ project, index, onDelete }: Props) {
             ) : (
               <Icon name="delete" size={16} className="text-error/60" />
             )}
-          </motion.button>
+          </button>
         )}
       </div>
 
@@ -120,13 +117,12 @@ export default function ProjectCard({ project, index, onDelete }: Props) {
           <span className="text-[11px] text-warm-gray/70">
             עדכון אחרון {lastEditedLabel}
           </span>
-          <motion.span
-            whileHover={{ x: -3 }}
+          <span
             className="text-sage text-xs font-medium flex items-center gap-1"
           >
             המשך עריכה
             <Icon name="arrow_back" size={14} />
-          </motion.span>
+          </span>
         </div>
       </div>
     </motion.div>

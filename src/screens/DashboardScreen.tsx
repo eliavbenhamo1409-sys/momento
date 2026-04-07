@@ -115,11 +115,9 @@ export default function DashboardScreen() {
             transition={{ duration: 0.45, delay: 0.1 }}
             className="mb-10"
           >
-            <motion.button
-              whileHover={{ scale: 1.005, y: -2 }}
-              whileTap={{ scale: 0.995 }}
+            <button
               onClick={() => navigate('/upload')}
-              className="group w-full relative overflow-hidden rounded-2xl p-7 md:p-8 flex items-center gap-5 text-right transition-shadow"
+              className="btn-press group w-full relative overflow-hidden rounded-2xl p-7 md:p-8 flex items-center gap-5 text-right transition-shadow"
               style={{
                 background: 'linear-gradient(135deg, rgba(142,137,115,0.08) 0%, rgba(233,227,201,0.15) 50%, rgba(247,241,241,0.4) 100%)',
                 boxShadow: '0 2px 20px rgba(90,80,70,0.05), inset 0 1px 0 rgba(255,255,255,0.6)',
@@ -141,7 +139,7 @@ export default function DashboardScreen() {
                 <p className="text-sm text-secondary/80">העלה תמונות וה-AI יעצב עבורך אלבום מושלם</p>
               </div>
               <Icon name="arrow_back" size={22} className="text-sage/50 mr-auto group-hover:text-sage transition-colors" />
-            </motion.button>
+            </button>
           </motion.div>
 
           <motion.div
@@ -157,7 +155,7 @@ export default function DashboardScreen() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`relative flex items-center gap-2 px-5 py-2.5 rounded-[10px] text-sm font-medium transition-all duration-300 ${
+                className={`relative flex items-center gap-2 px-5 py-2.5 rounded-[10px] text-sm font-medium transition-colors ${
                   activeTab === tab.id
                     ? 'text-deep-brown'
                     : 'text-warm-gray hover:text-deep-brown/70'

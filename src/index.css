@@ -297,11 +297,11 @@ body {
   outline-color: var(--color-primary-container);
 }
 
-/* Sidebar buttons — instant feedback */
-.overview-sidebar-btn {
-  transition: background-color 0s, color 0s, box-shadow 0.08s ease;
+/* Instant interactive feedback — replaces Motion whileHover/whileTap sitewide */
+.btn-press {
+  transition: background-color 0s, color 0s, box-shadow 0.08s ease, opacity 0.08s ease;
 }
-.overview-sidebar-btn:active {
+.btn-press:active {
   transform: scale(0.96);
 }
 

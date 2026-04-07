@@ -56,11 +56,9 @@ export default function ProductHeader({ showBack, backTo, backLabel }: Props) {
 
       {isLoggedIn && (
         <div className="relative" ref={menuRef}>
-          <motion.button
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
+          <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="flex items-center gap-2 py-1 px-1.5 rounded-full hover:bg-surface-container/40 transition-colors"
+            className="btn-press flex items-center gap-2 py-1 px-1.5 rounded-full hover:bg-surface-container/40 transition-colors"
           >
             <span className="text-xs font-medium text-warm-gray hidden sm:block">{userName}</span>
             <div
@@ -72,7 +70,7 @@ export default function ProductHeader({ showBack, backTo, backLabel }: Props) {
             >
               {initial}
             </div>
-          </motion.button>
+          </button>
 
           <AnimatePresence>
             {menuOpen && (

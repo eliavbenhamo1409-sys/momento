@@ -93,11 +93,9 @@ function ModeSelector({ onSelect }: { onSelect: (mode: CurateMode) => void }) {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 w-full max-w-lg">
-          <motion.button
-            whileHover={{ scale: 1.02, y: -4 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             onClick={() => onSelect('ai')}
-            className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-white ring-1 ring-black/[0.04] text-center transition-all duration-300 hover:shadow-xl group cursor-pointer"
+            className="btn-press flex flex-col items-center gap-4 p-8 rounded-2xl bg-white ring-1 ring-black/[0.04] text-center transition-shadow hover:shadow-xl group cursor-pointer"
             style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}
           >
             <div className="w-16 h-16 rounded-2xl bg-sage/10 flex items-center justify-center group-hover:bg-sage/18 transition-colors">
@@ -111,13 +109,11 @@ function ModeSelector({ onSelect }: { onSelect: (mode: CurateMode) => void }) {
                 הבינה המלאכותית תנתח את התמונות, תזהה כפילויות ואיכות נמוכה, ותציע סינון חכם
               </p>
             </div>
-          </motion.button>
+          </button>
 
-          <motion.button
-            whileHover={{ scale: 1.02, y: -4 }}
-            whileTap={{ scale: 0.98 }}
+          <button
             onClick={() => onSelect('manual')}
-            className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-white ring-1 ring-black/[0.04] text-center transition-all duration-300 hover:shadow-xl group cursor-pointer"
+            className="btn-press flex flex-col items-center gap-4 p-8 rounded-2xl bg-white ring-1 ring-black/[0.04] text-center transition-shadow hover:shadow-xl group cursor-pointer"
             style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}
           >
             <div className="w-16 h-16 rounded-2xl bg-amber-50 flex items-center justify-center group-hover:bg-amber-100/80 transition-colors">
@@ -131,7 +127,7 @@ function ModeSelector({ onSelect }: { onSelect: (mode: CurateMode) => void }) {
                 כל התמונות ייכנסו לאלבום ותוכל לבחור ידנית מה להוציא
               </p>
             </div>
-          </motion.button>
+          </button>
         </div>
       </div>
     </motion.div>
@@ -176,11 +172,9 @@ function PhotoTile({
         </div>
       )}
 
-      <motion.button
-        whileHover={{ scale: 1.12 }}
-        whileTap={{ scale: 0.9 }}
+      <button
         onClick={() => onSwap(photo.id)}
-        className={`absolute top-1.5 z-20 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg ${
+        className={`btn-press absolute top-1.5 z-20 w-7 h-7 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-lg ${
           side === 'selected'
             ? 'left-1.5 bg-red-500/80 text-white backdrop-blur-sm'
             : 'right-1.5 bg-sage/90 text-white backdrop-blur-sm'
@@ -191,7 +185,7 @@ function PhotoTile({
           name={side === 'selected' ? 'arrow_back' : 'arrow_forward'}
           size={16}
         />
-      </motion.button>
+      </button>
 
       {quality > 0 && (
         <div className={`absolute top-1.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity ${
@@ -553,7 +547,7 @@ export default function CurateScreen() {
                   <div className="flex items-center bg-surface-container-high rounded-full p-1 gap-0.5">
                     <button
                       onClick={() => handleModeSwitch('ai')}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                         mode === 'ai'
                           ? 'bg-white text-deep-brown shadow-md'
                           : 'text-warm-gray hover:text-deep-brown'
@@ -564,7 +558,7 @@ export default function CurateScreen() {
                     </button>
                     <button
                       onClick={() => handleModeSwitch('manual')}
-                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300 ${
+                      className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                         mode === 'manual'
                           ? 'bg-white text-deep-brown shadow-md'
                           : 'text-warm-gray hover:text-deep-brown'
@@ -664,12 +658,10 @@ export default function CurateScreen() {
                   )}
                 </div>
 
-                <motion.button
-                  whileHover={{ scale: 1.01, y: -1 }}
-                  whileTap={{ scale: 0.98 }}
+                <button
                   onClick={handleContinue}
                   disabled={selectedPhotos.length < 2}
-                  className={`px-10 py-3.5 rounded-xl font-semibold text-base transition-all duration-300 ${
+                  className={`btn-press px-10 py-3.5 rounded-xl font-semibold text-base transition-shadow ${
                     selectedPhotos.length < 2
                       ? 'bg-surface-container-high text-on-surface-variant/30 cursor-not-allowed'
                       : 'text-white shadow-lg'
@@ -680,7 +672,7 @@ export default function CurateScreen() {
                   } : undefined}
                 >
                   המשך
-                </motion.button>
+                </button>
               </div>
             </motion.div>
           )}

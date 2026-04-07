@@ -70,8 +70,7 @@ export default function HeroSection() {
         >
           <div className="p-8 md:p-12">
             <div className="flex justify-center gap-4 mb-8">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
+              <div
                 className="w-16 h-16 rounded-2xl flex items-center justify-center"
                 style={{
                   background: 'linear-gradient(135deg, rgba(234,226,210,0.6) 0%, rgba(234,226,210,0.2) 100%)',
@@ -79,9 +78,8 @@ export default function HeroSection() {
                 }}
               >
                 <Icon name="folder" size={28} className="text-on-secondary-container" />
-              </motion.div>
-              <motion.div
-                whileHover={{ scale: 1.05 }}
+              </div>
+              <div
                 className="w-16 h-16 rounded-2xl flex items-center justify-center"
                 style={{
                   background: 'linear-gradient(135deg, rgba(233,227,201,0.6) 0%, rgba(233,227,201,0.2) 100%)',
@@ -89,7 +87,7 @@ export default function HeroSection() {
                 }}
               >
                 <Icon name="photo_camera" size={28} className="text-on-primary-fixed" />
-              </motion.div>
+              </div>
             </div>
 
             <h3
@@ -100,30 +98,26 @@ export default function HeroSection() {
             </h3>
 
             <div className="flex flex-col gap-3">
-              <motion.button
-                whileHover={{ scale: 1.01, y: -1 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 onClick={handleCreate}
-                className="py-4 px-10 rounded-xl text-lg font-semibold text-white transition-all"
+                className="btn-press py-4 px-10 rounded-xl text-lg font-semibold text-white transition-shadow"
                 style={{
                   background: 'linear-gradient(135deg, #605c48 0%, #8E8973 100%)',
                   boxShadow: '0 6px 24px rgba(96,92,72,0.25), 0 2px 8px rgba(96,92,72,0.15)',
                 }}
               >
                 צור אלבום חדש עם AI
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.005 }}
-                whileTap={{ scale: 0.99 }}
+              </button>
+              <button
                 onClick={handleExisting}
-                className="py-4 px-10 rounded-xl text-lg font-semibold text-deep-brown transition-all"
+                className="btn-press py-4 px-10 rounded-xl text-lg font-semibold text-deep-brown transition-shadow"
                 style={{
                   background: 'rgba(234,226,210,0.4)',
                   boxShadow: '0 2px 8px rgba(90,80,70,0.05)',
                 }}
               >
                 המשך עריכה של אלבום קיים
-              </motion.button>
+              </button>
             </div>
 
             <p className="mt-7 text-xs text-warm-gray/60 tracking-wider">

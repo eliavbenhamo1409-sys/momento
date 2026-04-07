@@ -34,7 +34,7 @@ function SidebarBtn({
     <button
       type="button"
       onClick={onClick}
-      className={`overview-sidebar-btn w-full rounded-2xl flex items-center gap-3 py-2.5 px-3 outline-none text-right ${
+      className={`btn-press w-full rounded-2xl flex items-center gap-3 py-2.5 px-3 outline-none text-right ${
         danger
           ? active
             ? 'bg-error text-on-error shadow-sm'
@@ -94,13 +94,11 @@ function BgColorPanel({ onSelectColor, onApplyAll, onClose }: {
 
       <div className="grid grid-cols-6 gap-1.5">
         {PREDEFINED_BG_COLORS.map((bg) => (
-          <motion.button
+          <button
             key={bg.value}
             type="button"
-            whileHover={{ scale: 1.12 }}
-            whileTap={{ scale: 0.9 }}
             onClick={() => { setSelected(bg.value); onSelectColor(bg.value) }}
-            className={`aspect-square rounded-lg border shadow-sm transition-shadow ${
+            className={`btn-press aspect-square rounded-lg border shadow-sm transition-shadow ${
               selected === bg.value
                 ? 'ring-2 ring-primary ring-offset-1 ring-offset-white border-primary/30'
                 : 'border-black/[0.06] hover:shadow-md'
@@ -112,18 +110,14 @@ function BgColorPanel({ onSelectColor, onApplyAll, onClose }: {
       </div>
 
       {selected && (
-        <motion.button
+        <button
           type="button"
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           onClick={() => onApplyAll(selected)}
-          className="w-full py-1.5 bg-primary/10 hover:bg-primary/15 text-primary rounded-xl text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors"
+          className="btn-press w-full py-1.5 bg-primary/10 hover:bg-primary/15 text-primary rounded-xl text-[10px] font-semibold flex items-center justify-center gap-1 transition-colors"
         >
           <Icon name="select_all" size={13} />
           החל על כל האלבום
-        </motion.button>
+        </button>
       )}
     </motion.div>
   )

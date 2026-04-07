@@ -293,7 +293,7 @@ export default function PreviewOverlay() {
             <button
               key={i}
               onClick={() => handleSpreadChange(i)}
-              className={`rounded-full transition-all duration-200 ${
+              className={`rounded-full transition-colors ${
                 i === activeIdx
                   ? 'w-6 h-2 bg-white'
                   : 'w-2 h-2 bg-white/25 hover:bg-white/45'
@@ -302,15 +302,13 @@ export default function PreviewOverlay() {
           ))}
         </div>
         <div className="h-5 w-px bg-white/15" />
-        <motion.button
-          whileHover={{ scale: 1.03, y: -1 }}
-          whileTap={{ scale: 0.97 }}
+        <button
           onClick={() => { togglePreview(); navigate('/checkout') }}
-          className="px-8 py-2.5 rounded-full bg-white text-deep-brown font-bold text-sm shadow-[0_4px_24px_rgba(255,255,255,0.2)] hover:shadow-[0_6px_32px_rgba(255,255,255,0.3)] transition-all"
+          className="btn-press px-8 py-2.5 rounded-full bg-white text-deep-brown font-bold text-sm shadow-[0_4px_24px_rgba(255,255,255,0.2)] hover:shadow-[0_6px_32px_rgba(255,255,255,0.3)] transition-shadow"
           style={{ fontFamily: 'var(--font-family-headline)' }}
         >
           הזמן הדפסה
-        </motion.button>
+        </button>
       </motion.div>
     </motion.div>
   )

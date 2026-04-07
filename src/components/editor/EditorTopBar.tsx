@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router'
-import { motion, AnimatePresence } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useAlbumStore } from '../../store/albumStore'
 import { useEditorStore } from '../../store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
@@ -51,12 +51,10 @@ export default function EditorTopBar() {
   return (
     <header className="w-full z-20 bg-white/75 backdrop-blur-xl flex justify-between items-center px-4 md:px-8 py-2.5 md:py-3 border-b border-outline-variant/8 shrink-0 relative">
       <div className="flex items-center gap-3 md:gap-5 min-w-0">
-        <motion.button
+        <button
           type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
           onClick={() => navigate('/')}
-          className="flex items-center gap-2 shrink-0"
+          className="btn-press flex items-center gap-2 shrink-0"
         >
           <span
             className="text-lg md:text-xl font-light tracking-tighter text-on-surface"
@@ -64,7 +62,7 @@ export default function EditorTopBar() {
           >
             Momento
           </span>
-        </motion.button>
+        </button>
 
         <div className="h-7 w-px bg-outline-variant/20 hidden sm:block" />
 
@@ -117,68 +115,56 @@ export default function EditorTopBar() {
       </div>
 
       <div className="flex items-center gap-2 md:gap-3">
-        {/* Full buttons — visible on md+ */}
-        <motion.button
+        <button
           type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
           onClick={toggleOverview}
-          className="hidden md:flex px-4 py-2 rounded-full text-secondary/80 font-medium hover:bg-surface-container-high/60 transition-colors items-center gap-1.5 text-sm"
+          className="btn-press hidden md:flex px-4 py-2 rounded-full text-secondary/80 font-medium hover:bg-surface-container-high/60 transition-colors items-center gap-1.5 text-sm"
         >
           <Icon name="grid_view" size={18} />
           מבט על
-        </motion.button>
-        <motion.button
+        </button>
+        <button
           type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
           onClick={togglePreview}
-          className="hidden md:flex px-4 py-2 rounded-full text-secondary/80 font-medium hover:bg-surface-container-high/60 transition-colors items-center gap-1.5 text-sm"
+          className="btn-press hidden md:flex px-4 py-2 rounded-full text-secondary/80 font-medium hover:bg-surface-container-high/60 transition-colors items-center gap-1.5 text-sm"
         >
           <Icon name="visibility" size={18} />
           תצוגה מקדימה
-        </motion.button>
+        </button>
 
-        {/* Icon-only buttons — visible on sm..md */}
-        <motion.button
+        <button
           type="button"
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.94 }}
           onClick={toggleOverview}
-          className="hidden sm:flex md:hidden w-9 h-9 rounded-full text-secondary/70 hover:bg-surface-container-high/60 transition-colors items-center justify-center"
+          className="btn-press hidden sm:flex md:hidden w-9 h-9 rounded-full text-secondary/70 hover:bg-surface-container-high/60 transition-colors items-center justify-center"
           aria-label="מבט על"
         >
           <Icon name="grid_view" size={20} />
-        </motion.button>
-        <motion.button
+        </button>
+        <button
           type="button"
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.94 }}
           onClick={togglePreview}
-          className="hidden sm:flex md:hidden w-9 h-9 rounded-full text-secondary/70 hover:bg-surface-container-high/60 transition-colors items-center justify-center"
+          className="btn-press hidden sm:flex md:hidden w-9 h-9 rounded-full text-secondary/70 hover:bg-surface-container-high/60 transition-colors items-center justify-center"
           aria-label="תצוגה מקדימה"
         >
           <Icon name="visibility" size={20} />
-        </motion.button>
+        </button>
 
-        {/* Overflow menu — visible below sm */}
         <div className="relative sm:hidden" ref={menuRef}>
-          <motion.button
+          <button
             type="button"
-            whileTap={{ scale: 0.94 }}
             onClick={() => setMobileMenuOpen((v) => !v)}
-            className="w-9 h-9 rounded-full text-secondary/70 hover:bg-surface-container-high/60 transition-colors flex items-center justify-center"
+            className="btn-press w-9 h-9 rounded-full text-secondary/70 hover:bg-surface-container-high/60 transition-colors flex items-center justify-center"
             aria-label="תפריט"
           >
             <Icon name="more_vert" size={20} />
-          </motion.button>
+          </button>
           <AnimatePresence>
             {mobileMenuOpen && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: -4 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                transition={{ duration: 0.18 }}
+                transition={{ duration: 0.12 }}
                 className="absolute left-0 top-full mt-1.5 w-44 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_8px_32px_rgba(45,40,35,0.15)] border border-black/[0.06] py-1.5 z-50"
                 dir="rtl"
               >
@@ -201,38 +187,32 @@ export default function EditorTopBar() {
           </AnimatePresence>
         </div>
 
-        <motion.button
+        <button
           type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
           onClick={saveAlbum}
           disabled={isSaving}
-          className="hidden sm:flex px-4 py-2 rounded-full border border-outline-variant/30 text-secondary font-medium hover:bg-surface-container-low transition-colors text-sm disabled:opacity-50"
+          className="btn-press hidden sm:flex px-4 py-2 rounded-full border border-outline-variant/30 text-secondary font-medium hover:bg-surface-container-low transition-colors text-sm disabled:opacity-50"
         >
           {isSaving ? 'שומר...' : 'שמירה'}
-        </motion.button>
-        <motion.button
+        </button>
+        <button
           type="button"
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.94 }}
           onClick={saveAlbum}
           disabled={isSaving}
-          className="sm:hidden w-9 h-9 rounded-full border border-outline-variant/30 text-secondary/70 hover:bg-surface-container-low transition-colors flex items-center justify-center disabled:opacity-50"
+          className="btn-press sm:hidden w-9 h-9 rounded-full border border-outline-variant/30 text-secondary/70 hover:bg-surface-container-low transition-colors flex items-center justify-center disabled:opacity-50"
           aria-label="שמירה"
         >
           <Icon name={isSaving ? 'progress_activity' : 'save'} size={18} />
-        </motion.button>
-        <motion.button
+        </button>
+        <button
           type="button"
-          whileHover={{ scale: 1.03, y: -1 }}
-          whileTap={{ scale: 0.97 }}
           onClick={() => navigate('/checkout')}
-          className="px-4 md:px-7 py-2 md:py-2.5 rounded-full bg-deep-brown text-white font-bold shadow-[0_4px_16px_rgba(47,46,43,0.25)] hover:shadow-[0_6px_24px_rgba(47,46,43,0.35)] transition-all text-xs md:text-sm tracking-wide"
+          className="btn-press px-4 md:px-7 py-2 md:py-2.5 rounded-full bg-deep-brown text-white font-bold shadow-[0_4px_16px_rgba(47,46,43,0.25)] hover:shadow-[0_6px_24px_rgba(47,46,43,0.35)] transition-shadow text-xs md:text-sm tracking-wide"
           style={{ fontFamily: 'var(--font-family-headline)' }}
         >
           <span className="hidden sm:inline">הזמן עכשיו</span>
           <span className="sm:hidden">הזמנה</span>
-        </motion.button>
+        </button>
       </div>
     </header>
   )

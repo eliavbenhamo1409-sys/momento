@@ -166,7 +166,7 @@ function SliderRow({
             key={p.value}
             type="button"
             onClick={() => onChange(p.value)}
-            className={`flex-1 text-[9px] font-semibold py-1.5 rounded-lg transition-all duration-200 ${
+            className={`flex-1 text-[9px] font-semibold py-1.5 rounded-lg transition-colors ${
               value === p.value
                 ? 'bg-deep-brown text-white shadow-sm scale-[1.02]'
                 : 'bg-surface-container-low/60 text-secondary/60 hover:bg-surface-container-high hover:text-on-surface'
@@ -323,27 +323,23 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
       </div>
 
       <div className="mt-5 flex gap-2">
-        <motion.button
+        <button
           type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
           onClick={handleConfirm}
-          className="flex-1 py-2.5 rounded-xl bg-deep-brown text-white text-[12px] font-bold shadow-[0_4px_14px_rgba(47,46,43,0.25)] hover:shadow-[0_6px_20px_rgba(47,46,43,0.35)] transition-shadow"
+          className="btn-press flex-1 py-2.5 rounded-xl bg-deep-brown text-white text-[12px] font-bold shadow-[0_4px_14px_rgba(47,46,43,0.25)] hover:shadow-[0_6px_20px_rgba(47,46,43,0.35)] transition-shadow"
         >
           <div className="flex items-center justify-center gap-1.5">
             <Icon name="check" size={16} className="text-white" />
             <span>אישור</span>
           </div>
-        </motion.button>
-        <motion.button
+        </button>
+        <button
           type="button"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
           onClick={handleReset}
-          className="px-3 py-2.5 rounded-xl bg-surface-container-low/80 text-secondary/70 text-[11px] font-semibold hover:bg-surface-container-high hover:text-on-surface transition-colors"
+          className="btn-press px-3 py-2.5 rounded-xl bg-surface-container-low/80 text-secondary/70 text-[11px] font-semibold hover:bg-surface-container-high hover:text-on-surface transition-colors"
         >
           איפוס
-        </motion.button>
+        </button>
       </div>
 
       <div className="mt-3 pt-2 border-t border-black/[0.04]">

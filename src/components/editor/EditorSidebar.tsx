@@ -31,13 +31,11 @@ interface ToolBtnProps {
 
 function ToolBtn({ icon, label, active, danger, onClick }: ToolBtnProps) {
   return (
-    <motion.button
+    <button
       type="button"
       aria-label={label}
-      whileHover={{ scale: 1.04 }}
-      whileTap={{ scale: 0.94 }}
       onClick={onClick}
-      className={`relative rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all duration-200 outline-none focus-visible:ring-2 focus-visible:ring-primary/25 md:w-full py-2 px-2 md:px-1 ${
+      className={`btn-press relative rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary/25 md:w-full py-2 px-2 md:px-1 ${
         danger
           ? active
             ? 'bg-error text-on-error shadow-sm'
@@ -53,7 +51,7 @@ function ToolBtn({ icon, label, active, danger, onClick }: ToolBtnProps) {
       }`}>
         {label}
       </span>
-    </motion.button>
+    </button>
   )
 }
 

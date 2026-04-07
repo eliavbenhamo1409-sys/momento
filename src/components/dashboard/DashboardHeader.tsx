@@ -53,11 +53,9 @@ export default function DashboardHeader() {
       </span>
 
       <div className="relative" ref={menuRef}>
-        <motion.button
-          whileHover={{ scale: 1.04 }}
-          whileTap={{ scale: 0.96 }}
+        <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="flex items-center gap-3 py-2 px-3 rounded-full hover:bg-surface-container/60 transition-colors"
+          className="btn-press flex items-center gap-3 py-2 px-3 rounded-full hover:bg-surface-container/60 transition-colors"
         >
           <span className="text-sm font-medium text-deep-brown hidden sm:block">
             {userName}
@@ -71,7 +69,7 @@ export default function DashboardHeader() {
           >
             {initial}
           </div>
-        </motion.button>
+        </button>
 
         <AnimatePresence>
           {menuOpen && (

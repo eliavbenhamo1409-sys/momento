@@ -67,7 +67,7 @@ export default function ConfigureScreen() {
                       <button
                         key={size.id}
                         onClick={() => setSelectedSize(size.id)}
-                        className={`flex-1 rounded-xl p-5 transition-all duration-200 border-2 text-right ${
+                        className={`flex-1 rounded-xl p-5 transition-colors border-2 text-right ${
                           active
                             ? 'border-sage bg-sage/5 shadow-md'
                             : 'border-outline-variant/20 bg-surface-container-lowest hover:border-outline-variant/40'
@@ -156,14 +156,12 @@ export default function ConfigureScreen() {
               </div>
 
               {/* Continue */}
-              <motion.button
-                whileTap={{ scale: 0.97 }}
-                whileHover={{ scale: 1.01 }}
+              <button
                 onClick={handleContinue}
-                className="w-full py-4 bg-primary text-on-primary rounded-xl text-lg font-bold shadow-xl shadow-primary/20 transition-all"
+                className="btn-press w-full py-4 bg-primary text-on-primary rounded-xl text-lg font-bold shadow-xl shadow-primary/20 transition-shadow"
               >
                 המשך לעיצוב הסגנון
-              </motion.button>
+              </button>
             </motion.div>
           </div>
 

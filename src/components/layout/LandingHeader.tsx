@@ -84,11 +84,9 @@ export default function LandingHeader() {
         {isLoggedIn ? (
           /* Authenticated state — avatar with dropdown */
           <div className="relative" ref={menuRef}>
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+            <button
               onClick={() => setMenuOpen(!menuOpen)}
-              className="flex items-center gap-2.5 py-1.5 px-2 rounded-full hover:bg-surface-container/40 transition-colors"
+              className="btn-press flex items-center gap-2.5 py-1.5 px-2 rounded-full hover:bg-surface-container/40 transition-colors"
             >
               <span className="text-sm font-medium text-deep-brown hidden sm:block">{userName}</span>
               <div
@@ -100,7 +98,7 @@ export default function LandingHeader() {
               >
                 {initial}
               </div>
-            </motion.button>
+            </button>
 
             <AnimatePresence>
               {menuOpen && (
@@ -134,18 +132,16 @@ export default function LandingHeader() {
             >
               התחברות
             </button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
+            <button
               onClick={handleCreate}
-              className="text-on-primary px-6 py-2.5 rounded-full font-medium text-sm hover:opacity-90 transition-all"
+              className="btn-press text-on-primary px-6 py-2.5 rounded-full font-medium text-sm hover:opacity-90 transition-opacity"
               style={{
                 background: 'linear-gradient(135deg, #605c48 0%, #8E8973 100%)',
                 boxShadow: '0 4px 16px rgba(96,92,72,0.2)',
               }}
             >
               התחל יצירה
-            </motion.button>
+            </button>
           </>
         )}
       </div>

@@ -142,18 +142,16 @@ export default function LayoutPickerPanel({ onClose }: { onClose: () => void }) 
             </div>
             <div className="grid grid-cols-2 gap-2">
               {options.map((opt) => (
-                <motion.button
+                <button
                   key={opt.id}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
                   onClick={() => handleSelect(opt.id, opt.slots)}
-                  className="flex flex-col gap-1.5 p-1.5 rounded-xl hover:bg-surface-container-low/60 transition-colors"
+                  className="btn-press flex flex-col gap-1.5 p-1.5 rounded-xl hover:bg-surface-container-low/60 transition-colors"
                 >
                   <MiniPreview layout={opt} isActive={currentTemplate === opt.id} />
                   <span className="text-[10px] text-secondary/60 font-medium truncate w-full text-center">
                     {opt.name}
                   </span>
-                </motion.button>
+                </button>
               ))}
             </div>
           </div>
@@ -170,18 +168,16 @@ export default function LayoutPickerPanel({ onClose }: { onClose: () => void }) 
             </div>
             <div className="grid grid-cols-2 gap-2">
               {SPECIAL_OPTIONS.map((opt) => (
-                <motion.button
+                <button
                   key={opt.id}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
                   onClick={() => handleSelect(opt.id, opt.slots)}
-                  className="flex flex-col gap-1.5 p-1.5 rounded-xl hover:bg-primary/5 transition-colors ring-1 ring-primary/[0.08]"
+                  className="btn-press flex flex-col gap-1.5 p-1.5 rounded-xl hover:bg-primary/5 transition-colors ring-1 ring-primary/[0.08]"
                 >
                   <MiniPreview layout={opt} isActive={currentTemplate === opt.id} />
                   <span className="text-[10px] text-primary/70 font-medium truncate w-full text-center">
                     {opt.name}
                   </span>
-                </motion.button>
+                </button>
               ))}
             </div>
           </div>

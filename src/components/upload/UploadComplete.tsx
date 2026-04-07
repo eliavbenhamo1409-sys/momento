@@ -138,11 +138,9 @@ export default function UploadComplete() {
           </div>
 
           <div className="flex gap-3">
-            <motion.button
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={() => inputRef.current?.click()}
-              className="flex-1 py-3.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-shadow hover:shadow-md"
+              className="btn-press flex-1 py-3.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-shadow hover:shadow-md"
               style={{
                 background: 'linear-gradient(135deg, #8E8973 0%, #7B7660 100%)',
                 boxShadow: '0 4px 14px rgba(142,137,115,0.25)',
@@ -150,30 +148,29 @@ export default function UploadComplete() {
             >
               <Icon name="add_photo_alternate" size={18} />
               העלה תמונות נוספות
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
+            </button>
+            <button
               onClick={() => simulateUpload(needed + 5, true)}
-              className="py-3.5 px-5 rounded-xl text-xs font-medium text-warm-gray bg-white/60 ring-1 ring-black/[0.05] hover:bg-white/90 transition-colors"
+              className="btn-press py-3.5 px-5 rounded-xl text-xs font-medium text-warm-gray bg-white/60 ring-1 ring-black/[0.05] hover:bg-white/90 transition-colors"
             >
               דמו +{needed + 5}
-            </motion.button>
+            </button>
           </div>
         </motion.div>
       ) : (
-        <motion.button
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.97 }}
-          onClick={() => inputRef.current?.click()}
-          className="flex items-center gap-2 text-sm text-sage font-medium px-5 py-2.5 rounded-full bg-sage/[0.06] hover:bg-sage/[0.1] transition-colors"
         >
-          <Icon name="add_photo_alternate" size={17} />
-          הוסף עוד תמונות
-        </motion.button>
+          <button
+            onClick={() => inputRef.current?.click()}
+            className="btn-press flex items-center gap-2 text-sm text-sage font-medium px-5 py-2.5 rounded-full bg-sage/[0.06] hover:bg-sage/[0.1] transition-colors"
+          >
+            <Icon name="add_photo_alternate" size={17} />
+            הוסף עוד תמונות
+          </button>
+        </motion.div>
       )}
 
       {/* AI reassurance */}
@@ -202,26 +199,27 @@ export default function UploadComplete() {
       </motion.div>
 
       {/* Continue button */}
-      <motion.button
+      <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.55, duration: 0.4 }}
-        whileHover={!belowMin ? { scale: 1.01, y: -1 } : undefined}
-        whileTap={!belowMin ? { scale: 0.98 } : undefined}
-        onClick={() => navigate('/curate')}
-        disabled={belowMin}
-        className={`w-full py-4 rounded-2xl font-semibold text-lg transition-all duration-300 ${
-          belowMin
-            ? 'bg-surface-container-high text-on-surface-variant/30 cursor-not-allowed'
-            : 'text-white'
-        }`}
-        style={!belowMin ? {
-          background: 'linear-gradient(135deg, #605c48 0%, #8E8973 100%)',
-          boxShadow: '0 8px 24px rgba(96, 92, 72, 0.25), 0 2px 8px rgba(96, 92, 72, 0.15)',
-        } : undefined}
       >
-        המשך
-      </motion.button>
+        <button
+          onClick={() => navigate('/curate')}
+          disabled={belowMin}
+          className={`btn-press w-full py-4 rounded-2xl font-semibold text-lg transition-shadow ${
+            belowMin
+              ? 'bg-surface-container-high text-on-surface-variant/30 cursor-not-allowed'
+              : 'text-white'
+          }`}
+          style={!belowMin ? {
+            background: 'linear-gradient(135deg, #605c48 0%, #8E8973 100%)',
+            boxShadow: '0 8px 24px rgba(96, 92, 72, 0.25), 0 2px 8px rgba(96, 92, 72, 0.15)',
+          } : undefined}
+        >
+          המשך
+        </button>
+      </motion.div>
     </motion.div>
   )
 }

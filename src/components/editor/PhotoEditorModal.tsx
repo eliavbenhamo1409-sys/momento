@@ -201,14 +201,12 @@ export default function PhotoEditorModal() {
                 עריכת תמונה
               </h2>
             </div>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
+            <button
               onClick={() => selectPhoto(null)}
-              className="w-8 h-8 rounded-full flex items-center justify-center text-secondary/50 hover:text-on-surface hover:bg-surface-container-high/70 transition-colors"
+              className="btn-press w-8 h-8 rounded-full flex items-center justify-center text-secondary/50 hover:text-on-surface hover:bg-surface-container-high/70 transition-colors"
             >
               <Icon name="close" size={20} />
-            </motion.button>
+            </button>
           </div>
 
           {/* Photo preview with pan */}
@@ -236,7 +234,7 @@ export default function PhotoEditorModal() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-all duration-200 ${
+                className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-semibold transition-colors ${
                   activeTab === tab.id
                     ? 'bg-primary/10 text-primary shadow-sm'
                     : 'text-secondary/60 hover:text-on-surface hover:bg-surface-container-low'
@@ -320,22 +318,20 @@ export default function PhotoEditorModal() {
                   <div className="flex flex-col gap-2">
                     <label className="text-[11px] text-secondary/70 font-semibold tracking-wide">גודל מסגרת</label>
                     <div className="flex gap-2">
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
+                      <button
                         onClick={() => resizePhotoSlot(slotId, { width: -3, height: -3 })}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high text-xs text-on-surface/70 transition-colors font-medium"
+                        className="btn-press flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high text-xs text-on-surface/70 transition-colors font-medium"
                       >
                         <Icon name="zoom_out" size={15} />
                         הקטן
-                      </motion.button>
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
+                      </button>
+                      <button
                         onClick={() => resizePhotoSlot(slotId, { width: 3, height: 3 })}
-                        className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high text-xs text-on-surface/70 transition-colors font-medium"
+                        className="btn-press flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl bg-surface-container-low hover:bg-surface-container-high text-xs text-on-surface/70 transition-colors font-medium"
                       >
                         <Icon name="zoom_in" size={15} />
                         הגדל
-                      </motion.button>
+                      </button>
                     </div>
                   </div>
 
@@ -410,24 +406,20 @@ export default function PhotoEditorModal() {
                 if (e.target) e.target.value = ''
               }}
             />
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <button
               onClick={handleReplace}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/8 hover:bg-primary/14 text-primary text-xs font-semibold transition-colors"
+              className="btn-press flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary/8 hover:bg-primary/14 text-primary text-xs font-semibold transition-colors"
             >
               <Icon name="swap_horiz" size={16} />
               החלף תמונה
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            </button>
+            <button
               onClick={handleRemove}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-error/8 hover:bg-error/14 text-error text-xs font-semibold transition-colors"
+              className="btn-press flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-error/8 hover:bg-error/14 text-error text-xs font-semibold transition-colors"
             >
               <Icon name="delete" size={16} />
               הסר
-            </motion.button>
+            </button>
           </div>
         </motion.div>
       </motion.div>
@@ -439,12 +431,11 @@ export default function PhotoEditorModal() {
 
 function NudgeBtn({ icon, onClick }: { icon: string; onClick: () => void }) {
   return (
-    <motion.button
-      whileTap={{ scale: 0.9 }}
+    <button
       onClick={onClick}
-      className="flex items-center justify-center p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors"
+      className="btn-press flex items-center justify-center p-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-colors"
     >
       <Icon name={icon} size={16} className="text-on-surface/60" />
-    </motion.button>
+    </button>
   )
 }

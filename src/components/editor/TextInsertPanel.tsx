@@ -139,11 +139,10 @@ export default function TextInsertPanel({ onClose }: { onClose: () => void }) {
       {/* Font list */}
       <div className="flex flex-col gap-1.5 mb-4 max-h-[12rem] overflow-y-auto no-scrollbar">
         {filteredFonts.map((font) => (
-          <motion.button
+          <button
             key={font.family}
-            whileTap={{ scale: 0.98 }}
             onClick={() => setSelectedFont(font.family)}
-            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all ${
+            className={`btn-press w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-colors ${
               selectedFont === font.family
                 ? 'bg-primary/8 ring-1 ring-primary/20'
                 : 'hover:bg-surface-container-low'
@@ -158,21 +157,19 @@ export default function TextInsertPanel({ onClose }: { onClose: () => void }) {
             <span className="text-[9px] text-secondary/40 font-medium">
               {font.label}
             </span>
-          </motion.button>
+          </button>
         ))}
       </div>
 
       {/* Insert button */}
-      <motion.button
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+      <button
         onClick={handleInsert}
         disabled={!text.trim()}
-        className="w-full py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-all"
+        className="btn-press w-full py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-colors"
       >
         <Icon name="add" size={18} />
         הוסף לעמוד
-      </motion.button>
+      </button>
     </motion.div>
   )
 }

@@ -261,18 +261,17 @@ export function CoverMaterialPicker({
       onClick={(e) => e.stopPropagation()}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <motion.button
+      <button
         ref={buttonRef}
         type="button"
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-label={`כריכה: ${current.label}`}
-        className="flex items-center gap-2 h-8 ps-2 pe-1.5 rounded-full border border-black/[0.08] shadow-[0_1px_4px_rgba(45,40,35,0.06)] transition-shadow hover:shadow-[0_2px_8px_rgba(45,40,35,0.08)]"
+        className="btn-press flex items-center gap-2 h-8 ps-2 pe-1.5 rounded-full border border-black/[0.08] shadow-[0_1px_4px_rgba(45,40,35,0.06)] transition-shadow hover:shadow-[0_2px_8px_rgba(45,40,35,0.08)]"
         style={{
           backgroundColor: '#faf8f5',
           minWidth: '7.5rem',
         }}
-        whileTap={{ scale: 0.98 }}
         onClick={() => setOpen((o) => !o)}
       >
         <span
@@ -293,7 +292,7 @@ export function CoverMaterialPicker({
           size={18}
           className={`text-deep-brown/45 transition-transform shrink-0 ${open ? 'rotate-180' : ''}`}
         />
-      </motion.button>
+      </button>
     </div>
     {menuLayer}
     </>
