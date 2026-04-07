@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import Icon from '../shared/Icon'
@@ -116,7 +116,18 @@ export function BookCoverFrame({ material }: { material: CoverMaterial | undefin
   )
 }
 
-export function ClosedBookCover({
+/**
+ * Animated book-close overlay.
+ *
+ * Phase 1 — "flip": one half of the spread rotates 180° around the spine
+ *   (CSS 3D rotateY with perspective, same technique as the page-flip library).
+ * Phase 2 — "settle": the resulting cover square slides to the centre of the
+ *   spread container.
+ *
+ * The component is an absolute overlay at z-20 inside the scaleX(-1) book
+ * container. It does NOT touch the HTMLFlipBook or its animation callbacks.
+ */
+export function BookCoverOverlay({
   material,
   side,
 }: {
@@ -124,34 +135,138 @@ export function ClosedBookCover({
   side: 'front' | 'back'
 }) {
   const m = MATERIALS[material ?? DEFAULT_MATERIAL] ?? MATERIALS[DEFAULT_MATERIAL]
+  const isFront = side === 'front'
+  const flipRef = useRef<HTMLDivElement>(null)
+  const [phase, setPhase] = useState<'flip' | 'settle' | 'done'>('flip')
+
+  const FLIP_S = 0.75
+  const SETTLE_S = 0.45
+
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => {
+        if (flipRef.current) flipRef.current.style.visibility = 'hidden'
+        setPhase('settle')
+      }, FLIP_S * 1000),
+      setTimeout(() => setPhase('done'), (FLIP_S + SETTLE_S) * 1000 + 50),
+    ]
+    return () => timers.forEach(clearTimeout)
+  }, [])
+
+  const coverBg: React.CSSProperties = {
+    backgroundColor: m.solid,
+    backgroundImage: `${m.texture}, ${m.bg}`,
+  }
+
+  const coverShadow = [
+    '0 2px 8px rgba(0,0,0,0.10)',
+    '0 8px 24px rgba(0,0,0,0.08)',
+    '0 20px 48px rgba(0,0,0,0.06)',
+    `inset 0 1px 0 ${m.edgeLight}`,
+    'inset 0 -1px 2px rgba(0,0,0,0.05)',
+  ].join(', ')
 
   return (
     <motion.div
-      key={`closed-cover-${side}`}
-      className="absolute inset-0 z-20 rounded-lg overflow-hidden"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      className="absolute inset-0 z-20"
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      style={{
-        backgroundColor: m.solid,
-        backgroundImage: `${m.texture}, ${m.bg}`,
-        boxShadow: [
-          '0 2px 8px rgba(0,0,0,0.10)',
-          '0 8px 24px rgba(0,0,0,0.08)',
-          '0 20px 48px rgba(0,0,0,0.06)',
-          `inset 0 1px 0 ${m.edgeLight}`,
-          'inset 0 -1px 2px rgba(0,0,0,0.05)',
-        ].join(', '),
-      }}
+      transition={{ duration: 0.3 }}
+      style={{ perspective: phase === 'flip' ? 2500 : undefined }}
     >
-      <div
-        className="absolute top-0 left-2 right-2 h-px"
-        style={{ background: `linear-gradient(to right, transparent, ${m.edgeLight}, transparent)` }}
+      {/* Opaque backdrop — hides flipbook pages behind the animation */}
+      <div className="absolute inset-0" style={{ backgroundColor: '#fff' }} />
+
+      {/* Cover material revealed on the origin side as the page lifts away */}
+      <motion.div
+        animate={{ opacity: phase === 'flip' ? 1 : 0 }}
+        transition={{ duration: 0.3 }}
+        style={{
+          position: 'absolute', top: 0, height: '100%', width: '50%',
+          ...(isFront ? { left: 0 } : { right: 0 }),
+          ...coverBg,
+          zIndex: 1,
+        }}
       />
-      <div
-        className="absolute bottom-0 left-2 right-2 h-px"
-        style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.08), transparent)' }}
+
+      {/* Main cover — sits at the landing position, then slides to centre */}
+      <motion.div
+        animate={{
+          left: phase !== 'flip' ? '25%' : (isFront ? '50%' : '0%'),
+        }}
+        transition={{
+          duration: phase === 'settle' ? SETTLE_S : 0,
+          ease: [0.22, 1, 0.36, 1],
+        }}
+        style={{
+          position: 'absolute', top: 0, width: '50%', height: '100%',
+          ...coverBg,
+          zIndex: 2,
+          boxShadow: coverShadow,
+        }}
+      >
+        <div
+          className="absolute top-0 left-0 right-0 h-px"
+          style={{ background: `linear-gradient(to right, transparent, ${m.edgeLight}, transparent)` }}
+        />
+        <div
+          className="absolute bottom-0 left-0 right-0 h-px"
+          style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.08), transparent)' }}
+        />
+        {/* Spine-edge shadow on the cover */}
+        <div
+          style={{
+            position: 'absolute', top: 0, bottom: 0, width: 6,
+            ...(isFront ? { left: 0 } : { right: 0 }),
+            background: isFront
+              ? 'linear-gradient(to right, rgba(0,0,0,0.06), transparent)'
+              : 'linear-gradient(to left, rgba(0,0,0,0.06), transparent)',
+          }}
+        />
+      </motion.div>
+
+      {/* 3D flipping page — rotateY around the spine edge */}
+      <motion.div
+        ref={flipRef}
+        initial={{ rotateY: 0 }}
+        animate={{ rotateY: isFront ? -180 : 180 }}
+        transition={{ duration: FLIP_S, ease: [0.4, 0, 0.2, 1] }}
+        style={{
+          position: 'absolute', top: 0, height: '100%', width: '50%',
+          ...(isFront ? { left: 0 } : { right: 0 }),
+          transformOrigin: isFront ? '100% 50%' : '0% 50%',
+          transformStyle: 'preserve-3d',
+          zIndex: 5,
+        }}
+      >
+        {/* Front face — white page surface */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backfaceVisibility: 'hidden',
+          backgroundColor: '#FFFFFF',
+        }} />
+        {/* Back face — cover material (visible past 90°) */}
+        <div style={{
+          position: 'absolute', inset: 0,
+          backfaceVisibility: 'hidden',
+          transform: 'rotateY(180deg)',
+          ...coverBg,
+        }} />
+      </motion.div>
+
+      {/* Dynamic shadow cast onto the landing side during the flip */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: phase === 'flip' ? 0.12 : 0 }}
+        transition={{ duration: 0.3, delay: phase === 'flip' ? 0.08 : 0 }}
+        style={{
+          position: 'absolute', top: '2%', height: '96%', width: '25%',
+          ...(isFront ? { left: '50%' } : { right: '50%' }),
+          background: isFront
+            ? 'linear-gradient(to right, rgba(0,0,0,0.3), transparent)'
+            : 'linear-gradient(to left, rgba(0,0,0,0.3), transparent)',
+          zIndex: 4,
+          pointerEvents: 'none',
+        }}
       />
     </motion.div>
   )

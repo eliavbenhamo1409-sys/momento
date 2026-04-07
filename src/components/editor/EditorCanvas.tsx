@@ -7,7 +7,7 @@ import { useAlbumStore } from '../../store/albumStore'
 import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 import SpreadPage from './SpreadPage'
-import { BookCoverFrame, CoverMaterialPicker, ClosedBookCover } from './BookCoverFrame'
+import { BookCoverFrame, CoverMaterialPicker, BookCoverOverlay } from './BookCoverFrame'
 import { DEFAULT_FRAME, DEFAULT_STYLE, getTexturePattern } from './editorDefaults'
 import type {
   EditorSpread,
@@ -1926,7 +1926,7 @@ export default function EditorCanvas() {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <BookCoverFrame material={coverMaterial} />
+          {coverView === 'none' && <BookCoverFrame material={coverMaterial} />}
 
           <HTMLFlipBook
             ref={bookRef}
@@ -1960,7 +1960,7 @@ export default function EditorCanvas() {
 
           <AnimatePresence>
             {coverView !== 'none' && (
-              <ClosedBookCover material={coverMaterial} side={coverView} />
+              <BookCoverOverlay key="book-cover-overlay" material={coverMaterial} side={coverView} />
             )}
           </AnimatePresence>
 
