@@ -289,9 +289,6 @@ body {
   transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
               box-shadow 0.22s ease;
 }
-.overview-card:hover {
-  transform: scale(1.012);
-}
 .overview-card:active {
   transform: scale(0.99);
   transition-duration: 0.08s;
