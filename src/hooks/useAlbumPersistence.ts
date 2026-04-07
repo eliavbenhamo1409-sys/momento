@@ -26,14 +26,16 @@ function spreadsHaveBlobUrls(spreads: EditorSpread[]): boolean {
 export function useAlbumSave() {
   const savingRef = useRef(false)
 
-  const save = useCallback(async () => {
-    if (savingRef.current) return
+  const save = useCallback(async (): Promise<string | null> => {
+    if (savingRef.current) {
+      return useAlbumStore.getState().albumId
+    }
 
     const { userId, openAuthModal, addToast } = useUIStore.getState()
     if (!userId) {
       addToast('יש להתחבר כדי לשמור את האלבום', 'info')
       openAuthModal()
-      return
+      return null
     }
 
     const { albumId, albumTitle, config, peopleRoster } = useAlbumStore.getState()
@@ -61,9 +63,11 @@ export function useAlbumSave() {
 
       setLastSaved(new Date())
       useUIStore.getState().addToast('האלבום נשמר בהצלחה', 'success')
+      return useAlbumStore.getState().albumId
     } catch (err) {
       console.error('Save failed:', err)
       useUIStore.getState().addToast('שגיאה בשמירת האלבום', 'error')
+      return null
     } finally {
       setSaving(false)
       savingRef.current = false

@@ -12,6 +12,7 @@ export default function CheckoutScreen() {
   const navigate = useNavigate()
   const config = useAlbumStore((s) => s.config)
   const albumTitle = useAlbumStore((s) => s.albumTitle)
+  const albumId = useAlbumStore((s) => s.albumId)
   const sizeObj = ALBUM_SIZES.find((s) => s.id === config.size)
   const totalPrice = useMemo(() => calcAlbumPrice(config.size, config.pages), [config.size, config.pages])
   const [isProcessing, setIsProcessing] = useState(false)
@@ -63,7 +64,12 @@ export default function CheckoutScreen() {
 
   return (
     <PageTransition>
-      <ProductLayout showSteps={false} showBack backTo="/editor" backLabel="חזור לעורך">
+      <ProductLayout
+        showSteps={false}
+        showBack
+        backTo={albumId ? `/editor/${albumId}` : '/dashboard'}
+        backLabel="חזור לעורך"
+      >
         <div className="h-full flex items-center justify-center px-6">
           <div className="w-full max-w-[920px] grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Order Summary */}

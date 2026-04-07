@@ -26,6 +26,8 @@ export default function EditorScreen() {
   const [loadError, setLoadError] = useState(false)
   const [contentReady, setContentReady] = useState(false)
 
+  const storeAlbumId = useAlbumStore((s) => s.albumId)
+
   const doLoad = useCallback(async (id: string) => {
     setLoadingAlbum(true)
     setLoadError(false)
@@ -43,22 +45,29 @@ export default function EditorScreen() {
   }, [loadAlbum])
 
   useEffect(() => {
-    if (!albumId) {
-      const hasSpreads = useEditorStore.getState().spreads.length > 0
-      if (hasSpreads) {
+    if (albumId) {
+      const currentAlbumId = useAlbumStore.getState().albumId
+      if (currentAlbumId === albumId) {
         setContentReady(true)
         return
       }
-      navigate('/dashboard', { replace: true })
+      doLoad(albumId)
       return
     }
-    const currentAlbumId = useAlbumStore.getState().albumId
-    if (currentAlbumId === albumId) {
+
+    if (storeAlbumId) {
+      navigate(`/editor/${storeAlbumId}`, { replace: true })
+      return
+    }
+
+    const { spreads, isGenerated } = useEditorStore.getState()
+    if (isGenerated && spreads.length > 0) {
       setContentReady(true)
       return
     }
-    doLoad(albumId)
-  }, [albumId, doLoad, navigate])
+
+    navigate('/dashboard', { replace: true })
+  }, [albumId, storeAlbumId, doLoad, navigate])
 
   const isPreviewOpen = useEditorStore((s) => s.isPreviewOpen)
   const isOverviewOpen = useEditorStore((s) => s.isOverviewOpen)
