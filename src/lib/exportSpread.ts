@@ -13,6 +13,35 @@ const DEFAULT_OPTIONS: Required<ExportOptions> = {
   backgroundColor: '#FFFFFF',
 }
 
+/**
+ * html2canvas cannot parse oklab() / oklch() color functions used by Tailwind v4.
+ * Before rendering, walk all elements in the cloned document and replace any
+ * computed oklab/oklch values with a hex fallback via a temporary canvas context.
+ */
+function sanitizeCloneColors(doc: Document) {
+  const ctx = doc.createElement('canvas').getContext('2d')
+  if (!ctx) return
+
+  const elements = doc.querySelectorAll('*')
+  const colorProps = ['color', 'background-color', 'border-color', 'outline-color'] as const
+
+  for (const el of elements) {
+    const style = (el as HTMLElement).style
+    if (!style) continue
+    const computed = doc.defaultView?.getComputedStyle(el)
+    if (!computed) continue
+
+    for (const prop of colorProps) {
+      const val = computed.getPropertyValue(prop)
+      if (val && (val.includes('oklab') || val.includes('oklch'))) {
+        ctx.fillStyle = val
+        const hex = ctx.fillStyle
+        style.setProperty(prop, hex, 'important')
+      }
+    }
+  }
+}
+
 const TARGET_DPI = 300
 const CM_PER_INCH = 2.54
 
@@ -44,6 +73,7 @@ export async function exportSpreadToDataUrl(
     useCORS: true,
     allowTaint: true,
     logging: false,
+    onclone: (_doc, _el) => { sanitizeCloneColors(_doc) },
   })
 
   return canvas.toDataURL('image/jpeg', opts.quality)
@@ -74,6 +104,7 @@ export async function exportSpreadToBlob(
     useCORS: true,
     allowTaint: true,
     logging: false,
+    onclone: (_doc, _el) => { sanitizeCloneColors(_doc) },
   })
 
   return new Promise<Blob>((resolve, reject) => {
