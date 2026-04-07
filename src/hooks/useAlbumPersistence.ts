@@ -126,10 +126,12 @@ export function useAutoSave(intervalMs = 25000) {
 
       if (state.spreads === prevState.spreads) return
 
+      const structuralChange = state.spreads.length !== prevState.spreads.length
+
       clearTimeout(timerRef.current)
       timerRef.current = setTimeout(() => {
         save()
-      }, intervalMs)
+      }, structuralChange ? 500 : intervalMs)
     })
 
     return () => {
