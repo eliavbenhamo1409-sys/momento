@@ -11,13 +11,17 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   const { loading } = useAdminGuard()
   const userName = useUIStore((s) => s.userName)
+  const isLoggedIn = useUIStore((s) => s.isLoggedIn)
   const logout = useUIStore((s) => s.logout)
   const navigate = useNavigate()
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
+      <div dir="rtl" className="min-h-screen bg-[#f8f9fa] flex items-center justify-center flex-col gap-4">
         <div className="w-8 h-8 border-2 border-[#6b7280] border-t-transparent rounded-full animate-spin" />
+        {!isLoggedIn && (
+          <p className="text-[13px] text-[#6b7280]">נא להתחבר כדי לגשת לדשבורד הניהול</p>
+        )}
       </div>
     )
   }

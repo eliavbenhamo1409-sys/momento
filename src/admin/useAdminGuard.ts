@@ -8,13 +8,14 @@ export function useAdminGuard() {
   const userId = useUIStore((s) => s.userId)
   const isLoggedIn = useUIStore((s) => s.isLoggedIn)
   const authLoading = useUIStore((s) => s.authLoading)
+  const openAuthModal = useUIStore((s) => s.openAuthModal)
   const navigate = useNavigate()
 
   useEffect(() => {
     if (authLoading) return
 
     if (!isLoggedIn || !userId) {
-      navigate('/', { replace: true })
+      openAuthModal('login', '/admin')
       return
     }
 
@@ -29,7 +30,7 @@ export function useAdminGuard() {
     })
 
     return () => { cancelled = true }
-  }, [userId, isLoggedIn, authLoading, navigate])
+  }, [userId, isLoggedIn, authLoading, navigate, openAuthModal])
 
   return { isAdmin, loading: isAdmin === null }
 }
