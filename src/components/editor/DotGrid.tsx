@@ -9,8 +9,11 @@ const REVEAL_RADIUS_GROWTH = 1.4
 const DOT_COLOR = '50, 50, 50'
 const THROTTLE_MS = 33
 
-export default function DotGrid() {
+export default function DotGrid({ paused = false }: { paused?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const pausedRef = useRef(paused)
+  pausedRef.current = paused
+
   const stateRef = useRef({
     mx: -9999,
     my: -9999,
@@ -23,6 +26,16 @@ export default function DotGrid() {
     baseH: 0,
     lastMoveTime: 0,
   })
+
+  useEffect(() => {
+    if (paused) {
+      const state = stateRef.current
+      cancelAnimationFrame(state.raf)
+      state.running = false
+      state.mx = -9999
+      state.my = -9999
+    }
+  }, [paused])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -58,6 +71,8 @@ export default function DotGrid() {
     }
 
     const draw = () => {
+      if (pausedRef.current) { state.running = false; return }
+
       const ctx = canvas.getContext('2d')
       if (!ctx) return
 
@@ -126,6 +141,7 @@ export default function DotGrid() {
     }
 
     const startLoop = () => {
+      if (pausedRef.current) return
       if (!state.running) {
         state.running = true
         state.raf = requestAnimationFrame(draw)
@@ -136,6 +152,7 @@ export default function DotGrid() {
     state.running = false
 
     const onMove = (e: MouseEvent) => {
+      if (pausedRef.current) return
       const now = performance.now()
       if (now - state.lastMoveTime < THROTTLE_MS) return
       state.lastMoveTime = now
@@ -151,12 +168,12 @@ export default function DotGrid() {
       state.my = -9999
       cancelAnimationFrame(state.raf)
       state.running = false
-      startLoop()
+      if (!pausedRef.current) startLoop()
     }
 
     const onResize = () => {
       state.baseCanvas = null
-      startLoop()
+      if (!pausedRef.current) startLoop()
     }
 
     window.addEventListener('mousemove', onMove, { passive: true })

@@ -130,7 +130,7 @@ export default function EditorScreen() {
   return (
     <PageTransition>
       <div className="h-screen w-screen overflow-hidden flex flex-col bg-[#EEECEA] relative">
-        <DotGrid />
+        <DotGrid paused={isOverviewOpen || isPreviewOpen} />
         <EditorTopBar />
         <EditorPeopleStrip />
 
@@ -145,13 +145,20 @@ export default function EditorScreen() {
           variants={contentReveal}
           initial="initial"
           animate={contentReady ? 'animate' : 'initial'}
+          style={{ visibility: isOverviewOpen || isPreviewOpen ? 'hidden' : 'visible' }}
         >
           <EditorCanvas />
           <PageThumbnails />
           <EditorSidebar />
         </motion.div>
 
-        <footer className="w-full bg-white/70 backdrop-blur-lg border-t border-outline-variant/6 flex justify-between items-center px-4 md:px-10 py-2 md:py-2.5 shrink-0 relative z-20">
+        <footer
+          className="w-full border-t border-outline-variant/6 flex justify-between items-center px-4 md:px-10 py-2 md:py-2.5 shrink-0 relative z-20"
+          style={{
+            backgroundColor: 'rgba(255,255,255,0.92)',
+            visibility: isOverviewOpen || isPreviewOpen ? 'hidden' : 'visible',
+          }}
+        >
           <div className="flex items-center gap-4 md:gap-6">
             <div className="hidden sm:flex items-center gap-1.5">
               <span className="text-[10px] uppercase tracking-wider text-secondary/45 font-medium">גודל</span>
