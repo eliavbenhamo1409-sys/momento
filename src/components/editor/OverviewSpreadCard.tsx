@@ -33,7 +33,7 @@ function isPhotoClickMode(mode: OverviewMode) {
 }
 
 function isSpreadClickMode(mode: OverviewMode) {
-  return mode === 'bg-color' || mode === 'bg-ai' || mode === 'delete-spread'
+  return mode === 'bg-color' || mode === 'bg-ai' || mode === 'bg-ai-panel' || mode === 'delete-spread'
 }
 
 function PhotoSlot({

@@ -206,8 +206,8 @@ export default function OverviewSidebar({
             <SidebarBtn
               icon="auto_awesome"
               label="רקע AI"
-              active={activeMode === 'bg-ai'}
-              onClick={() => toggle('bg-ai')}
+              active={activeMode === 'bg-ai' || activeMode === 'bg-ai-panel'}
+              onClick={() => onSetMode('bg-ai-panel')}
             />
 
             <AnimatePresence>

@@ -145,6 +145,10 @@ export default function AlbumOverview() {
         setMode('bg-ai-panel')
         break
       }
+      case 'bg-ai-panel': {
+        setCurrentSpread(spreadIndex)
+        break
+      }
       case 'delete-spread': {
         if (spreads.length <= 1) {
           addToast('לא ניתן למחוק את העמוד האחרון')
@@ -155,7 +159,7 @@ export default function AlbumOverview() {
         break
       }
     }
-  }, [mode, selectedBgColor, spreads.length, setSpreadBgColor, setCurrentSpread, toggleOverview, deleteSpread, addToast])
+  }, [mode, selectedBgColor, spreads.length, setSpreadBgColor, setCurrentSpread, deleteSpread, addToast])
 
   const handleReplaceFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0]
@@ -340,7 +344,11 @@ export default function AlbumOverview() {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="h-full overflow-y-auto no-scrollbar">
-              <AIBackgroundPanel onClose={() => handleSetMode('idle')} standalone />
+              <AIBackgroundPanel
+                onClose={() => handleSetMode('idle')}
+                standalone
+                defaultTab="ai"
+              />
             </div>
           </motion.div>
         )}

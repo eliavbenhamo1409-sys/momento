@@ -7,7 +7,7 @@ import { PREDEFINED_BG_COLORS } from '../../lib/constants'
 import Icon from '../shared/Icon'
 
 type Target = 'spread' | 'left' | 'right'
-type Tab = 'gallery' | 'ai'
+type AIBackgroundTab = 'gallery' | 'ai'
 
 const TARGETS: { id: Target; label: string; icon: string; ratio: '16:9' | '1:1' }[] = [
   { id: 'spread', label: 'כל הדף', icon: 'panorama', ratio: '16:9' },
@@ -24,10 +24,19 @@ const QUICK_PROMPTS = [
   { label: 'כוכבים', prompt: 'שמיים זרועי כוכבים בלילה ברור עם שביל החלב' },
 ]
 
-export default function AIBackgroundPanel({ onClose, standalone }: { onClose: () => void; standalone?: boolean }) {
+export default function AIBackgroundPanel({
+  onClose,
+  standalone,
+  defaultTab = 'gallery',
+}: {
+  onClose: () => void
+  standalone?: boolean
+  /** When opening from overview "רקע AI", start on the AI generator tab */
+  defaultTab?: AIBackgroundTab
+}) {
   const setSpreadGeneratedBg = useEditorStore((s) => s.setSpreadGeneratedBg)
   const addToast = useUIStore((s) => s.addToast)
-  const [activeTab, setActiveTab] = useState<Tab>('gallery')
+  const [activeTab, setActiveTab] = useState<AIBackgroundTab>(defaultTab)
   const [prompt, setPrompt] = useState('')
   const [target, setTarget] = useState<Target>('spread')
   const [isGenerating, setIsGenerating] = useState(false)
