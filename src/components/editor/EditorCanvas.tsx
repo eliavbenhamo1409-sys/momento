@@ -7,7 +7,7 @@ import { useAlbumStore } from '../../store/albumStore'
 import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 import SpreadPage from './SpreadPage'
-import { BookCoverFrame, CoverMaterialPicker } from './BookCoverFrame'
+import { BookCoverFrame, CoverMaterialPicker, ClosedBookCover } from './BookCoverFrame'
 import { DEFAULT_FRAME, DEFAULT_STYLE, getTexturePattern } from './editorDefaults'
 import type {
   EditorSpread,
@@ -1699,6 +1699,7 @@ export default function EditorCanvas() {
   const bookRef = useRef<any>(null)
   const initialPageRef = useRef(currentSpreadIndex * 2)
   const [isTransitioning, setIsTransitioning] = useState(false)
+  const [coverView, setCoverView] = useState<'none' | 'front' | 'back'>('none')
 
   // ── Drag-to-swap state ──
   const [dragState, setDragState] = useState<DragState | null>(null)
@@ -1794,6 +1795,35 @@ export default function EditorCanvas() {
     })
   }, [deselectAll])
 
+  const handlePrev = useCallback(() => {
+    if (coverView === 'back') {
+      setCoverView('none')
+      return
+    }
+    if (coverView === 'none' && currentSpreadIndex === 0) {
+      deselectAll()
+      setCoverView('front')
+      return
+    }
+    flipPrev()
+  }, [coverView, currentSpreadIndex, flipPrev, deselectAll])
+
+  const handleNext = useCallback(() => {
+    if (coverView === 'front') {
+      setCoverView('none')
+      return
+    }
+    if (coverView === 'none' && currentSpreadIndex === spreadCount - 1) {
+      deselectAll()
+      setCoverView('back')
+      return
+    }
+    flipNext()
+  }, [coverView, currentSpreadIndex, spreadCount, flipNext, deselectAll])
+
+  const canPrevArrow = coverView !== 'front'
+  const canNextArrow = coverView !== 'back'
+
   const isSwapping = swapPhase !== 'off'
 
   const flipBookStyle = useMemo(() => ({}), [])
@@ -1885,8 +1915,8 @@ export default function EditorCanvas() {
       >
         <SpreadNavArrow
           direction="prev"
-          disabled={!canPrev}
-          onClick={flipPrev}
+          disabled={!canPrevArrow}
+          onClick={handlePrev}
         />
 
         <div
@@ -1930,27 +1960,37 @@ export default function EditorCanvas() {
             {flipPages}
           </HTMLFlipBook>
 
-          {/* Spine divider */}
-          <div
-            className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px pointer-events-none z-30"
-            style={{
-              background: 'linear-gradient(to bottom, transparent 4%, rgba(0,0,0,0.10) 15%, rgba(0,0,0,0.13) 50%, rgba(0,0,0,0.10) 85%, transparent 96%)',
-            }}
-          />
-          <div
-            className="absolute top-0 bottom-0 left-1/2 pointer-events-none z-30"
-            style={{
-              width: 6,
-              transform: 'translateX(-50%)',
-              background: 'linear-gradient(to right, rgba(0,0,0,0.03), transparent 35%, transparent 65%, rgba(0,0,0,0.03))',
-            }}
-          />
+          <AnimatePresence>
+            {coverView !== 'none' && (
+              <ClosedBookCover material={coverMaterial} side={coverView} />
+            )}
+          </AnimatePresence>
+
+          {coverView === 'none' && (
+            <>
+              {/* Spine divider */}
+              <div
+                className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px pointer-events-none z-30"
+                style={{
+                  background: 'linear-gradient(to bottom, transparent 4%, rgba(0,0,0,0.10) 15%, rgba(0,0,0,0.13) 50%, rgba(0,0,0,0.10) 85%, transparent 96%)',
+                }}
+              />
+              <div
+                className="absolute top-0 bottom-0 left-1/2 pointer-events-none z-30"
+                style={{
+                  width: 6,
+                  transform: 'translateX(-50%)',
+                  background: 'linear-gradient(to right, rgba(0,0,0,0.03), transparent 35%, transparent 65%, rgba(0,0,0,0.03))',
+                }}
+              />
+            </>
+          )}
         </div>
 
         <SpreadNavArrow
           direction="next"
-          disabled={!canNext}
-          onClick={flipNext}
+          disabled={!canNextArrow}
+          onClick={handleNext}
         />
       </div>
 

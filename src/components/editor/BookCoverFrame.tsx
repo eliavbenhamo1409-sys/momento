@@ -116,6 +116,47 @@ export function BookCoverFrame({ material }: { material: CoverMaterial | undefin
   )
 }
 
+export function ClosedBookCover({
+  material,
+  side,
+}: {
+  material: CoverMaterial | undefined
+  side: 'front' | 'back'
+}) {
+  const m = MATERIALS[material ?? DEFAULT_MATERIAL] ?? MATERIALS[DEFAULT_MATERIAL]
+
+  return (
+    <motion.div
+      key={`closed-cover-${side}`}
+      className="absolute inset-0 z-20 rounded-lg overflow-hidden"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+      style={{
+        backgroundColor: m.solid,
+        backgroundImage: `${m.texture}, ${m.bg}`,
+        boxShadow: [
+          '0 2px 8px rgba(0,0,0,0.10)',
+          '0 8px 24px rgba(0,0,0,0.08)',
+          '0 20px 48px rgba(0,0,0,0.06)',
+          `inset 0 1px 0 ${m.edgeLight}`,
+          'inset 0 -1px 2px rgba(0,0,0,0.05)',
+        ].join(', '),
+      }}
+    >
+      <div
+        className="absolute top-0 left-2 right-2 h-px"
+        style={{ background: `linear-gradient(to right, transparent, ${m.edgeLight}, transparent)` }}
+      />
+      <div
+        className="absolute bottom-0 left-2 right-2 h-px"
+        style={{ background: 'linear-gradient(to right, transparent, rgba(0,0,0,0.08), transparent)' }}
+      />
+    </motion.div>
+  )
+}
+
 export function CoverMaterialPicker({
   value,
   onChange,
