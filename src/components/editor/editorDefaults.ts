@@ -10,7 +10,7 @@ export const DEFAULT_FRAME: ResolvedFrame = {
 }
 
 export const DEFAULT_STYLE: ResolvedSpreadStyle = {
-  spacing: { pageMarginPercent: 6, photoGapPx: 10, whiteSpaceRatio: 0.30, breathingRoom: 'normal', asymmetric: false },
+  spacing: { pageMarginPercent: 1, photoGapPx: 10, whiteSpaceRatio: 0.30, breathingRoom: 'normal', asymmetric: false },
   background: { color: '#FFFFFF', allowPhotoBlur: true, photoBlurOpacity: 0.06, photoBlurPx: 60, allowTexture: true, textureType: 'paper', textureOpacity: 0.015 },
   frame: DEFAULT_FRAME,
   typography: { quoteFont: 'Heebo', quoteWeight: 300, quoteSizeClass: 'text-lg', quoteItalic: false, quoteLineHeight: 1.8, quoteLetterSpacing: '0.02em', quoteAlign: 'center', captionFont: 'Plus Jakarta Sans', captionWeight: 400, captionSizeClass: 'text-[10px]' },

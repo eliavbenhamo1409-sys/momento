@@ -193,7 +193,7 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
   const initialRadius = useRef(storeRadius)
 
   const [framePx, setFramePx] = useState(storeFrame ?? 8)
-  const [margin, setMargin] = useState(storeMargin ?? 6)
+  const [margin, setMargin] = useState(storeMargin ?? 1)
   const [cornerPx, setCornerPx] = useState(storeRadius ?? 12)
   const [dirty, setDirty] = useState(false)
 
@@ -224,7 +224,7 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
 
   const handleReset = useCallback(() => {
     setFramePx(8)
-    setMargin(6)
+    setMargin(1)
     setCornerPx(12)
     setDirty(true)
     setGlobalPhotoFramePadding(null)
