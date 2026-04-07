@@ -286,12 +286,15 @@ body {
 
 /* Cards */
 .overview-card {
-  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
-              box-shadow 0.22s ease;
+  transition: box-shadow 0.1s ease;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+}
+.overview-card:hover {
+  outline-color: var(--color-primary);
 }
 .overview-card:active {
-  transform: scale(0.99);
-  transition-duration: 0.08s;
+  outline-color: var(--color-primary-container);
 }
 
 .shadow-overview-card         { box-shadow: 0 2px 8px rgba(45,40,35,0.05); }
