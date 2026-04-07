@@ -1692,8 +1692,6 @@ export default function EditorCanvas() {
 
   const spread: EditorSpread | undefined = spreads[currentSpreadIndex] ?? spreads[0]
   const spreadCount = spreads.length
-  const canPrev = currentSpreadIndex > 0
-  const canNext = currentSpreadIndex < spreadCount - 1
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const bookRef = useRef<any>(null)
