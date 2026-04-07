@@ -173,7 +173,7 @@ export default function AdminDashboard() {
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
                       className="border-t border-[#f3f4f6] hover:bg-[#f9fafb] transition-colors cursor-pointer"
-                      onClick={() => navigate(`/admin/orders/${order.id}`)}
+                      onClick={() => navigate(`/admin.eliav/orders/${order.id}`)}
                     >
                       <td className="px-5 py-3.5">
                         <span className="font-mono font-medium text-[#111827]">{order.order_number}</span>

@@ -40,7 +40,7 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiesPage />} />
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/admin.eliav" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="orders" element={<AdminDashboard />} />
             <Route path="orders/:orderId" element={<AdminOrderDetail />} />

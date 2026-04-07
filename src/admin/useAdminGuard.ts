@@ -15,7 +15,7 @@ export function useAdminGuard() {
     if (authLoading) return
 
     if (!isLoggedIn || !userId) {
-      openAuthModal('login', '/admin')
+      openAuthModal('login', '/admin.eliav')
       return
     }
 

@@ -1,19 +1,106 @@
+import { useState } from 'react'
 import { Outlet, NavLink, useNavigate } from 'react-router'
 import { motion } from 'motion/react'
 import { useAdminGuard } from './useAdminGuard'
 import { useUIStore } from '../store/uiStore'
 
+const ADMIN_BASE = '/admin.eliav'
+const GATE_KEY = 'momento_admin_gate'
+const ADMIN_USER = 'eliav'
+const ADMIN_PASS = 'Momento2026!'
+
 const NAV_ITEMS = [
-  { to: '/admin', label: 'סקירה כללית', icon: 'dashboard', end: true },
-  { to: '/admin/orders', label: 'הזמנות', icon: 'receipt_long', end: false },
+  { to: ADMIN_BASE, label: 'סקירה כללית', icon: 'dashboard', end: true },
+  { to: `${ADMIN_BASE}/orders`, label: 'הזמנות', icon: 'receipt_long', end: false },
 ]
 
+function useGateAuth() {
+  const [passed, setPassed] = useState(() => sessionStorage.getItem(GATE_KEY) === 'true')
+
+  const verify = (user: string, pass: string): boolean => {
+    if (user === ADMIN_USER && pass === ADMIN_PASS) {
+      sessionStorage.setItem(GATE_KEY, 'true')
+      setPassed(true)
+      return true
+    }
+    return false
+  }
+
+  return { passed, verify }
+}
+
+function GateScreen({ onVerify }: { onVerify: (user: string, pass: string) => boolean }) {
+  const [user, setUser] = useState('')
+  const [pass, setPass] = useState('')
+  const [error, setError] = useState(false)
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!onVerify(user, pass)) {
+      setError(true)
+      setTimeout(() => setError(false), 2000)
+    }
+  }
+
+  return (
+    <div dir="rtl" className="min-h-screen bg-[#f8f9fa] flex items-center justify-center">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.25 }}
+        className="bg-white rounded-2xl border border-[#e5e7eb] p-8 w-full max-w-sm"
+        style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}
+      >
+        <div className="text-center mb-6">
+          <div className="w-12 h-12 rounded-xl bg-[#111827] flex items-center justify-center mx-auto mb-3">
+            <span className="material-symbols-outlined text-white text-[22px]">lock</span>
+          </div>
+          <h1 className="text-[16px] font-bold text-[#111827]">ניהול Momento</h1>
+          <p className="text-[12px] text-[#6b7280] mt-1">הזן פרטי כניסה</p>
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <input
+            type="text"
+            placeholder="שם משתמש"
+            value={user}
+            onChange={(e) => setUser(e.target.value)}
+            className="w-full px-4 py-2.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-[13px] text-[#111827] placeholder:text-[#9ca3af] focus:outline-none focus:border-[#6b7280] transition-colors"
+            autoFocus
+          />
+          <input
+            type="password"
+            placeholder="סיסמה"
+            value={pass}
+            onChange={(e) => setPass(e.target.value)}
+            className="w-full px-4 py-2.5 bg-[#f9fafb] border border-[#e5e7eb] rounded-lg text-[13px] text-[#111827] placeholder:text-[#9ca3af] focus:outline-none focus:border-[#6b7280] transition-colors"
+          />
+          {error && (
+            <p className="text-[12px] text-[#ef4444] text-center">שם משתמש או סיסמה שגויים</p>
+          )}
+          <button
+            type="submit"
+            className="w-full py-2.5 bg-[#111827] text-white text-[13px] font-medium rounded-lg hover:bg-[#1f2937] transition-colors"
+          >
+            כניסה
+          </button>
+        </form>
+      </motion.div>
+    </div>
+  )
+}
+
 export default function AdminLayout() {
+  const { passed, verify } = useGateAuth()
   const { loading } = useAdminGuard()
   const userName = useUIStore((s) => s.userName)
   const isLoggedIn = useUIStore((s) => s.isLoggedIn)
   const logout = useUIStore((s) => s.logout)
   const navigate = useNavigate()
+
+  if (!passed) {
+    return <GateScreen onVerify={verify} />
+  }
 
   if (loading) {
     return (

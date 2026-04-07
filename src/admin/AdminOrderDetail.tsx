@@ -121,7 +121,7 @@ export default function AdminOrderDetail() {
       <div className="text-center py-20">
         <span className="material-symbols-outlined text-4xl text-[#9ca3af] block mb-3">error_outline</span>
         <p className="text-[#6b7280] mb-4">הזמנה לא נמצאה</p>
-        <button onClick={() => navigate('/admin')} className="text-[13px] text-[#111827] underline">
+        <button onClick={() => navigate('/admin.eliav')} className="text-[13px] text-[#111827] underline">
           חזרה לרשימה
         </button>
       </div>
@@ -138,7 +138,7 @@ export default function AdminOrderDetail() {
       {/* Back + Title */}
       <div className="flex items-center gap-4">
         <button
-          onClick={() => navigate('/admin')}
+          onClick={() => navigate('/admin.eliav')}
           className="w-9 h-9 rounded-lg bg-white border border-[#e5e7eb] flex items-center justify-center hover:bg-[#f3f4f6] transition-colors"
         >
           <span className="material-symbols-outlined text-[18px] text-[#6b7280]">arrow_forward</span>
