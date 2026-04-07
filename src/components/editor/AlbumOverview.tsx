@@ -55,6 +55,14 @@ export default function AlbumOverview() {
   const removePhotoSlotBySpread = useEditorStore((s) => s.removePhotoSlotBySpread)
   const addToast = useUIStore((s) => s.addToast)
 
+  const [gridReady, setGridReady] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setGridReady(true))
+    })
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   const photos = useAlbumStore((s) => s.photos)
   const thumbnailLookup = useMemo(() => {
     const lookup: Record<string, string> = {}
@@ -195,7 +203,7 @@ export default function AlbumOverview() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.18 }}
+      transition={{ duration: 0.12 }}
       className="fixed inset-0 z-50 flex flex-col"
       dir="rtl"
     >
@@ -271,24 +279,30 @@ export default function AlbumOverview() {
           mode === 'bg-ai-panel' ? 'md:pr-[340px]' : 'md:pr-[230px]'
         }`}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[72rem] mx-auto overview-grid-enter">
-          {spreadIds.map((id, i) => (
-            <LazyCard key={id} index={i}>
-              <OverviewSpreadCard
-                spreadIndex={i}
-                total={spreadsCount}
-                isCurrent={i === currentSpreadIndex}
-                activeMode={mode}
-                swapSourceSlotId={swapSource?.slotId ?? null}
-                thumbnailLookup={thumbnailLookup}
-                onClickPhoto={handleClickPhoto}
-                onClickSpread={handleClickSpread}
-                onRemoveSlot={handleRemoveSlot}
-                onJumpToSpread={handleJumpToSpread}
-              />
-            </LazyCard>
-          ))}
-        </div>
+        {!gridReady ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="w-7 h-7 border-2 border-primary/15 border-t-primary rounded-full animate-spin" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[72rem] mx-auto overview-grid-enter">
+            {spreadIds.map((id, i) => (
+              <LazyCard key={id} index={i}>
+                <OverviewSpreadCard
+                  spreadIndex={i}
+                  total={spreadsCount}
+                  isCurrent={i === currentSpreadIndex}
+                  activeMode={mode}
+                  swapSourceSlotId={swapSource?.slotId ?? null}
+                  thumbnailLookup={thumbnailLookup}
+                  onClickPhoto={handleClickPhoto}
+                  onClickSpread={handleClickSpread}
+                  onRemoveSlot={handleRemoveSlot}
+                  onJumpToSpread={handleJumpToSpread}
+                />
+              </LazyCard>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Sidebar */}
