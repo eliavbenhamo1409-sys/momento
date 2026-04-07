@@ -177,11 +177,11 @@ export function BookCoverOverlay({
       transition={{ duration: 0.3 }}
       style={{ perspective: phase === 'flip' ? 2500 : undefined }}
     >
-      {/* White backdrop — starts transparent so real flipbook pages show
-          through, fades in around the 90° mark of the flip. */}
+      {/* Backdrop — transparent so the editor dot-grid background shows
+          through around the cover. Fades in around the 90° mark. */}
       <motion.div
         className="absolute inset-0"
-        style={{ backgroundColor: '#fff' }}
+        style={{ backgroundColor: 'transparent' }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: COVER_DELAY, duration: COVER_FADE }}
