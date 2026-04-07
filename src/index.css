@@ -256,6 +256,47 @@ body {
   animation: ambient-drift 20s ease-in-out infinite;
 }
 
+/* ── Album Overview ──────────────────────────────────────── */
+@keyframes overview-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes overview-header-slide {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes overview-grid-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.overview-enter {
+  animation: overview-fade-in 0.2s ease both;
+}
+.overview-header-enter {
+  animation: overview-header-slide 0.22s cubic-bezier(0.22,1,0.36,1) 0.04s both;
+}
+.overview-grid-enter {
+  animation: overview-grid-up 0.24s cubic-bezier(0.22,1,0.36,1) 0.08s both;
+}
+
+/* Cards */
+.overview-card {
+  transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+              box-shadow 0.22s ease;
+}
+.overview-card:hover {
+  transform: scale(1.012);
+}
+.overview-card:active {
+  transform: scale(0.99);
+  transition-duration: 0.08s;
+}
+
+.shadow-overview-card         { box-shadow: 0 2px 8px rgba(45,40,35,0.05); }
+.shadow-overview-card-hover   { box-shadow: 0 6px 20px rgba(45,40,35,0.10); }
+.shadow-overview-card-active  { box-shadow: 0 4px 20px rgba(96,92,72,0.12); }
+
 /* ── page-flip library overrides ────────────────────────────────── */
 .album-flipbook .stf__parent {
   position: relative !important;

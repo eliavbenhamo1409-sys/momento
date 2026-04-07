@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect, useMemo } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { AnimatePresence, motion } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useAlbumStore } from '../../store/albumStore'
 import { useUIStore } from '../../store/uiStore'
@@ -8,8 +8,6 @@ import OverviewSpreadCard from './OverviewSpreadCard'
 import OverviewSidebar, { type OverviewMode } from './OverviewSidebar'
 import AIBackgroundPanel from './AIBackgroundPanel'
 import Icon from '../shared/Icon'
-
-const OVERLAY_SPRING = { type: 'spring' as const, stiffness: 500, damping: 35, mass: 0.8 }
 
 const BANNER_CONFIG: Record<string, { icon: string; title: string; subtitle: string }> = {
   replace:        { icon: 'swap_horiz',    title: 'החלפת תמונה',            subtitle: 'לחצו על התמונה שברצונכם להחליף' },
@@ -23,13 +21,13 @@ const BANNER_CONFIG: Record<string, { icon: string; title: string; subtitle: str
 
 function LazyCard({ children, index }: { children: React.ReactNode; index: number }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [visible, setVisible] = useState(index < 8)
+  const [visible, setVisible] = useState(index < 16)
 
   useEffect(() => {
     if (visible || !ref.current) return
     const observer = new IntersectionObserver(
       ([entry]) => { if (entry.isIntersecting) { setVisible(true); observer.disconnect() } },
-      { rootMargin: '200px' },
+      { rootMargin: '300px' },
     )
     observer.observe(ref.current)
     return () => observer.disconnect()
@@ -43,10 +41,9 @@ function LazyCard({ children, index }: { children: React.ReactNode; index: numbe
 }
 
 export default function AlbumOverview() {
-  const { spreads, currentSpreadIndex } = useEditorStore(useShallow((s) => ({
-    spreads: s.spreads,
-    currentSpreadIndex: s.currentSpreadIndex,
-  })))
+  const spreadIds = useEditorStore(useShallow((s) => s.spreads.map((sp) => sp.id)))
+  const spreadsCount = spreadIds.length
+  const currentSpreadIndex = useEditorStore((s) => s.currentSpreadIndex)
   const toggleOverview = useEditorStore((s) => s.toggleOverview)
   const setCurrentSpread = useEditorStore((s) => s.setCurrentSpread)
   const replacePhotoInSlotBySpread = useEditorStore((s) => s.replacePhotoInSlotBySpread)
@@ -58,21 +55,14 @@ export default function AlbumOverview() {
   const removePhotoSlotBySpread = useEditorStore((s) => s.removePhotoSlotBySpread)
   const addToast = useUIStore((s) => s.addToast)
 
+  const photos = useAlbumStore((s) => s.photos)
   const thumbnailLookup = useMemo(() => {
-    const photos = useAlbumStore.getState().photos
     const lookup: Record<string, string> = {}
     for (const p of photos) {
       if (p.thumbnailUrl) lookup[p.id] = p.thumbnailUrl
     }
     return lookup
-  }, [])
-
-  const [gridReady, setGridReady] = useState(false)
-  useEffect(() => {
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => setGridReady(true))
-    })
-  }, [])
+  }, [photos])
 
   // ── Mode state ──
   const [mode, setMode] = useState<OverviewMode>('idle')
@@ -88,7 +78,6 @@ export default function AlbumOverview() {
     if (newMode !== 'bg-color') setSelectedBgColor(null)
   }, [])
 
-  // ── Photo click handler — dispatches based on active mode ──
   const handleClickPhoto = useCallback((spreadId: string, slotId: string, _spreadIndex: number) => {
     switch (mode) {
       case 'replace': {
@@ -128,7 +117,6 @@ export default function AlbumOverview() {
     }
   }, [mode, swapSource, swapPhotosAcrossSpreads, movePhotoToEmptySlot, removePhotoFromSlotBySpread, addToast])
 
-  // ── Spread click handler — dispatches based on active mode ──
   const handleClickSpread = useCallback((spreadId: string, spreadIndex: number) => {
     switch (mode) {
       case 'bg-color': {
@@ -150,7 +138,7 @@ export default function AlbumOverview() {
         break
       }
       case 'delete-spread': {
-        if (spreads.length <= 1) {
+        if (useEditorStore.getState().spreads.length <= 1) {
           addToast('לא ניתן למחוק את העמוד האחרון')
           return
         }
@@ -159,7 +147,7 @@ export default function AlbumOverview() {
         break
       }
     }
-  }, [mode, selectedBgColor, spreads.length, setSpreadBgColor, setCurrentSpread, deleteSpread, addToast])
+  }, [mode, selectedBgColor, setSpreadBgColor, setCurrentSpread, deleteSpread, addToast])
 
   const handleReplaceFile = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.files?.[0]
@@ -184,7 +172,6 @@ export default function AlbumOverview() {
     toggleOverview()
   }, [setCurrentSpread, toggleOverview])
 
-  // ── Keyboard ──
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -208,17 +195,13 @@ export default function AlbumOverview() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={{ duration: 0.18 }}
       className="fixed inset-0 z-50 flex flex-col"
       dir="rtl"
     >
-      {/* Backdrop */}
-      <motion.div
-        initial={{ backdropFilter: 'blur(0px)' }}
-        animate={{ backdropFilter: 'blur(12px)' }}
-        exit={{ backdropFilter: 'blur(0px)' }}
-        transition={{ duration: 0.25 }}
-        className="absolute inset-0 bg-[#EEECEA]/95"
+      {/* Backdrop — opaque, no blur */}
+      <div
+        className="absolute inset-0 bg-[#EEECEA]"
         onClick={() => {
           if (mode !== 'idle') { handleSetMode('idle'); return }
           toggleOverview()
@@ -226,12 +209,7 @@ export default function AlbumOverview() {
       />
 
       {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ...OVERLAY_SPRING, delay: 0.05 }}
-        className="relative z-10 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 border-b border-black/[0.04]"
-      >
+      <header className="relative z-10 flex items-center justify-between px-4 md:px-8 py-3 md:py-4 border-b border-black/[0.04] overview-header-enter">
         <div className="flex items-center gap-4">
           <h2
             className="text-xl font-bold text-on-surface"
@@ -240,20 +218,18 @@ export default function AlbumOverview() {
             מבט על האלבום
           </h2>
           <span className="text-sm text-secondary/50 font-medium">
-            {spreads.length} דפים
+            {spreadsCount} דפים
           </span>
         </div>
-        <motion.button
+        <button
           type="button"
-          whileHover={{ scale: 1.06 }}
-          whileTap={{ scale: 0.94 }}
           onClick={toggleOverview}
-          className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-sm flex items-center justify-center shadow-sm border border-black/[0.06] hover:bg-white transition-colors"
+          className="w-10 h-10 rounded-full bg-white/80 flex items-center justify-center shadow-sm border border-black/[0.06] hover:bg-white hover:scale-105 active:scale-95 transition-all duration-150"
           aria-label="סגור"
         >
           <Icon name="close" size={20} className="text-secondary/70" />
-        </motion.button>
-      </motion.header>
+        </button>
+      </header>
 
       {/* Action Banner */}
       <AnimatePresence>
@@ -263,9 +239,9 @@ export default function AlbumOverview() {
             initial={{ opacity: 0, y: -18 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -14 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
             dir="rtl"
-            className="absolute top-[72px] left-1/2 -translate-x-1/2 z-[56] flex items-center gap-3 px-5 py-3 rounded-2xl bg-deep-brown/90 backdrop-blur-md shadow-xl shadow-black/10"
+            className="absolute top-[72px] left-1/2 -translate-x-1/2 z-[56] flex items-center gap-3 px-5 py-3 rounded-2xl bg-deep-brown/90 shadow-xl shadow-black/10"
             onClick={(e) => e.stopPropagation()}
           >
             <span className="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
@@ -290,21 +266,17 @@ export default function AlbumOverview() {
       </AnimatePresence>
 
       {/* Grid */}
-      <motion.div
+      <div
         className={`relative z-10 flex-1 overflow-y-auto px-4 md:px-8 py-6 ${
           mode === 'bg-ai-panel' ? 'md:pr-[340px]' : 'md:pr-[230px]'
         }`}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: gridReady ? 1 : 0 }}
-        transition={{ duration: 0.25 }}
       >
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[72rem] mx-auto">
-          {spreads.map((spread, i) => (
-            <LazyCard key={spread.id} index={i}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-[72rem] mx-auto overview-grid-enter">
+          {spreadIds.map((id, i) => (
+            <LazyCard key={id} index={i}>
               <OverviewSpreadCard
-                spread={spread}
-                index={i}
-                total={spreads.length}
+                spreadIndex={i}
+                total={spreadsCount}
                 isCurrent={i === currentSpreadIndex}
                 activeMode={mode}
                 swapSourceSlotId={swapSource?.slotId ?? null}
@@ -313,18 +285,17 @@ export default function AlbumOverview() {
                 onClickSpread={handleClickSpread}
                 onRemoveSlot={handleRemoveSlot}
                 onJumpToSpread={handleJumpToSpread}
-                entranceDelay={i < 8 ? i * 0.04 : 0}
               />
             </LazyCard>
           ))}
         </div>
-      </motion.div>
+      </div>
 
       {/* Sidebar */}
       {mode !== 'bg-ai-panel' && (
         <OverviewSidebar
           activeMode={mode}
-          spreadsCount={spreads.length}
+          spreadsCount={spreadsCount}
           onSetMode={handleSetMode}
           onSelectBgColor={handleSelectBgColor}
           onClose={toggleOverview}
@@ -364,16 +335,11 @@ export default function AlbumOverview() {
       />
 
       {/* Hint bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ ...OVERLAY_SPRING, delay: 0.15 }}
-        className="relative z-10 text-center py-3 text-[11px] text-secondary/40 font-medium border-t border-black/[0.04]"
-      >
+      <div className="relative z-10 text-center py-3 text-[11px] text-secondary/40 font-medium border-t border-black/[0.04]">
         {mode === 'idle'
           ? 'בחר פעולה מהסרגל · לחץ על עמוד לניווט · Esc לסגירה'
           : 'Esc לביטול הפעולה'}
-      </motion.div>
+      </div>
     </motion.div>
   )
 }

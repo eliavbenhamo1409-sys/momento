@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
-import { motion } from 'motion/react'
-import type { EditorSpread, PhotoElement } from '../../types'
+import React, { useState, useMemo } from 'react'
+import type { PhotoElement } from '../../types'
 import type { OverviewMode } from './OverviewSidebar'
+import { useEditorStore } from '../../store/editorStore'
 import Icon from '../shared/Icon'
 
 const SPREAD_LABELS: Record<number, string> = { 0: 'כריכה' }
@@ -12,8 +12,7 @@ function getSpreadLabel(index: number, total: number): string {
 }
 
 interface Props {
-  spread: EditorSpread
-  index: number
+  spreadIndex: number
   total: number
   isCurrent: boolean
   activeMode: OverviewMode
@@ -23,10 +22,7 @@ interface Props {
   onClickSpread: (spreadId: string, spreadIndex: number) => void
   onRemoveSlot: (spreadId: string, slotId: string) => void
   onJumpToSpread: (index: number) => void
-  entranceDelay: number
 }
-
-const CARD_SPRING = { type: 'spring' as const, stiffness: 420, damping: 30, mass: 0.7 }
 
 function isPhotoClickMode(mode: OverviewMode) {
   return mode === 'replace' || mode === 'swap-source' || mode === 'swap-target' || mode === 'remove'
@@ -66,9 +62,7 @@ function PhotoSlot({
 
   return (
     <div
-      className={`absolute overflow-hidden transition-all duration-150 group/slot ${
-        clickable ? 'cursor-pointer' : ''
-      }`}
+      className={`absolute overflow-hidden group/slot ${clickable ? 'cursor-pointer' : ''}`}
       style={{
         left: `${element.x}%`,
         top: `${element.y}%`,
@@ -89,35 +83,30 @@ function PhotoSlot({
       {hasPhoto ? (
         <>
           {!imgLoaded && (
-            <div
-              className="absolute inset-0 skeleton-shimmer rounded-[inherit]"
-              style={{
-                background: 'linear-gradient(90deg, var(--color-surface-container) 25%, var(--color-surface-container-low) 50%, var(--color-surface-container) 75%)',
-                backgroundSize: '200% 100%',
-              }}
-            />
+            <div className="absolute inset-0 bg-surface-container animate-pulse rounded-[inherit]" />
           )}
           <img
             src={imgSrc!}
             alt=""
-            className="w-full h-full object-cover select-none transition-all duration-150"
+            className="w-full h-full object-cover select-none"
             style={{
               objectPosition: element.objectPosition,
               opacity: imgLoaded ? 1 : 0,
+              transition: 'opacity 0.15s ease',
             }}
             draggable={false}
             loading="lazy"
+            decoding="async"
             onLoad={() => setImgLoaded(true)}
           />
         </>
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-black/[0.03] border border-dashed border-black/[0.08] rounded-[inherit]">
           <Icon name="add_photo_alternate" size={14} className="text-secondary/25" />
-          {/* Red X to remove empty slot on hover */}
           <button
             type="button"
             onClick={(e) => { e.stopPropagation(); onRemoveSlot(spreadId, element.slotId) }}
-            className="absolute top-1 left-1 w-5 h-5 rounded-full bg-error/80 hover:bg-error flex items-center justify-center shadow-sm opacity-0 group-hover/slot:opacity-100 transition-all duration-200 z-20"
+            className="absolute top-1 left-1 w-5 h-5 rounded-full bg-error/80 hover:bg-error flex items-center justify-center shadow-sm opacity-0 group-hover/slot:opacity-100 transition-opacity duration-150 z-20"
           >
             <Icon name="close" size={11} className="text-white" />
           </button>
@@ -135,7 +124,7 @@ function PhotoSlot({
       )}
 
       {clickable && !isSwapSource && (
-        <div className="absolute inset-0 rounded-[inherit] bg-black/0 hover:bg-black/15 transition-colors duration-150 z-10 flex items-center justify-center opacity-0 hover:opacity-100">
+        <div className="absolute inset-0 rounded-[inherit] bg-black/0 hover:bg-black/15 transition-colors duration-100 z-10 flex items-center justify-center opacity-0 hover:opacity-100">
           <div className="w-7 h-7 rounded-full bg-white/90 shadow-md flex items-center justify-center">
             {showSwapIcon && <Icon name="swap_horiz" size={15} className="text-deep-brown" />}
             {showReplaceIcon && <Icon name="swap_horiz" size={15} className="text-deep-brown" />}
@@ -149,8 +138,7 @@ function PhotoSlot({
 }
 
 const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
-  spread,
-  index,
+  spreadIndex,
   total,
   isCurrent,
   activeMode,
@@ -160,18 +148,23 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
   onClickSpread,
   onRemoveSlot,
   onJumpToSpread,
-  entranceDelay,
 }: Props) {
+  const spread = useEditorStore((s) => s.spreads[spreadIndex])
+
+  if (!spread) return null
+
   const design = spread.design
   const hasDesign = design && design.elements.length > 0
-  const label = getSpreadLabel(index, total)
+  const label = getSpreadLabel(spreadIndex, total)
 
-  const leftElements = hasDesign
-    ? (design.elements.filter((e) => e.type === 'photo' && (e.page === 'left' || e.page === 'full')) as PhotoElement[])
-    : []
-  const rightElements = hasDesign
-    ? (design.elements.filter((e) => e.type === 'photo' && e.page === 'right') as PhotoElement[])
-    : []
+  const leftElements = useMemo(
+    () => hasDesign ? design.elements.filter((e) => e.type === 'photo' && (e.page === 'left' || e.page === 'full')) as PhotoElement[] : [],
+    [hasDesign, design?.elements],
+  )
+  const rightElements = useMemo(
+    () => hasDesign ? design.elements.filter((e) => e.type === 'photo' && e.page === 'right') as PhotoElement[] : [],
+    [hasDesign, design?.elements],
+  )
 
   const bgColor = design?.background.color || '#FFFFFF'
   const genBgUrl = design?.background.generatedBgUrl
@@ -182,29 +175,22 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
 
   const handleClick = () => {
     if (spreadClickable) {
-      onClickSpread(spread.id, index)
+      onClickSpread(spread.id, spreadIndex)
     } else if (activeMode === 'idle') {
-      onJumpToSpread(index)
+      onJumpToSpread(spreadIndex)
     }
   }
 
+  const ringClass = spreadClickable
+    ? 'ring-1 ring-primary/30 shadow-overview-card hover:ring-2 hover:ring-primary/50 hover:shadow-overview-card-hover'
+    : isCurrent
+      ? 'ring-2 ring-primary/30 shadow-overview-card-active'
+      : 'ring-1 ring-black/[0.06] shadow-overview-card hover:shadow-overview-card-hover hover:ring-black/[0.10]'
+
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ ...CARD_SPRING, delay: entranceDelay }}
-      className="flex flex-col gap-2"
-    >
-      <motion.div
-        whileHover={{ scale: 1.012 }}
-        transition={{ type: 'spring', stiffness: 400, damping: 25 }}
-        className={`relative rounded-xl overflow-hidden cursor-pointer group transition-shadow duration-300 ${
-          spreadClickable
-            ? 'ring-1 ring-primary/30 shadow-[0_2px_8px_rgba(45,40,35,0.05)] hover:ring-2 hover:ring-primary/50 hover:shadow-[0_6px_24px_rgba(96,92,72,0.18)]'
-            : isCurrent
-              ? 'ring-2 ring-primary/30 shadow-[0_4px_20px_rgba(96,92,72,0.12)]'
-              : 'ring-1 ring-black/[0.06] shadow-[0_2px_8px_rgba(45,40,35,0.05)] hover:shadow-[0_6px_20px_rgba(45,40,35,0.10)] hover:ring-black/[0.10]'
-        }`}
+    <div className="flex flex-col gap-2">
+      <div
+        className={`overview-card relative rounded-xl overflow-hidden cursor-pointer group ${ringClass}`}
         onClick={handleClick}
         style={{ aspectRatio: '2 / 1' }}
       >
@@ -246,7 +232,7 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
         </div>
 
         {/* Spine */}
-        <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-black/[0.08] z-20" />
+        <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-black/[0.08] z-20 pointer-events-none" />
 
         {/* Left page elements */}
         <div className="absolute inset-y-0 left-0 w-1/2">
@@ -256,7 +242,7 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
                 key={el.slotId}
                 element={el}
                 spreadId={spread.id}
-                spreadIndex={index}
+                spreadIndex={spreadIndex}
                 mode={activeMode}
                 isSwapSource={swapSourceSlotId === el.slotId}
                 thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
@@ -267,7 +253,7 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
           ) : (
             spread.leftPhotos.map((src, i) =>
               src ? (
-                <img key={i} src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                <img key={i} src={src} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : null,
             )
           )}
@@ -281,7 +267,7 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
                 key={el.slotId}
                 element={el}
                 spreadId={spread.id}
-                spreadIndex={index}
+                spreadIndex={spreadIndex}
                 mode={activeMode}
                 isSwapSource={swapSourceSlotId === el.slotId}
                 thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
@@ -292,7 +278,7 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
           ) : (
             spread.rightPhotos.map((src, i) =>
               src ? (
-                <img key={i} src={src} alt="" className="w-full h-full object-cover" loading="lazy" />
+                <img key={i} src={src} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
               ) : null,
             )
           )}
@@ -304,13 +290,13 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
             נוכחי
           </div>
         )}
-      </motion.div>
+      </div>
 
       {/* Label */}
       <span className={`text-xs font-medium text-center ${isCurrent ? 'text-primary/70' : 'text-secondary/50'}`}>
         {label}
       </span>
-    </motion.div>
+    </div>
   )
 })
 
