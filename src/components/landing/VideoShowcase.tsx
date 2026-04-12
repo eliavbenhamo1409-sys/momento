@@ -1,5 +1,7 @@
 import { useRef } from 'react'
 import { motion, useInView } from 'motion/react'
+import { useNavigate } from 'react-router'
+import { useUIStore } from '../../store/uiStore'
 import Icon from '../shared/Icon'
 
 interface Slot {
@@ -33,8 +35,21 @@ interface VideoShowcaseProps {
 
 export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
   const ref = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
+  const isLoggedIn = useUIStore((s) => s.isLoggedIn)
+  const openAuthModal = useUIStore((s) => s.openAuthModal)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
   const effectiveInView = lead || isInView
+
+  const handleCreate = () => {
+    if (isLoggedIn) navigate('/upload')
+    else openAuthModal('signup', '/upload')
+  }
+
+  const handleExisting = () => {
+    if (isLoggedIn) navigate('/dashboard')
+    else openAuthModal('login', '/dashboard')
+  }
 
   return (
     <section ref={ref} className="w-full">
@@ -43,7 +58,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
         data-landing-video-intro={lead ? '' : undefined}
         className={
           lead
-            ? 'text-center px-6 pt-28 pb-16 md:pt-32 md:pb-20 bg-gradient-to-b from-deep-brown via-[#1f1c19] to-[#252220]'
+            ? 'text-center px-6 pt-28 pb-14 md:pt-32 md:pb-20 bg-gradient-to-b from-deep-brown via-[#1f1c19] to-[#252220]'
             : 'text-center py-20 md:py-28 px-6'
         }
       >
@@ -73,6 +88,30 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
         >
           תראו בעצמכם.
         </motion.h2>
+
+        {lead && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={effectiveInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.55, delay: 0.35 }}
+            className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5"
+          >
+            <button
+              type="button"
+              onClick={handleCreate}
+              className="btn-press border border-white/65 bg-white/[0.06] px-10 py-3.5 text-[11px] font-medium uppercase tracking-[0.18em] text-white backdrop-blur-sm transition-all duration-500 hover:border-white hover:bg-white hover:text-deep-brown md:px-12 md:py-4 md:text-[12px] md:tracking-[0.2em]"
+            >
+              התחילו ליצור
+            </button>
+            <button
+              type="button"
+              onClick={handleExisting}
+              className="btn-press text-[12px] text-white/45 transition-colors duration-300 hover:text-white/80 md:text-[13px]"
+            >
+              יש לי כבר חשבון
+            </button>
+          </motion.div>
+        )}
       </div>
 
       {/* Two-up video grid — Artifact Uprising split style */}
