@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import BrandLogo from '../shared/BrandLogo'
 
 export default function Footer() {
   return (
@@ -6,12 +7,9 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-8 md:px-16">
         <div className="flex flex-col md:flex-row-reverse justify-between items-start gap-12 mb-12">
           <div>
-            <span
-              className="text-2xl font-bold text-white block mb-3"
-              style={{ fontFamily: 'var(--font-family-headline)' }}
-            >
-              Momento
-            </span>
+            <div className="block mb-4">
+              <BrandLogo tone="light" heightClass="h-10 md:h-11" />
+            </div>
             <p className="text-sm text-white/35 max-w-xs leading-relaxed">
               כל תמונה שווה יותר מאלף לייקים.
               <br />

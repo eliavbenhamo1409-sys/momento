@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useNavigate } from 'react-router'
 import { useUIStore } from '../../store/uiStore'
 import Icon from '../shared/Icon'
+import BrandLogo from '../shared/BrandLogo'
 
 export default function DashboardHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -44,13 +45,7 @@ export default function DashboardHeader() {
           : 'bg-transparent'
       }`}
     >
-      <span
-        className="text-xl font-semibold text-deep-brown tracking-tight cursor-pointer"
-        style={{ fontFamily: 'var(--font-family-headline)' }}
-        onClick={() => navigate('/')}
-      >
-        Momento
-      </span>
+      <BrandLogo heightClass="h-9" onClick={() => navigate('/')} />
 
       <div className="relative" ref={menuRef}>
         <button

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router'
 import { motion, AnimatePresence } from 'motion/react'
 import { useUIStore } from '../../store/uiStore'
 import Icon from '../shared/Icon'
+import BrandLogo from '../shared/BrandLogo'
 
 interface Props {
   showBack?: boolean
@@ -34,13 +35,7 @@ export default function ProductHeader({ showBack, backTo, backLabel, onBack }: P
   return (
     <header className="h-[60px] w-full glass-header border-b border-muted-border/10 flex items-center justify-between px-8 shrink-0 z-40">
       <div className="flex items-center gap-4">
-        <span
-          className="text-lg font-semibold text-deep-brown tracking-tight cursor-pointer"
-          style={{ fontFamily: 'var(--font-family-headline)' }}
-          onClick={() => navigate('/')}
-        >
-          Momento
-        </span>
+        <BrandLogo heightClass="h-7" onClick={() => navigate('/')} />
         {showBack && (
           <>
             <div className="h-5 w-px bg-outline-variant/30" />

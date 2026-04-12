@@ -4,6 +4,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react'
 import { useUIStore } from '../../store/uiStore'
 import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
+import BrandLogo from '../shared/BrandLogo'
 
 export default function LandingHeader() {
   const [scrolled, setScrolled] = useState(false)
@@ -62,13 +63,7 @@ export default function LandingHeader() {
           scrolled ? 'glass-header border-b border-muted-border/15' : 'bg-transparent'
         }`}
       >
-        <div
-          className="text-xl font-bold text-deep-brown tracking-tight cursor-pointer"
-          style={{ fontFamily: 'var(--font-family-headline)' }}
-          onClick={() => navigate('/')}
-        >
-          Momento
-        </div>
+        <BrandLogo heightClass="h-9 sm:h-10" onClick={() => navigate('/')} />
 
         <nav className="hidden md:flex items-center gap-8">
           {['איך זה עובד', 'מחירים', 'שאלות נפוצות'].map((item) => (

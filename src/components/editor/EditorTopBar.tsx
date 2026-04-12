@@ -6,6 +6,7 @@ import { useEditorStore } from '../../store/editorStore'
 import { useShallow } from 'zustand/react/shallow'
 import { useAlbumSave } from '../../hooks/useAlbumPersistence'
 import Icon from '../shared/Icon'
+import BrandLogo from '../shared/BrandLogo'
 
 export default function EditorTopBar() {
   const navigate = useNavigate()
@@ -56,12 +57,7 @@ export default function EditorTopBar() {
           onClick={() => navigate('/')}
           className="btn-press flex items-center gap-2 shrink-0"
         >
-          <span
-            className="text-lg md:text-xl font-light tracking-tighter text-on-surface"
-            style={{ fontFamily: 'var(--font-family-headline)' }}
-          >
-            Momento
-          </span>
+          <BrandLogo heightClass="h-7 md:h-8" />
         </button>
 
         <div className="h-7 w-px bg-outline-variant/20 hidden sm:block" />
