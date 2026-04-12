@@ -153,15 +153,20 @@ body {
 }
 
 /* ── Marquee for trust strip ──────────────────────── */
-@keyframes marquee {
+@keyframes marquee-scroll {
   0%   { transform: translateX(0); }
-  100% { transform: translateX(-25%); }
+  100% { transform: translateX(-50%); }
 }
-.marquee-track {
-  animation: marquee 20s linear infinite;
+.marquee-wrapper {
+  animation: marquee-scroll 25s linear infinite;
+  width: max-content;
 }
-.marquee-track:hover {
+.marquee-wrapper:hover {
   animation-play-state: paused;
+}
+.marquee-half {
+  min-width: 100vw;
+  justify-content: space-around;
 }
 
 /* ── Underline reveal on hover ────────────────────── */

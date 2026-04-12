@@ -7,32 +7,31 @@ const items = [
   { icon: 'local_shipping', text: 'משלוח חינם עד הבית' },
   { icon: 'lock', text: 'הפרטיות שלכם שמורה' },
   { icon: 'thumb_up', text: 'שביעות רצון מובטחת' },
+  { icon: 'schedule', text: 'מוכן תוך 2 דקות' },
+  { icon: 'star', text: 'דירוג 4.9 מלקוחות' },
 ]
 
-function ItemSet() {
+function Strip() {
   return (
-    <>
+    <div className="marquee-half flex items-center shrink-0" aria-hidden="true">
       {items.map((item, i) => (
-        <div key={i} className="flex items-center gap-2.5 px-6 shrink-0">
-          <Icon name={item.icon} size={18} className="text-sage/70" />
-          <span className="text-sm font-medium text-deep-brown/70 tracking-wide whitespace-nowrap">
+        <div key={i} className="flex items-center gap-2.5 shrink-0 mx-8">
+          <Icon name={item.icon} size={16} className="text-sage/60" />
+          <span className="text-sm font-medium text-deep-brown/60 tracking-wide whitespace-nowrap">
             {item.text}
           </span>
-          <span className="text-muted-border/40 mr-6 text-xs">◆</span>
         </div>
       ))}
-    </>
+    </div>
   )
 }
 
 export default function TrustStrip() {
   return (
-    <section className="py-5 overflow-hidden border-y border-muted-border/10 bg-white/40">
-      <div className="marquee-track flex items-center w-max">
-        <ItemSet />
-        <ItemSet />
-        <ItemSet />
-        <ItemSet />
+    <section className="py-4 overflow-hidden border-y border-muted-border/10 bg-white/40">
+      <div className="marquee-wrapper flex">
+        <Strip />
+        <Strip />
       </div>
     </section>
   )
