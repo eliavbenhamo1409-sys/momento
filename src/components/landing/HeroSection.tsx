@@ -55,8 +55,11 @@ export default function HeroSection() {
       {/* Warm neutral bg */}
       <div className="absolute inset-0 hero-gradient pointer-events-none" />
 
-      <motion.div style={{ opacity: textOpacity }} className="container mx-auto px-6 md:px-16 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+      <motion.div
+        style={{ opacity: textOpacity }}
+        className="container mx-auto px-5 sm:px-8 md:px-12 lg:px-10 xl:px-14 relative z-10 max-w-[1400px]"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.22fr)] gap-12 lg:gap-14 xl:gap-16 items-center">
 
           {/* ── Text ──────────────────────────────── */}
           <div className="order-2 lg:order-1 max-w-2xl lg:max-w-none">
@@ -173,7 +176,7 @@ export default function HeroSection() {
           {/* ── Image ─────────────────────────────── */}
           <motion.div
             style={{ y: parallaxY }}
-            className="order-1 lg:order-2 flex justify-center relative"
+            className="order-1 lg:order-2 flex justify-center lg:justify-end relative w-full"
           >
             <motion.div
               style={{ x: imgX, y: imgY }}
@@ -192,7 +195,7 @@ export default function HeroSection() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                className="w-[380px] h-[448px] sm:w-[448px] sm:h-[528px] rounded-2xl overflow-hidden"
+                className="w-full max-w-[min(94vw,440px)] aspect-[95/112] sm:max-w-[min(92vw,500px)] lg:max-w-none lg:w-[min(58vw,760px)] lg:aspect-auto lg:h-[min(68vh,820px)] rounded-2xl overflow-hidden"
                 style={{
                   boxShadow: '0 30px 80px rgba(26,23,20,0.12), 0 10px 30px rgba(26,23,20,0.06)',
                 }}
