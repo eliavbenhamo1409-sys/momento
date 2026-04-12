@@ -192,7 +192,7 @@ export default function HeroSection() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                className="w-[340px] h-[400px] sm:w-[400px] sm:h-[470px] rounded-2xl overflow-hidden"
+                className="w-[380px] h-[448px] sm:w-[448px] sm:h-[528px] rounded-2xl overflow-hidden"
                 style={{
                   boxShadow: '0 30px 80px rgba(26,23,20,0.12), 0 10px 30px rgba(26,23,20,0.06)',
                 }}
