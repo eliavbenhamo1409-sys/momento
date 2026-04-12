@@ -22,19 +22,14 @@ export default function HeroSection() {
     else openAuthModal('signup', '/upload')
   }
 
-  const handleExisting = () => {
-    if (isLoggedIn) navigate('/dashboard')
-    else openAuthModal('login', '/dashboard')
-  }
-
   return (
     <section
       ref={sectionRef}
       data-landing-hero=""
-      className="relative z-[1] isolate w-full overflow-hidden bg-deep-brown"
+      className="relative z-[1] isolate w-full overflow-hidden border-b border-black/[0.06] bg-white"
     >
       {/* LTR row: physical left = image, physical right = copy (Hebrew RTL inside) */}
-      <div className="flex min-h-[min(40vh,420px)] max-h-[min(44vh,480px)] md:min-h-[min(42vh,440px)] md:max-h-[min(46vh,520px)] flex-col md:flex-row md:max-w-[1600px] md:mx-auto">
+      <div className="flex min-h-[min(40vh,420px)] max-h-[min(44vh,480px)] flex-col md:mx-auto md:min-h-[min(42vh,440px)] md:max-h-[min(46vh,520px)] md:max-w-[1600px] md:flex-row">
         {/* Image — left on desktop, top on mobile */}
         <motion.div
           className="relative h-[28vh] min-h-[200px] max-h-[280px] w-full shrink-0 overflow-hidden md:h-auto md:max-h-none md:min-h-0 md:w-[48%] lg:w-[50%]"
@@ -49,22 +44,22 @@ export default function HeroSection() {
             className="pointer-events-none absolute inset-0 md:hidden"
             style={{
               background:
-                'linear-gradient(to bottom, transparent 55%, rgba(26,23,20,0.35) 100%)',
+                'linear-gradient(to bottom, transparent 60%, rgba(26,23,20,0.12) 100%)',
             }}
           />
         </motion.div>
 
-        {/* Copy + CTAs — right on desktop */}
+        {/* Copy + CTA — right on desktop */}
         <motion.div
           style={{ y: contentY, opacity: contentOpacity }}
           dir="rtl"
-          className="relative z-10 flex flex-1 flex-col justify-center gap-5 px-8 py-8 md:px-12 md:py-10 lg:px-16 lg:py-12"
+          className="relative z-10 flex flex-1 flex-col justify-center gap-5 bg-white px-8 py-8 md:px-12 md:py-10 lg:px-16 lg:py-12"
         >
           <motion.p
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1.0, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="text-[10px] md:text-[12px] font-medium uppercase tracking-[0.45em] text-white/45"
+            className="text-right text-[10px] font-medium uppercase tracking-[0.45em] text-secondary md:text-[12px]"
             style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
           >
             The Art of Remembering
@@ -74,7 +69,7 @@ export default function HeroSection() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.85, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-            className="text-right text-[1.85rem] leading-[1.12] text-white sm:text-4xl md:text-[2.35rem] md:leading-[1.1] lg:text-5xl"
+            className="text-right text-[1.85rem] leading-[1.12] text-deep-brown sm:text-4xl md:text-[2.35rem] md:leading-[1.1] lg:text-5xl"
             style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
           >
             התמונות שלכם.
@@ -86,32 +81,25 @@ export default function HeroSection() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.65, delay: 0.5 }}
-            className="max-w-md text-right text-[14px] leading-relaxed text-white/58 md:text-[15px]"
+            className="max-w-md text-right text-[14px] leading-relaxed text-on-surface-variant md:text-[15px]"
           >
             שופכים תמונות מהטלפון. מקבלים אלבום מעוצב בדלת.
             <br className="hidden sm:block" />
-            <span className="text-white/72">בין לבין — אפס עבודה.</span>
+            <span className="text-secondary">בין לבין — אפס עבודה.</span>
           </motion.p>
 
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.55, delay: 0.72 }}
-            className="flex flex-col items-end gap-4 sm:flex-row sm:flex-wrap sm:justify-end sm:gap-5"
+            className="flex flex-col items-end"
           >
             <button
               type="button"
               onClick={handleCreate}
-              className="btn-press border border-white/65 bg-white/[0.04] px-10 py-3.5 text-[11px] font-medium uppercase tracking-[0.18em] text-white backdrop-blur-sm transition-all duration-500 hover:border-white hover:bg-white hover:text-deep-brown md:px-12 md:py-4 md:text-[12px] md:tracking-[0.2em]"
+              className="btn-press bg-deep-brown px-10 py-3.5 text-[11px] font-medium uppercase tracking-[0.18em] text-white shadow-sm transition-[background-color,transform] duration-300 hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-deep-brown focus-visible:ring-offset-2 focus-visible:ring-offset-white md:px-12 md:py-4 md:text-[12px] md:tracking-[0.2em]"
             >
               התחילו ליצור
-            </button>
-            <button
-              type="button"
-              onClick={handleExisting}
-              className="btn-press text-[12px] text-white/45 transition-colors duration-300 hover:text-white/75 md:text-[13px]"
-            >
-              יש לי כבר חשבון
             </button>
           </motion.div>
         </motion.div>
@@ -127,7 +115,7 @@ export default function HeroSection() {
         <motion.div
           animate={{ y: [0, 6, 0] }}
           transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="h-7 w-px bg-gradient-to-b from-transparent via-white/25 to-transparent"
+          className="h-7 w-px bg-gradient-to-b from-transparent via-deep-brown/25 to-transparent"
         />
       </motion.div>
     </section>

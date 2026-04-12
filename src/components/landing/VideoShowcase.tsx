@@ -34,7 +34,7 @@ const slots: Slot[] = [
 ]
 
 interface VideoShowcaseProps {
-  /** First on page: dark intro under fixed header + light nav */
+  /** First on page: intro band under fixed header */
   lead?: boolean
 }
 
@@ -51,11 +51,6 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
     else openAuthModal('signup', '/upload')
   }
 
-  const handleExisting = () => {
-    if (isLoggedIn) navigate('/dashboard')
-    else openAuthModal('login', '/dashboard')
-  }
-
   return (
     <section ref={ref} className="w-full">
       {/* Editorial heading above the videos */}
@@ -63,7 +58,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
         data-landing-video-intro={lead ? '' : undefined}
         className={
           lead
-            ? 'text-center px-6 pt-36 pb-14 md:pt-44 md:pb-20 bg-gradient-to-b from-deep-brown via-[#1f1c19] to-[#252220]'
+            ? 'border-b border-black/[0.06] bg-white text-center px-6 pt-36 pb-14 md:pt-44 md:pb-20'
             : 'text-center py-20 md:py-28 px-6'
         }
       >
@@ -73,7 +68,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
           transition={{ duration: 0.8 }}
           className={
             lead
-              ? 'text-[11px] md:text-[12px] tracking-[0.45em] uppercase text-white/45 mb-5'
+              ? 'mb-5 text-[11px] uppercase tracking-[0.45em] text-secondary md:text-[12px]'
               : 'text-[11px] md:text-[12px] tracking-[0.45em] uppercase text-warm-gray/60 mb-5'
           }
           style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
@@ -86,7 +81,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
           transition={{ duration: 0.7, delay: 0.15 }}
           className={
             lead
-              ? 'text-3xl sm:text-4xl md:text-5xl text-white leading-tight'
+              ? 'text-3xl leading-tight text-deep-brown sm:text-4xl md:text-5xl'
               : 'text-3xl sm:text-4xl md:text-5xl text-deep-brown leading-tight'
           }
           style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
@@ -99,21 +94,14 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
             initial={{ opacity: 0, y: 12 }}
             animate={effectiveInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.55, delay: 0.35 }}
-            className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row sm:gap-5"
+            className="mt-10 flex justify-center"
           >
             <button
               type="button"
               onClick={handleCreate}
-              className="btn-press border border-white/65 bg-white/[0.06] px-10 py-3.5 text-[11px] font-medium uppercase tracking-[0.18em] text-white backdrop-blur-sm transition-all duration-500 hover:border-white hover:bg-white hover:text-deep-brown md:px-12 md:py-4 md:text-[12px] md:tracking-[0.2em]"
+              className="btn-press bg-deep-brown px-10 py-3.5 text-[11px] font-medium uppercase tracking-[0.18em] text-white shadow-sm transition-[background-color,transform] duration-300 hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-deep-brown focus-visible:ring-offset-2 focus-visible:ring-offset-white md:px-12 md:py-4 md:text-[12px] md:tracking-[0.2em]"
             >
               התחילו ליצור
-            </button>
-            <button
-              type="button"
-              onClick={handleExisting}
-              className="btn-press text-[12px] text-white/45 transition-colors duration-300 hover:text-white/80 md:text-[13px]"
-            >
-              יש לי כבר חשבון
             </button>
           </motion.div>
         )}
