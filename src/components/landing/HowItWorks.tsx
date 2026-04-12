@@ -72,25 +72,23 @@ export default function HowItWorks() {
           variants={containerVariants}
           initial="hidden"
           animate={isInView ? 'visible' : 'hidden'}
-          className="grid grid-cols-1 md:grid-cols-3 gap-px bg-muted-border/10"
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 md:gap-12"
         >
           {steps.map((step) => (
             <motion.div
               key={step.num}
               variants={cardVariants}
-              className="group bg-surface p-10 md:p-12 cursor-default relative"
+              className="group p-10 md:p-12 cursor-default relative"
             >
-              {/* Step number */}
               <p
-                className="text-[11px] tracking-[0.3em] text-warm-gray/30 mb-8 uppercase"
+                className="text-[11px] tracking-[0.3em] text-warm-gray/50 mb-8 uppercase"
                 style={{ fontFamily: 'var(--font-family-headline)' }}
               >
                 Step {step.num}
               </p>
 
-              {/* Icon */}
-              <div className="w-11 h-11 rounded-full border border-muted-border/20 flex items-center justify-center mb-7 group-hover:border-deep-brown/15 transition-colors duration-500">
-                <Icon name={step.icon} size={20} className="text-deep-brown/50 group-hover:text-deep-brown/80 transition-colors duration-500" />
+              <div className="w-11 h-11 rounded-full border border-deep-brown/15 flex items-center justify-center mb-7 group-hover:border-deep-brown/30 transition-colors duration-500">
+                <Icon name={step.icon} size={20} className="text-deep-brown/70 group-hover:text-deep-brown transition-colors duration-500" />
               </div>
 
               <h3
@@ -99,7 +97,7 @@ export default function HowItWorks() {
               >
                 {step.title}
               </h3>
-              <p className="text-warm-gray/70 leading-relaxed text-[15px]">{step.desc}</p>
+              <p className="text-warm-gray leading-relaxed text-[15px]">{step.desc}</p>
             </motion.div>
           ))}
         </motion.div>
