@@ -6,7 +6,12 @@ import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 import BrandLogo from '../shared/BrandLogo'
 
-export default function LandingHeader() {
+interface LandingHeaderProps {
+  /** When true, white nav on transparent bar (over dark hero / video intro). Overrides solid header while scrolling on dark. */
+  navLightOnDark?: boolean
+}
+
+export default function LandingHeader({ navLightOnDark }: LandingHeaderProps) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -48,20 +53,25 @@ export default function LandingHeader() {
 
   const initial = (userName || 'א')[0].toUpperCase()
 
-  const navColor = scrolled
-    ? 'text-warm-gray hover:text-deep-brown'
-    : 'text-white/60 hover:text-white'
+  const lightText =
+    typeof navLightOnDark === 'boolean' ? navLightOnDark : !scrolled
+  const solidBg =
+    typeof navLightOnDark === 'boolean' ? scrolled && !navLightOnDark : scrolled
+
+  const navColor = lightText
+    ? 'text-white/60 hover:text-white'
+    : 'text-warm-gray hover:text-deep-brown'
 
   return (
     <header
       className={`fixed top-0 w-full z-50 flex justify-between items-center px-8 md:px-16 py-5 transition-all duration-700 ${
-        scrolled
+        solidBg
           ? 'glass-header border-b border-muted-border/10'
           : 'bg-transparent'
       }`}
     >
       <BrandLogo
-        tone={scrolled ? 'dark' : 'light'}
+        tone={lightText ? 'light' : 'dark'}
         heightClass="h-10 sm:h-12"
         onClick={() => navigate('/')}
       />
@@ -87,7 +97,7 @@ export default function LandingHeader() {
             >
               <span
                 className={`text-sm font-medium hidden sm:block transition-colors duration-300 ${
-                  scrolled ? 'text-deep-brown' : 'text-white/70'
+                  lightText ? 'text-white/70' : 'text-deep-brown'
                 }`}
               >
                 {userName}
@@ -95,9 +105,9 @@ export default function LandingHeader() {
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300"
                 style={{
-                  background: scrolled ? '#2D2926' : 'rgba(255,255,255,0.15)',
-                  color: scrolled ? '#fff' : 'rgba(255,255,255,0.8)',
-                  backdropFilter: scrolled ? 'none' : 'blur(8px)',
+                  background: lightText ? 'rgba(255,255,255,0.15)' : '#2D2926',
+                  color: lightText ? 'rgba(255,255,255,0.8)' : '#fff',
+                  backdropFilter: lightText ? 'blur(8px)' : 'none',
                 }}
               >
                 {initial}
@@ -141,10 +151,10 @@ export default function LandingHeader() {
               whileTap={{ scale: 0.97 }}
               className="px-7 py-2.5 text-[12px] font-medium tracking-[0.12em] transition-all duration-500"
               style={{
-                background: scrolled ? '#2D2926' : 'rgba(255,255,255,0.12)',
-                color: scrolled ? '#fff' : 'rgba(255,255,255,0.85)',
-                backdropFilter: scrolled ? 'none' : 'blur(12px)',
-                border: scrolled ? '1px solid transparent' : '1px solid rgba(255,255,255,0.2)',
+                background: lightText ? 'rgba(255,255,255,0.12)' : '#2D2926',
+                color: lightText ? 'rgba(255,255,255,0.85)' : '#fff',
+                backdropFilter: lightText ? 'blur(12px)' : 'none',
+                border: lightText ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent',
                 borderRadius: '2px',
               }}
             >

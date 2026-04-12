@@ -26,28 +26,49 @@ const slots: Slot[] = [
   },
 ]
 
-export default function VideoShowcase() {
+interface VideoShowcaseProps {
+  /** First on page: dark intro under fixed header + light nav */
+  lead?: boolean
+}
+
+export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
   const ref = useRef<HTMLDivElement>(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
+  const effectiveInView = lead || isInView
 
   return (
     <section ref={ref} className="w-full">
       {/* Editorial heading above the videos */}
-      <div className="text-center py-20 md:py-28 px-6">
+      <div
+        data-landing-video-intro={lead ? '' : undefined}
+        className={
+          lead
+            ? 'text-center px-6 pt-28 pb-16 md:pt-32 md:pb-20 bg-gradient-to-b from-deep-brown via-[#1f1c19] to-[#252220]'
+            : 'text-center py-20 md:py-28 px-6'
+        }
+      >
         <motion.p
           initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
+          animate={effectiveInView ? { opacity: 1 } : {}}
           transition={{ duration: 0.8 }}
-          className="text-[11px] md:text-[12px] tracking-[0.45em] uppercase text-warm-gray/60 mb-5"
+          className={
+            lead
+              ? 'text-[11px] md:text-[12px] tracking-[0.45em] uppercase text-white/45 mb-5'
+              : 'text-[11px] md:text-[12px] tracking-[0.45em] uppercase text-warm-gray/60 mb-5'
+          }
           style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
         >
           See It in Motion
         </motion.p>
         <motion.h2
           initial={{ opacity: 0, y: 16 }}
-          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          animate={effectiveInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, delay: 0.15 }}
-          className="text-3xl sm:text-4xl md:text-5xl text-deep-brown leading-tight"
+          className={
+            lead
+              ? 'text-3xl sm:text-4xl md:text-5xl text-white leading-tight'
+              : 'text-3xl sm:text-4xl md:text-5xl text-deep-brown leading-tight'
+          }
           style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
         >
           תראו בעצמכם.
@@ -60,7 +81,7 @@ export default function VideoShowcase() {
           <motion.div
             key={slot.id}
             initial={{ opacity: 0 }}
-            animate={isInView ? { opacity: 1 } : {}}
+            animate={effectiveInView ? { opacity: 1 } : {}}
             transition={{ duration: 0.8, delay: 0.2 + i * 0.15 }}
             className="relative overflow-hidden group cursor-pointer"
             style={{ aspectRatio: '16 / 10' }}
