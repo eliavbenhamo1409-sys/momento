@@ -13,11 +13,12 @@ import {
   LegacyQuoteBlock,
   LegacyCornerOrnaments,
 } from '../editor/EditorCanvas'
+import { useEditorStore } from '../../store/editorStore'
 import { DEFAULT_STYLE, getTexturePattern } from '../editor/editorDefaults'
 import { getTemplate } from '../../lib/layoutGrammar'
 import { ALBUM_SIZES } from '../../lib/constants'
 
-const RENDER_WIDTH_PER_PAGE = 600
+const RENDER_WIDTH_PER_PAGE = 1200
 
 interface OffScreenSpreadRendererProps {
   spreads: EditorSpread[]
@@ -91,7 +92,7 @@ function ExportPageBackground({
             />
           </div>
         )}
-        {!bg.generatedBgUrl && bg.backgroundLayers?.map((layer, i) => (
+        {!bg.generatedBgUrl && bg.backgroundLayers && bg.backgroundLayers.length > 0 && bg.backgroundLayers.map((layer, i) => (
           <div
             key={`bg-layer-${i}`}
             className="absolute inset-0 z-0 pointer-events-none"
@@ -198,11 +199,15 @@ function ExportAbsoluteElements({
   design,
   side,
   layoutInsetPercent,
+  collectivePaddingPx,
+  collectiveBorderRadiusPx,
 }: {
   spread: EditorSpread
   design: SpreadDesign
   side: 'left' | 'right'
   layoutInsetPercent: number
+  collectivePaddingPx: number | null
+  collectiveBorderRadiusPx: number | null
 }) {
   const elements = design.elements.filter((e) => e.page === side)
 
@@ -220,8 +225,8 @@ function ExportAbsoluteElements({
               isSwapping={false}
               onSelect={() => {}}
               layoutInsetPercent={layoutInsetPercent}
-              collectivePaddingPx={null}
-              collectiveBorderRadiusPx={null}
+              collectivePaddingPx={collectivePaddingPx}
+              collectiveBorderRadiusPx={collectiveBorderRadiusPx}
             />
           )
         }
@@ -249,6 +254,88 @@ function ExportAbsoluteElements({
   )
 }
 
+const OVERLAY_TEMPLATES: Record<string, 'left' | 'right'> = {
+  'photo-over-photo': 'left',
+  'photo-over-photo-right': 'right',
+}
+
+function ExportOverlayPageElements({
+  spread,
+  style,
+  side,
+}: {
+  spread: EditorSpread
+  style: ResolvedSpreadStyle
+  side: 'left' | 'right'
+}) {
+  const slotDataByUrl = useMemo(
+    () => new Map((spread.slots ?? []).map((s) => [s.photoUrl, s])),
+    [spread.slots],
+  )
+
+  const variant = spread.variant ?? null
+  const photos = side === 'left' ? spread.leftPhotos : spread.rightPhotos
+  const bgSrc = photos[0]
+  const overlaySrc = photos[1]
+
+  const bgSlotData = bgSrc ? slotDataByUrl.get(bgSrc) as EnrichedSlotData | undefined : undefined
+  const overlaySlotData = overlaySrc ? slotDataByUrl.get(overlaySrc) as EnrichedSlotData | undefined : undefined
+
+  return (
+    <div className="w-full h-full relative z-[1]">
+      {bgSrc && (
+        <div
+          className="absolute inset-0 overflow-hidden"
+          style={{ borderRadius: style.frame.borderRadius }}
+        >
+          <LegacyPhotoSlot
+            src={bgSrc}
+            isSelected={false}
+            onSelect={() => {}}
+            objectPosition={bgSlotData?.objectPosition}
+            transform={bgSlotData?.transform}
+            frame={{ ...style.frame, borderWidth: 0, shadow: 'none', innerPadding: 0 }}
+            variant={variant}
+            slotImportance="hero"
+          />
+        </div>
+      )}
+
+      {overlaySrc && (
+        <div
+          className="absolute z-10"
+          style={{
+            right: side === 'left' ? '6%' : undefined,
+            left: side === 'right' ? '6%' : undefined,
+            bottom: '6%',
+            width: '38%',
+            aspectRatio: '1',
+          }}
+        >
+          <div
+            className="w-full h-full rounded-xl overflow-hidden"
+            style={{
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.15)',
+              border: '3px solid rgba(255,255,255,0.85)',
+            }}
+          >
+            <LegacyPhotoSlot
+              src={overlaySrc}
+              isSelected={false}
+              onSelect={() => {}}
+              objectPosition={overlaySlotData?.objectPosition}
+              transform={overlaySlotData?.transform}
+              frame={{ ...style.frame, borderWidth: 0, borderRadius: 12, shadow: 'none', innerPadding: 0 }}
+              variant={variant}
+              slotImportance="primary"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function ExportLegacyElements({
   spread,
   style,
@@ -266,6 +353,17 @@ function ExportLegacyElements({
   const margin = style.spacing.pageMarginPercent
   const photos = side === 'left' ? spread.leftPhotos : spread.rightPhotos
   const variant = spread.variant ?? null
+
+  const overlaySide = spread.templateId ? OVERLAY_TEMPLATES[spread.templateId] : undefined
+  if (overlaySide === side) {
+    return (
+      <ExportOverlayPageElements
+        spread={spread}
+        style={style}
+        side={side}
+      />
+    )
+  }
 
   const template = spread.templateId ? getTemplate(spread.templateId) : undefined
   const pageSlots = template?.slots.filter((s) => s.page === side) ?? []
@@ -368,18 +466,47 @@ function ExportLegacyElements({
 function ExportSinglePage({
   spread,
   side,
+  globalPhotoFramePaddingPx,
+  globalPageMarginPercent,
+  globalPhotoBorderRadiusPx,
 }: {
   spread: EditorSpread
   side: 'left' | 'right'
+  globalPhotoFramePaddingPx: number | null
+  globalPageMarginPercent: number | null
+  globalPhotoBorderRadiusPx: number | null
 }) {
   const design = spread.design
-  const style = spread.resolvedStyle ?? DEFAULT_STYLE
+  const baseStyle = spread.resolvedStyle ?? DEFAULT_STYLE
+  const style = useMemo<ResolvedSpreadStyle>(() => {
+    if (
+      globalPhotoFramePaddingPx === null
+      && globalPageMarginPercent === null
+      && globalPhotoBorderRadiusPx === null
+    ) {
+      return baseStyle
+    }
+    return {
+      ...baseStyle,
+      spacing: {
+        ...baseStyle.spacing,
+        ...(globalPageMarginPercent !== null ? { pageMarginPercent: globalPageMarginPercent } : {}),
+      },
+      frame: {
+        ...baseStyle.frame,
+        ...(globalPhotoFramePaddingPx !== null ? { innerPadding: globalPhotoFramePaddingPx } : {}),
+        ...(globalPhotoBorderRadiusPx !== null ? { borderRadius: globalPhotoBorderRadiusPx } : {}),
+      },
+    }
+  }, [baseStyle, globalPhotoFramePaddingPx, globalPageMarginPercent, globalPhotoBorderRadiusPx])
+
   const useAbs = !!design && design.elements.length > 0
   const bgColor = useAbs ? design!.background.color : style.background.color
   const heroPhotoSrc = spread.leftPhotos?.[0] ?? spread.rightPhotos?.[0] ?? null
 
   return (
     <div
+      dir="rtl"
       style={{
         width: '50%',
         height: '100%',
@@ -405,6 +532,8 @@ function ExportSinglePage({
           design={design!}
           side={side}
           layoutInsetPercent={style.spacing.pageMarginPercent}
+          collectivePaddingPx={globalPhotoFramePaddingPx}
+          collectiveBorderRadiusPx={globalPhotoBorderRadiusPx}
         />
       ) : (
         <ExportLegacyElements
@@ -432,6 +561,10 @@ export default function OffScreenSpreadRenderer({
   const [currentIndex, setCurrentIndex] = useState(0)
   const spreadRef = useRef<HTMLDivElement>(null)
   const processingRef = useRef(false)
+
+  const globalPhotoFramePaddingPx = useEditorStore((s) => s.globalPhotoFramePaddingPx)
+  const globalPageMarginPercent = useEditorStore((s) => s.globalPageMarginPercent)
+  const globalPhotoBorderRadiusPx = useEditorStore((s) => s.globalPhotoBorderRadiusPx)
 
   const sizeObj = ALBUM_SIZES.find((s) => s.id === albumSizeId)
   const aspectRatio = sizeObj ? sizeObj.openW / sizeObj.openH : 2
@@ -462,7 +595,7 @@ export default function OffScreenSpreadRenderer({
       onComplete()
       return
     }
-    const timer = setTimeout(processCurrentSpread, 100)
+    const timer = setTimeout(processCurrentSpread, 200)
     return () => clearTimeout(timer)
   }, [currentIndex, spreads.length, processCurrentSpread, onComplete])
 
@@ -493,8 +626,20 @@ export default function OffScreenSpreadRenderer({
           backgroundColor: '#FFFFFF',
         }}
       >
-        <ExportSinglePage spread={spread} side="right" />
-        <ExportSinglePage spread={spread} side="left" />
+        <ExportSinglePage
+          spread={spread}
+          side="right"
+          globalPhotoFramePaddingPx={globalPhotoFramePaddingPx}
+          globalPageMarginPercent={globalPageMarginPercent}
+          globalPhotoBorderRadiusPx={globalPhotoBorderRadiusPx}
+        />
+        <ExportSinglePage
+          spread={spread}
+          side="left"
+          globalPhotoFramePaddingPx={globalPhotoFramePaddingPx}
+          globalPageMarginPercent={globalPageMarginPercent}
+          globalPhotoBorderRadiusPx={globalPhotoBorderRadiusPx}
+        />
       </div>
     </div>
   )

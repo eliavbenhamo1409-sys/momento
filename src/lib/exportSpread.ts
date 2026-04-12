@@ -42,6 +42,44 @@ function sanitizeCloneColors(doc: Document) {
   }
 }
 
+/**
+ * Pre-loads all images referenced in the element tree (both <img> tags and
+ * CSS background-image urls) so html2canvas finds them already in the browser
+ * cache and doesn't silently fail on slow / CORS-redirected fetches.
+ */
+async function preloadImages(element: HTMLElement): Promise<void> {
+  const urls = new Set<string>()
+
+  const imgs = element.querySelectorAll('img')
+  for (const img of imgs) {
+    if (img.src && !img.src.startsWith('data:')) urls.add(img.src)
+  }
+
+  const allEls = element.querySelectorAll('*')
+  for (const el of allEls) {
+    const computed = window.getComputedStyle(el)
+    const bg = computed.backgroundImage
+    if (bg && bg !== 'none') {
+      const match = bg.match(/url\(["']?(https?:\/\/[^"')]+)["']?\)/)
+      if (match?.[1]) urls.add(match[1])
+    }
+  }
+
+  if (urls.size === 0) return
+
+  const loadSingle = (url: string): Promise<void> =>
+    new Promise((resolve) => {
+      const img = new Image()
+      img.crossOrigin = 'anonymous'
+      img.onload = () => resolve()
+      img.onerror = () => resolve()
+      img.src = url
+      setTimeout(resolve, 8000)
+    })
+
+  await Promise.all([...urls].map(loadSingle))
+}
+
 const TARGET_DPI = 300
 const CM_PER_INCH = 2.54
 
@@ -61,20 +99,39 @@ export function calc300DpiScale(renderedWidthPx: number, albumSizeId: string): n
   return Math.min(scale, MAX_SCALE)
 }
 
+const EXPORT_TIMEOUT_MS = 45_000
+const MIN_VALID_BLOB_BYTES = 10_000
+
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v) },
+      (e) => { clearTimeout(timer); reject(e) },
+    )
+  })
+}
+
 export async function exportSpreadToDataUrl(
   element: HTMLElement,
   options?: ExportOptions,
 ): Promise<string> {
   const opts = { ...DEFAULT_OPTIONS, ...options }
 
-  const canvas = await html2canvas(element, {
-    scale: opts.scale,
-    backgroundColor: opts.backgroundColor,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    onclone: (_doc, _el) => { sanitizeCloneColors(_doc) },
-  })
+  await preloadImages(element)
+
+  const canvas = await withTimeout(
+    html2canvas(element, {
+      scale: opts.scale,
+      backgroundColor: opts.backgroundColor,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      onclone: (_doc, _el) => { sanitizeCloneColors(_doc) },
+    }),
+    EXPORT_TIMEOUT_MS,
+    'html2canvas',
+  )
 
   return canvas.toDataURL('image/jpeg', opts.quality)
 }
@@ -92,20 +149,24 @@ export async function downloadSpreadAsJpg(
   link.click()
 }
 
-export async function exportSpreadToBlob(
+async function captureToBlob(
   element: HTMLElement,
-  options?: ExportOptions,
+  opts: Required<ExportOptions>,
 ): Promise<Blob> {
-  const opts = { ...DEFAULT_OPTIONS, ...options }
+  await preloadImages(element)
 
-  const canvas = await html2canvas(element, {
-    scale: opts.scale,
-    backgroundColor: opts.backgroundColor,
-    useCORS: true,
-    allowTaint: true,
-    logging: false,
-    onclone: (_doc, _el) => { sanitizeCloneColors(_doc) },
-  })
+  const canvas = await withTimeout(
+    html2canvas(element, {
+      scale: opts.scale,
+      backgroundColor: opts.backgroundColor,
+      useCORS: true,
+      allowTaint: true,
+      logging: false,
+      onclone: (_doc, _el) => { sanitizeCloneColors(_doc) },
+    }),
+    EXPORT_TIMEOUT_MS,
+    'html2canvas',
+  )
 
   return new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -117,6 +178,36 @@ export async function exportSpreadToBlob(
       opts.quality,
     )
   })
+}
+
+/**
+ * Exports a DOM element to a JPEG blob with built-in retry logic.
+ * Retries up to 2 times if the blob is suspiciously small (< 10 KB),
+ * which typically indicates a blank or corrupted capture.
+ */
+export async function exportSpreadToBlob(
+  element: HTMLElement,
+  options?: ExportOptions,
+): Promise<Blob> {
+  const opts = { ...DEFAULT_OPTIONS, ...options }
+  const maxAttempts = 3
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const blob = await captureToBlob(element, opts)
+
+      if (blob.size >= MIN_VALID_BLOB_BYTES || attempt === maxAttempts) {
+        return blob
+      }
+
+      await new Promise((r) => setTimeout(r, 500 * attempt))
+    } catch (err) {
+      if (attempt === maxAttempts) throw err
+      await new Promise((r) => setTimeout(r, 500 * attempt))
+    }
+  }
+
+  throw new Error('Export failed after maximum retries')
 }
 
 export async function exportAlbumSpreads(

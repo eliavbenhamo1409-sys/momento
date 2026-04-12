@@ -222,7 +222,7 @@ export default function AdminOrderDetail() {
               קבצי הדפסה (300 DPI)
             </h2>
             <span className="text-[11px] text-[#9ca3af] bg-[#f3f4f6] px-2 py-0.5 rounded-full tabular-nums">
-              {exportUrls.length} עמודים
+              {exportUrls.length} דפים פתוחים
             </span>
           </div>
           {exportUrls.length > 0 && (
@@ -245,7 +245,7 @@ export default function AdminOrderDetail() {
           {loadingExports ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="aspect-[3/2] bg-[#f3f4f6] rounded-lg animate-pulse" />
+                <div key={i} className="aspect-[2/1] bg-[#f3f4f6] rounded-lg animate-pulse" />
               ))}
             </div>
           ) : exportUrls.length === 0 ? (
@@ -260,7 +260,7 @@ export default function AdminOrderDetail() {
                   key={i}
                   className="group relative bg-[#f9fafb] rounded-lg overflow-hidden border border-[#e5e7eb] hover:border-[#d1d5db] transition-colors"
                 >
-                  <div className="aspect-[3/2]">
+                  <div className="aspect-[2/1]">
                     <img
                       src={url}
                       alt={`עמוד ${i + 1}`}
