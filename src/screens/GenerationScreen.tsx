@@ -59,7 +59,6 @@ function AnimatedDots() {
 export default function GenerationScreen() {
   const navigate = useNavigate()
   const saveAlbumDraft = useAlbumSave()
-  const [openingEditor, setOpeningEditor] = useState(false)
   const [stageIndex, setStageIndex] = useState(0)
   const [progress, setProgress] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
@@ -215,19 +214,13 @@ export default function GenerationScreen() {
                     initial={{ opacity: 0, y: 8 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.7 }}
-                    disabled={openingEditor}
-                    onClick={async () => {
-                      setOpeningEditor(true)
-                      try {
-                        const id = await saveAlbumDraft()
-                        if (id) navigate(`/editor/${id}`, { replace: true })
-                      } finally {
-                        setOpeningEditor(false)
-                      }
+                    onClick={() => {
+                      navigate('/editor', { replace: true })
+                      saveAlbumDraft()
                     }}
-                    className="mt-4 px-12 py-4 bg-primary text-on-primary rounded-xl text-lg font-semibold shadow-lg hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-60 disabled:pointer-events-none"
+                    className="mt-4 px-12 py-4 bg-primary text-on-primary rounded-xl text-lg font-semibold shadow-lg hover:opacity-90 active:scale-[0.98] transition-all"
                   >
-                    {openingEditor ? 'שומר…' : 'צפה באלבום'}
+                    צפה באלבום
                   </motion.button>
                 </motion.div>
               ) : (
