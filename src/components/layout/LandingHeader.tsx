@@ -44,20 +44,20 @@ export default function LandingHeader() {
 
   return (
     <header
-      className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-black/[0.06] bg-white/95 px-3 py-1 shadow-[0_1px_0_rgba(26,23,20,0.04)] backdrop-blur-md transition-colors duration-300 md:px-6 md:py-1 lg:px-10"
+      className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-black/[0.06] bg-white/95 px-4 py-1.5 shadow-[0_1px_0_rgba(26,23,20,0.04)] backdrop-blur-md transition-colors duration-300 md:px-8 md:py-2 lg:px-12"
     >
       <button
         type="button"
         onClick={() => navigate('/')}
-        className="btn-press -my-0.5 border-0 bg-transparent p-0 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-deep-brown/40 focus-visible:ring-offset-2"
+        className="btn-press border-0 bg-transparent p-0 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-deep-brown/40 focus-visible:ring-offset-2"
         aria-label="Momento — דף הבית"
       >
         <span
           lang="en"
           dir="ltr"
           translate="no"
-          className="block font-normal text-[1.85rem] text-deep-brown sm:text-[2.1rem] md:text-[2.45rem] lg:text-[2.85rem]"
-          style={{ fontFamily: "'Great Vibes', cursive" }}
+          className="block font-normal text-[1.5rem] text-deep-brown sm:text-[1.7rem] md:text-[1.95rem] lg:text-[2.2rem]"
+          style={{ fontFamily: "'Allura', cursive" }}
         >
           Momento.
         </span>
