@@ -16,6 +16,8 @@ interface Slot {
 const slots: Slot[] = [
   {
     id: 'v1',
+    /** RTL: first column = visual right */
+    videoSrc: '/static-wooden.mp4',
     bg: '#E8E3DC',
     label: 'מדריך קצר',
     caption: 'איך יוצרים אלבום ב-2 דקות',
@@ -129,10 +131,12 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
             {slot.videoSrc ? (
               <video
                 src={slot.videoSrc}
-                className="absolute inset-0 w-full h-full object-cover"
+                className="absolute inset-0 h-full w-full object-cover"
+                autoPlay
                 muted
                 loop
                 playsInline
+                preload="metadata"
               />
             ) : (
               <div
@@ -153,20 +157,22 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
               </div>
             )}
 
-            {/* Play button */}
-            <div className="absolute inset-0 flex items-center justify-center z-10">
-              <motion.div
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.95 }}
-                className="w-20 h-20 md:w-24 md:h-24 rounded-full border border-deep-brown/15 flex items-center justify-center backdrop-blur-sm transition-all duration-500 group-hover:border-deep-brown/30 group-hover:bg-white/10"
-              >
-                <Icon
-                  name="play_arrow"
-                  size={36}
-                  className="text-deep-brown/35 group-hover:text-deep-brown/60 transition-colors duration-500 mr-[-2px]"
-                />
-              </motion.div>
-            </div>
+            {/* Play button — placeholder slots only */}
+            {!slot.videoSrc && (
+              <div className="absolute inset-0 z-10 flex items-center justify-center">
+                <motion.div
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex h-20 w-20 items-center justify-center rounded-full border border-deep-brown/15 backdrop-blur-sm transition-all duration-500 group-hover:border-deep-brown/30 group-hover:bg-white/10 md:h-24 md:w-24"
+                >
+                  <Icon
+                    name="play_arrow"
+                    size={36}
+                    className="mr-[-2px] text-deep-brown/35 transition-colors duration-500 group-hover:text-deep-brown/60"
+                  />
+                </motion.div>
+              </div>
+            )}
 
             {/* Caption — bottom-left */}
             <div className="absolute bottom-6 right-6 left-6 md:bottom-8 md:right-8 md:left-8 z-10">
