@@ -1,5 +1,5 @@
-import { useRef, useEffect, useState, useCallback } from 'react'
-import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'motion/react'
+import { useRef, useEffect, useState } from 'react'
+import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react'
 import { useNavigate } from 'react-router'
 import { useUIStore } from '../../store/uiStore'
 
@@ -12,29 +12,16 @@ export default function HeroSection() {
   const sectionRef = useRef<HTMLElement>(null)
   const [wordIdx, setWordIdx] = useState(0)
 
-  const mouseX = useMotionValue(0)
-  const mouseY = useMotionValue(0)
-  const imgX = useSpring(mouseX, { stiffness: 40, damping: 25 })
-  const imgY = useSpring(mouseY, { stiffness: 40, damping: 25 })
-
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start start', 'end start'],
   })
-  const parallaxY = useTransform(scrollYProgress, [0, 1], [0, 100])
   const textOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0])
 
   useEffect(() => {
     const t = setInterval(() => setWordIdx((i) => (i + 1) % ROTATING.length), 3000)
     return () => clearInterval(t)
   }, [])
-
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
-    const r = sectionRef.current?.getBoundingClientRect()
-    if (!r) return
-    mouseX.set(((e.clientX - r.left) / r.width - 0.5) * 24)
-    mouseY.set(((e.clientY - r.top) / r.height - 0.5) * 16)
-  }, [mouseX, mouseY])
 
   const handleCreate = () => {
     if (isLoggedIn) navigate('/upload')
@@ -49,7 +36,6 @@ export default function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      onMouseMove={onMouseMove}
       className="relative min-h-[96vh] pt-32 pb-24 flex items-center overflow-hidden"
     >
       {/* Warm neutral bg */}
@@ -174,14 +160,8 @@ export default function HeroSection() {
           </div>
 
           {/* ── Image ─────────────────────────────── */}
-          <motion.div
-            style={{ y: parallaxY }}
-            className="order-1 lg:order-2 flex justify-center lg:justify-end relative w-full"
-          >
-            <motion.div
-              style={{ x: imgX, y: imgY }}
-              className="relative"
-            >
+          <div className="order-1 lg:order-2 flex justify-center lg:justify-end relative w-full">
+            <div className="relative">
               {/* Soft glow behind */}
               <div
                 className="absolute -inset-8 rounded-[2rem] -z-10 opacity-60"
@@ -234,8 +214,8 @@ export default function HeroSection() {
               >
                 <p className="text-[11px] font-bold">משלוח חינם</p>
               </motion.div>
-            </motion.div>
-          </motion.div>
+            </div>
+          </div>
         </div>
       </motion.div>
     </section>
