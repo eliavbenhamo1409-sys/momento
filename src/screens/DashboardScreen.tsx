@@ -9,31 +9,21 @@ import EmptyState from '../components/dashboard/EmptyState'
 import Skeleton from '../components/shared/Skeleton'
 import Icon from '../components/shared/Icon'
 import { useUIStore } from '../store/uiStore'
-import { listUserAlbums, deleteAlbum, type AlbumRow } from '../lib/albumService'
+import { listUserAlbums, deleteAlbum, type AlbumSummary } from '../lib/albumService'
 import { listUserOrders, type OrderWithAlbum } from '../lib/orderService'
 import { ALBUM_SIZES } from '../lib/constants'
 
 type Tab = 'projects' | 'orders'
 
-function albumToProject(album: AlbumRow) {
-  const spreads = album.spreads ?? []
-  let photoCount = 0
-  for (const s of spreads) {
-    if (s.design) {
-      photoCount += s.design.elements.filter((e) => e.type === 'photo' && e.photoUrl).length
-    } else {
-      photoCount += (s.leftPhotos?.filter(Boolean).length ?? 0) + (s.rightPhotos?.filter(Boolean).length ?? 0)
-    }
-  }
-
+function albumToProject(album: AlbumSummary) {
   const config = album.config as unknown as Record<string, unknown> | null
   return {
     id: album.id,
     title: album.title,
     coverUrl: album.cover_url,
     size: (config?.size as string) ?? '30x30',
-    pages: spreads.length * 2,
-    photosCount: photoCount,
+    pages: (album.spread_count ?? 0) * 2,
+    photosCount: album.photo_count ?? 0,
     lastEdited: album.updated_at,
     status: album.status,
   }
@@ -60,7 +50,7 @@ function orderRowToCardData(o: OrderWithAlbum) {
 
 export default function DashboardScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('projects')
-  const [albums, setAlbums] = useState<AlbumRow[]>([])
+  const [albums, setAlbums] = useState<AlbumSummary[]>([])
   const [orders, setOrders] = useState<OrderWithAlbum[]>([])
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)

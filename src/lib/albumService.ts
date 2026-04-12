@@ -13,6 +13,21 @@ export interface AlbumRow {
   status: 'draft' | 'ordered' | 'archived'
   created_at: string
   updated_at: string
+  spread_count: number
+  photo_count: number
+}
+
+export interface AlbumSummary {
+  id: string
+  user_id: string
+  title: string
+  cover_url: string | null
+  config: AlbumConfig
+  status: 'draft' | 'ordered' | 'archived'
+  created_at: string
+  updated_at: string
+  spread_count: number
+  photo_count: number
 }
 
 async function uploadBlobToStorage(
@@ -110,6 +125,8 @@ export async function saveAlbum(
     spreads: cleanedSpreads as unknown as Record<string, unknown>[],
     people_roster: (peopleRoster ?? []) as unknown as Record<string, unknown>[],
     status: 'draft',
+    spread_count: cleanedSpreads.length,
+    photo_count: countPhotosInSpreads(cleanedSpreads),
   }
 
   const { error } = await supabase
@@ -139,15 +156,17 @@ export async function loadAlbum(albumId: string): Promise<AlbumRow | null> {
   }
 }
 
-export async function listUserAlbums(userId: string): Promise<AlbumRow[]> {
+const ALBUM_SUMMARY_COLUMNS = 'id, user_id, title, cover_url, config, status, created_at, updated_at, spread_count, photo_count' as const
+
+export async function listUserAlbums(userId: string): Promise<AlbumSummary[]> {
   const { data, error } = await supabase
     .from('albums')
-    .select('*')
+    .select(ALBUM_SUMMARY_COLUMNS)
     .eq('user_id', userId)
     .order('updated_at', { ascending: false })
 
   if (error) throw error
-  return ((data ?? []) as AlbumRow[]).map((row) => ({
+  return ((data ?? []) as AlbumSummary[]).map((row) => ({
     ...row,
     config: mergeAlbumConfig(row.config),
   }))
@@ -160,6 +179,18 @@ export async function deleteAlbum(albumId: string): Promise<void> {
     .eq('id', albumId)
 
   if (error) throw error
+}
+
+function countPhotosInSpreads(spreads: EditorSpread[]): number {
+  let count = 0
+  for (const s of spreads) {
+    if (s.design) {
+      count += s.design.elements.filter((e) => e.type === 'photo' && e.photoUrl).length
+    } else {
+      count += (s.leftPhotos?.filter(Boolean).length ?? 0) + (s.rightPhotos?.filter(Boolean).length ?? 0)
+    }
+  }
+  return count
 }
 
 function findCoverUrl(spreads: EditorSpread[]): string | null {
