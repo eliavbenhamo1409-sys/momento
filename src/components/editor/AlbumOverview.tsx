@@ -8,6 +8,8 @@ import OverviewSpreadCard from './OverviewSpreadCard'
 import OverviewSidebar, { type OverviewMode } from './OverviewSidebar'
 import AIBackgroundPanel from './AIBackgroundPanel'
 import Icon from '../shared/Icon'
+import { generateAutoBackgroundsForAllSpreads, imageUrlToDataUrl } from '../../lib/openai'
+import type { PhotoElement } from '../../types'
 
 const BANNER_CONFIG: Record<string, { icon: string; title: string; subtitle: string }> = {
   replace:        { icon: 'swap_horiz',    title: 'החלפת תמונה',            subtitle: 'לחצו על התמונה שברצונכם להחליף' },
@@ -76,6 +78,71 @@ export default function AlbumOverview() {
   const [mode, setMode] = useState<OverviewMode>('idle')
   const [swapSource, setSwapSource] = useState<{ spreadId: string; slotId: string } | null>(null)
   const [selectedBgColor, setSelectedBgColor] = useState<string | null>(null)
+
+  // ── Auto AI background generation ──
+  const batchApplySpreadGeneratedBgs = useEditorStore((s) => s.batchApplySpreadGeneratedBgs)
+  const [autoAiProgress, setAutoAiProgress] = useState<{ done: number; total: number } | null>(null)
+  const autoAiAbortRef = useRef(false)
+
+  const collectPhotosForSpread = useCallback(async (spreadIndex: number): Promise<string[]> => {
+    const { spreads } = useEditorStore.getState()
+    const spread = spreads[spreadIndex]
+    if (!spread?.design) return []
+
+    const photoEls = spread.design.elements.filter(
+      (el): el is PhotoElement => el.type === 'photo' && !!el.photoUrl,
+    )
+
+    const urls = photoEls.map((el) => el.photoUrl!).slice(0, 4)
+    const dataUrls = await Promise.all(urls.map((u) => imageUrlToDataUrl(u)))
+    return dataUrls.filter((u): u is string => u !== null)
+  }, [])
+
+  const handleAutoAiGenerate = useCallback(async () => {
+    const { spreads } = useEditorStore.getState()
+    const indices = spreads.map((sp, i) => (sp.design ? i : -1)).filter((i) => i >= 0)
+    if (indices.length === 0) {
+      addToast('אין דפים לעדכון')
+      return
+    }
+
+    autoAiAbortRef.current = false
+    setAutoAiProgress({ done: 0, total: indices.length })
+
+    try {
+      const rows = await generateAutoBackgroundsForAllSpreads(
+        indices,
+        spreads.length,
+        collectPhotosForSpread,
+        (done, total) => {
+          if (!autoAiAbortRef.current) setAutoAiProgress({ done, total })
+        },
+      )
+
+      if (autoAiAbortRef.current) return
+
+      const items = rows
+        .filter((r): r is { spreadIndex: number; url: string } => r.url != null)
+        .map((r) => ({ spreadIndex: r.spreadIndex, bgUrl: r.url, target: 'spread' as const, opacity: 1 }))
+
+      if (items.length === 0) {
+        addToast('לא הצלחנו ליצור רקעים, נסו שוב', 'error')
+        return
+      }
+
+      batchApplySpreadGeneratedBgs(items)
+      addToast(
+        items.length === indices.length
+          ? `נוצרו ${items.length} רקעים ייחודיים לכל הדפים`
+          : `נוצרו ${items.length} מתוך ${indices.length} רקעים`,
+        'success',
+      )
+    } catch {
+      if (!autoAiAbortRef.current) addToast('שגיאה ביצירת הרקעים', 'error')
+    } finally {
+      setAutoAiProgress(null)
+    }
+  }, [collectPhotosForSpread, batchApplySpreadGeneratedBgs, addToast])
 
   const replaceFileRef = useRef<HTMLInputElement>(null)
   const pendingReplace = useRef<{ spreadId: string; slotId: string } | null>(null)
@@ -313,6 +380,8 @@ export default function AlbumOverview() {
           onSetMode={handleSetMode}
           onSelectBgColor={handleSelectBgColor}
           onClose={toggleOverview}
+          onAutoAiGenerate={handleAutoAiGenerate}
+          isAutoAiRunning={!!autoAiProgress}
         />
       )}
 
@@ -335,6 +404,74 @@ export default function AlbumOverview() {
                 defaultTab="ai"
               />
             </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Auto AI Background Progress Overlay */}
+      <AnimatePresence>
+        {autoAiProgress && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="fixed inset-0 z-[60] flex items-center justify-center"
+            dir="rtl"
+          >
+            <div className="absolute inset-0 bg-black/20 backdrop-blur-sm" />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.92, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 8 }}
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+              className="relative z-10 bg-white/95 backdrop-blur-xl rounded-3xl border border-black/[0.06] shadow-[0_20px_60px_rgba(45,40,35,0.18)] p-8 w-[340px] max-w-[90vw] flex flex-col items-center gap-5"
+            >
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/15 to-sage/10 flex items-center justify-center">
+                <span className="inline-block animate-spin">
+                  <Icon name="auto_awesome" size={28} className="text-primary" />
+                </span>
+              </div>
+
+              <div className="text-center">
+                <h3
+                  className="text-base font-bold text-on-surface mb-1"
+                  style={{ fontFamily: 'var(--font-family-headline)' }}
+                >
+                  יוצר רקעים חכמים
+                </h3>
+                <p className="text-[12px] text-secondary/60 leading-relaxed">
+                  ה-AI מנתח את התמונות בכל דף ויוצר רקע ייחודי שמתאים לצבעים ולאווירה
+                </p>
+              </div>
+
+              <div className="w-full">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-[11px] font-semibold text-on-surface/80">
+                    דף {autoAiProgress.done} מתוך {autoAiProgress.total}
+                  </span>
+                  <span className="text-[11px] font-bold text-primary">
+                    {Math.round((autoAiProgress.done / autoAiProgress.total) * 100)}%
+                  </span>
+                </div>
+                <div className="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
+                  <motion.div
+                    className="h-full bg-gradient-to-l from-primary to-sage rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${(autoAiProgress.done / autoAiProgress.total) * 100}%` }}
+                    transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                  />
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => { autoAiAbortRef.current = true; setAutoAiProgress(null) }}
+                className="btn-press mt-1 px-6 py-2 rounded-xl text-[11px] font-semibold text-secondary/60 hover:text-on-surface hover:bg-surface-container-low transition-colors"
+              >
+                ביטול
+              </button>
+            </motion.div>
           </motion.div>
         )}
       </AnimatePresence>

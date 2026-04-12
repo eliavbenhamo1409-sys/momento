@@ -15,6 +15,8 @@ interface Props {
   onSetMode: (mode: OverviewMode) => void
   onSelectBgColor: (color: string) => void
   onClose: () => void
+  onAutoAiGenerate?: () => void
+  isAutoAiRunning?: boolean
 }
 
 function SidebarBtn({
@@ -129,6 +131,8 @@ export default function OverviewSidebar({
   onSetMode,
   onSelectBgColor,
   onClose: _onClose,
+  onAutoAiGenerate,
+  isAutoAiRunning,
 }: Props) {
   const addSpread = useEditorStore((s) => s.addSpread)
   const setAllSpreadsBgColor = useEditorStore((s) => s.setAllSpreadsBgColor)
@@ -197,9 +201,12 @@ export default function OverviewSidebar({
             />
             <SidebarBtn
               icon="auto_awesome"
-              label="רקע AI"
-              active={activeMode === 'bg-ai' || activeMode === 'bg-ai-panel'}
-              onClick={() => toggle('bg-ai')}
+              label={isAutoAiRunning ? 'יוצר רקעים…' : 'רקע AI'}
+              active={activeMode === 'bg-ai' || activeMode === 'bg-ai-panel' || !!isAutoAiRunning}
+              onClick={() => {
+                if (isAutoAiRunning) return
+                onAutoAiGenerate?.()
+              }}
             />
 
             <AnimatePresence>

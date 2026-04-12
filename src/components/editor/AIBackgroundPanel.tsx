@@ -2,9 +2,10 @@ import { useState, useCallback } from 'react'
 import { motion, AnimatePresence } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
 import { useUIStore } from '../../store/uiStore'
-import { generateCustomBackground, generateCustomBackgroundsPerSpread, imageUrlToDataUrl } from '../../lib/openai'
+import { generateCustomBackground, generateCustomBackgroundsPerSpread, generateAutoBackground, generateAutoBackgroundsForAllSpreads, imageUrlToDataUrl } from '../../lib/openai'
 import { PREDEFINED_BG_COLORS } from '../../lib/constants'
 import Icon from '../shared/Icon'
+import type { PhotoElement } from '../../types'
 
 type Target = 'spread' | 'left' | 'right'
 type AIBackgroundTab = 'gallery' | 'ai'
@@ -46,8 +47,12 @@ export default function AIBackgroundPanel({
   const [batchProgress, setBatchProgress] = useState<{ done: number; total: number } | null>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
+  const [isAutoGenerating, setIsAutoGenerating] = useState(false)
+  const [isAutoAllGenerating, setIsAutoAllGenerating] = useState(false)
+  const [autoAllProgress, setAutoAllProgress] = useState<{ done: number; total: number } | null>(null)
+
   const selectedTarget = TARGETS.find((t) => t.id === target)!
-  const isBusy = isGenerating || isBatchStyling
+  const isBusy = isGenerating || isBatchStyling || isAutoGenerating || isAutoAllGenerating
 
   const collectPagePhotosForSpread = useCallback(async (spreadIndex: number): Promise<string[]> => {
     const { spreads } = useEditorStore.getState()
@@ -155,6 +160,83 @@ export default function AIBackgroundPanel({
     } finally {
       setIsBatchStyling(false)
       setBatchProgress(null)
+    }
+  }
+
+  const handleAutoGenerate = async () => {
+    setIsAutoGenerating(true)
+    setPreviewUrl(null)
+
+    try {
+      const idx = useEditorStore.getState().currentSpreadIndex
+      const spreads = useEditorStore.getState().spreads
+      const pagePhotos = await collectPagePhotos()
+      const url = await generateAutoBackground(pagePhotos, idx, spreads.length)
+
+      if (url) {
+        setPreviewUrl(url)
+      } else {
+        addToast('לא הצלחנו ליצור רקע, נסו שוב', 'error')
+      }
+    } catch {
+      addToast('שגיאה ביצירת הרקע', 'error')
+    } finally {
+      setIsAutoGenerating(false)
+    }
+  }
+
+  const handleAutoGenerateAll = async () => {
+    const { spreads } = useEditorStore.getState()
+    const indices = spreads.map((sp, i) => (sp.design ? i : -1)).filter((i) => i >= 0)
+    if (indices.length === 0) {
+      addToast('אין דפים לעדכון')
+      return
+    }
+
+    setIsAutoAllGenerating(true)
+    setAutoAllProgress({ done: 0, total: indices.length })
+
+    try {
+      const collectForSpread = async (spreadIndex: number): Promise<string[]> => {
+        const spread = useEditorStore.getState().spreads[spreadIndex]
+        if (!spread?.design) return []
+        const photoEls = spread.design.elements.filter(
+          (el): el is PhotoElement => el.type === 'photo' && !!el.photoUrl,
+        )
+        const urls = photoEls.map((el) => el.photoUrl!).slice(0, 4)
+        const dataUrls = await Promise.all(urls.map((u) => imageUrlToDataUrl(u)))
+        return dataUrls.filter((u): u is string => u !== null)
+      }
+
+      const rows = await generateAutoBackgroundsForAllSpreads(
+        indices,
+        spreads.length,
+        collectForSpread,
+        (done, total) => setAutoAllProgress({ done, total }),
+      )
+
+      const items = rows
+        .filter((r): r is { spreadIndex: number; url: string } => r.url != null)
+        .map((r) => ({ spreadIndex: r.spreadIndex, bgUrl: r.url, target: 'spread' as const, opacity: 1 }))
+
+      if (items.length === 0) {
+        addToast('לא נוצרו רקעים, נסו שוב', 'error')
+        return
+      }
+
+      batchApplySpreadGeneratedBgs(items)
+      addToast(
+        items.length === indices.length
+          ? `נוצרו ${items.length} רקעים ייחודיים לכל הדפים`
+          : `נוצרו ${items.length} מתוך ${indices.length} רקעים`,
+        'success',
+      )
+      onClose()
+    } catch {
+      addToast('שגיאה ביצירת הרקעים', 'error')
+    } finally {
+      setIsAutoAllGenerating(false)
+      setAutoAllProgress(null)
     }
   }
 
@@ -304,6 +386,70 @@ export default function AIBackgroundPanel({
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.2 }}
           >
+            {/* Smart Auto-Generate Section */}
+            <div className="rounded-2xl border border-sage/15 bg-gradient-to-br from-sage/[0.06] to-primary/[0.03] p-3.5 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/20 to-sage/15 flex items-center justify-center">
+                  <Icon name="auto_fix_high" size={14} className="text-primary" />
+                </div>
+                <span
+                  className="text-[11px] font-bold text-on-surface"
+                  style={{ fontFamily: 'var(--font-family-headline)' }}
+                >
+                  רקע חכם
+                </span>
+              </div>
+              <p className="text-[10px] text-secondary/60 leading-relaxed mb-3">
+                ה-AI מנתח את התמונות בדף ויוצר רקע מינימלי שמתאים לצבעים ולאווירה
+              </p>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={handleAutoGenerate}
+                  disabled={isBusy}
+                  className="btn-press w-full py-2.5 bg-gradient-to-l from-sage to-primary text-white rounded-xl text-[12px] font-semibold flex items-center justify-center gap-2 disabled:opacity-40 transition-colors shadow-[0_4px_16px_rgba(142,137,115,0.25)]"
+                >
+                  {isAutoGenerating ? (
+                    <>
+                      <span className="inline-block animate-spin">
+                        <Icon name="progress_activity" size={16} />
+                      </span>
+                      מנתח ויוצר…
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="auto_fix_high" size={16} />
+                      צור רקע לדף הזה
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleAutoGenerateAll}
+                  disabled={isBusy}
+                  className="btn-press w-full py-2 bg-white border border-black/[0.08] text-deep-brown rounded-xl text-[11px] font-semibold flex items-center justify-center gap-2 shadow-[0_2px_12px_rgba(45,40,35,0.05)] hover:border-sage/25 transition-colors disabled:opacity-40"
+                >
+                  {isAutoAllGenerating && autoAllProgress ? (
+                    <>
+                      <span className="inline-block animate-spin">
+                        <Icon name="progress_activity" size={14} />
+                      </span>
+                      {autoAllProgress.done} מתוך {autoAllProgress.total} דפים…
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="select_all" size={14} className="text-sage" />
+                      רקע חכם לכל הדפים
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex-1 h-px bg-gradient-to-l from-transparent via-black/[0.08] to-transparent" />
+              <span className="text-[9px] text-secondary/40 font-medium">או תיאור ידני</span>
+              <div className="flex-1 h-px bg-gradient-to-r from-transparent via-black/[0.08] to-transparent" />
+            </div>
+
             {/* Target selector */}
             <div className="flex gap-1.5 mb-4">
               {TARGETS.map((t) => (
@@ -380,7 +526,7 @@ export default function AIBackgroundPanel({
             </button>
 
             {/* Hint before any preview — sets expectation */}
-            {!previewUrl && (
+            {!previewUrl && !isAutoGenerating && (
               <p
                 className={`text-[10px] leading-relaxed text-center px-1 mb-1 ${
                   isGenerating ? 'text-secondary/40' : 'text-secondary/55'

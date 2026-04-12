@@ -896,6 +896,125 @@ Vary the scene naturally (e.g. different angle, time of day nuance, or arrangeme
   return out
 }
 
+/**
+ * Generates a background by analyzing the page's photos — no user prompt needed.
+ * The AI examines each photo's palette, mood, lighting, and season, then
+ * creates a minimalist, elegant background that complements those photos.
+ */
+export async function generateAutoBackground(
+  pagePhotoDataUrls: string[],
+  spreadIndex: number,
+  totalSpreads: number,
+): Promise<string | null> {
+  try {
+    const ai = getGeminiClient()
+
+    const hasPhotos = pagePhotoDataUrls.length > 0
+
+    const prompt = hasPhotos
+      ? `You are a world-class album designer. I've attached ${pagePhotoDataUrls.length} photo(s) from a single page of a premium printed photo album.
+
+TASK: Create a MINIMALIST, elegant background image that perfectly complements these specific photos.
+
+ANALYSIS INSTRUCTIONS — study the attached photos carefully:
+1. Extract the DOMINANT COLOR PALETTE (warm golds, cool blues, earthy greens, soft pastels, etc.)
+2. Identify the LIGHTING MOOD (golden hour warmth, soft diffused daylight, moody twilight, bright midday, etc.)
+3. Sense the EMOTIONAL ATMOSPHERE (romantic, joyful, serene, nostalgic, celebratory, intimate, etc.)
+4. Note the SEASON / ENVIRONMENT if visible (summer warmth, autumn leaves, winter cool, spring bloom, indoor cozy, etc.)
+
+DESIGN RULES:
+- The background must feel like a NATURAL EXTENSION of these photos — as if the same light, color, and air fills the entire page.
+- Use SOFT, SUBTLE textures: gentle watercolor washes, muted gradient transitions, delicate paper or linen textures, soft bokeh.
+- Keep it MINIMALIST — this is a backdrop, not the main event. The photos layered on top are the star.
+- Colors should be PULLED DIRECTLY from the photos but rendered softer, more muted, almost whispered.
+- Think "premium fine-art stationery" — refined, understated luxury.
+- Light, airy feel with generous negative space. Nothing heavy or visually busy.
+- Subtle organic texture (brushstrokes, grain, soft gradients) to avoid flatness.
+
+This is spread ${spreadIndex + 1} of ${totalSpreads} in the album. Each spread has a UNIQUE background, but together they should feel like a cohesive visual story.
+
+CRITICAL: No objects, no people, no text, no frames, no shapes, no icons, no photo placeholders, no UI elements.
+Output ONLY the background image — pure color, light, and gentle texture.`
+      : `Create a soft, minimalist, elegant background for a premium photo album page.
+Use warm cream and beige tones with subtle watercolor texture and gentle gradient transitions.
+Think "fine-art stationery" — refined, airy, and luxurious.
+This is spread ${spreadIndex + 1} of ${totalSpreads}.
+
+CRITICAL: No objects, no people, no text, no frames. Only color, light, and texture.`
+
+    const contents = hasPhotos
+      ? buildGeminiContents(prompt, pagePhotoDataUrls)
+      : prompt
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3.1-flash-image-preview',
+      contents,
+      config: {
+        responseModalities: ['IMAGE'],
+        imageConfig: {
+          aspectRatio: '16:9',
+          imageSize: '1K',
+        },
+      },
+    })
+
+    const parts = response.candidates?.[0]?.content?.parts
+    if (parts) {
+      for (const part of parts) {
+        if (part.inlineData?.data) {
+          const mimeType = part.inlineData.mimeType ?? 'image/png'
+          return `data:${mimeType};base64,${part.inlineData.data}`
+        }
+      }
+    }
+
+    return null
+  } catch (err) {
+    console.error(`Auto background generation failed for spread ${spreadIndex}:`, err)
+    return null
+  }
+}
+
+/**
+ * Generates unique AI backgrounds for ALL spreads automatically.
+ * Each background is tailored to the specific photos on that spread —
+ * matching their colors, mood, and atmosphere without any user prompt.
+ */
+export async function generateAutoBackgroundsForAllSpreads(
+  spreadIndices: number[],
+  totalSpreads: number,
+  getPagePhotosForSpread: (spreadIndex: number) => Promise<string[]>,
+  onProgress?: (done: number, total: number) => void,
+): Promise<Array<{ spreadIndex: number; url: string | null }>> {
+  const out: Array<{ spreadIndex: number; url: string | null }> = []
+  const total = spreadIndices.length
+  const BATCH_SIZE = 2
+
+  for (let b = 0; b < total; b += BATCH_SIZE) {
+    const batchEnd = Math.min(b + BATCH_SIZE, total)
+    const batchPromises: Promise<{ spreadIndex: number; url: string | null }>[] = []
+
+    for (let k = b; k < batchEnd; k++) {
+      const idx = spreadIndices[k]!
+      batchPromises.push(
+        (async () => {
+          const photos = await getPagePhotosForSpread(idx)
+          const url = await generateAutoBackground(photos, idx, totalSpreads)
+          return { spreadIndex: idx, url }
+        })(),
+      )
+    }
+
+    const batchResults = await Promise.all(batchPromises)
+    for (const result of batchResults) {
+      out.push(result)
+      onProgress?.(out.length, total)
+    }
+  }
+
+  return out
+}
+
 export async function editPhotoWithAI(
   userPrompt: string,
   photoDataUrl: string,
