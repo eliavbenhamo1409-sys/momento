@@ -28,7 +28,7 @@ export default function HeroSection() {
   }
 
   return (
-    <section ref={sectionRef} className="relative h-screen w-full overflow-hidden">
+    <section ref={sectionRef} className="relative z-[1] isolate min-h-[100dvh] h-[100dvh] w-full overflow-hidden">
       {/* Full-bleed background */}
       <motion.div className="absolute inset-0" style={{ scale: imgScale }}>
         <img

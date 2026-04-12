@@ -15,8 +15,8 @@ export default function LandingPage() {
         <LandingHeader />
         <HeroSection />
         <TrustStrip />
-        <VideoShowcase />
         <HowItWorks />
+        <VideoShowcase />
         <PricingSection />
         <FaqSection />
         <Footer />
