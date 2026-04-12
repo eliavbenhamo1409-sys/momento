@@ -63,9 +63,11 @@
   --color-muted-border: #E0DCD6;
   --color-accent: #B5A48A;
 
-  --font-family-headline: 'Cormorant Garamond', 'Noto Serif Hebrew', serif;
-  --font-family-body: 'DM Sans', 'Heebo', sans-serif;
-  --font-family-label: 'DM Sans', 'Heebo', sans-serif;
+  /* Poppins for UI; Heebo fallback for Hebrew glyphs Poppins lacks */
+  --font-family-headline: 'Poppins', 'Heebo', system-ui, sans-serif;
+  --font-family-body: 'Poppins', 'Heebo', system-ui, sans-serif;
+  --font-family-label: 'Poppins', 'Heebo', system-ui, sans-serif;
+  --font-heebo: 'Poppins', 'Heebo', system-ui, sans-serif;
 
   --radius-sm: 0.5rem;
   --radius: 1rem;

@@ -39,7 +39,7 @@ export default function VideoShowcase() {
           animate={isInView ? { opacity: 1 } : {}}
           transition={{ duration: 0.8 }}
           className="text-[11px] md:text-[12px] tracking-[0.45em] uppercase text-warm-gray/60 mb-5"
-          style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}
+          style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
         >
           See It in Motion
         </motion.p>

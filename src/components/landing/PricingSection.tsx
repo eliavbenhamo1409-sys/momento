@@ -44,7 +44,7 @@ export default function PricingSection() {
         >
           <p
             className="text-[11px] tracking-[0.4em] uppercase text-warm-gray/50 mb-5"
-            style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}
+            style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
           >
             Pricing
           </p>
@@ -82,7 +82,7 @@ export default function PricingSection() {
                   className={`text-[10px] tracking-[0.3em] uppercase mb-3 ${
                     plan.recommended ? 'text-white/35' : 'text-warm-gray/40'
                   }`}
-                  style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                  style={{ fontFamily: 'var(--font-family-headline)' }}
                 >
                   {plan.id === 'basic' ? 'Essential' : plan.id === 'premium' ? 'Most Popular' : 'Deluxe'}
                 </p>

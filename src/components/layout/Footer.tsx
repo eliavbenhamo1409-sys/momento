@@ -13,7 +13,7 @@ export default function Footer() {
             </div>
             <p
               className="text-[12px] tracking-[0.35em] uppercase text-white/20 mb-3"
-              style={{ fontFamily: "'Cormorant Garamond', serif" }}
+              style={{ fontFamily: 'var(--font-family-headline)' }}
             >
               The Art of Remembering
             </p>

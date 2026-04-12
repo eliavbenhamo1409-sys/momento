@@ -53,7 +53,7 @@ export default function HowItWorks() {
         >
           <p
             className="text-[11px] tracking-[0.4em] uppercase text-warm-gray/50 mb-5"
-            style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}
+            style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
           >
             How It Works
           </p>
@@ -83,7 +83,7 @@ export default function HowItWorks() {
               {/* Step number */}
               <p
                 className="text-[11px] tracking-[0.3em] text-warm-gray/30 mb-8 uppercase"
-                style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                style={{ fontFamily: 'var(--font-family-headline)' }}
               >
                 Step {step.num}
               </p>

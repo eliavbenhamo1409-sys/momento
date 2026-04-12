@@ -58,7 +58,7 @@ export default function HeroSection() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
           className="text-[11px] md:text-[13px] tracking-[0.5em] uppercase text-white/50 mb-7"
-          style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}
+          style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
         >
           The Art of Remembering
         </motion.p>

@@ -41,7 +41,7 @@ export default function FaqSection() {
         >
           <p
             className="text-[11px] tracking-[0.4em] uppercase text-warm-gray/50 mb-5"
-            style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}
+            style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
           >
             Questions
           </p>
