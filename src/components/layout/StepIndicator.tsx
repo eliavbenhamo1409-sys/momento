@@ -28,7 +28,7 @@ export default function StepIndicator({ current }: Props) {
             {i > 0 && (
               <div
                 className={`w-12 h-px mx-1 ${
-                  isComplete ? 'bg-sage' : 'bg-outline-variant/30'
+                  isComplete ? 'bg-primary' : 'bg-outline-variant/30'
                 }`}
               />
             )}
@@ -38,7 +38,7 @@ export default function StepIndicator({ current }: Props) {
                   isActive
                     ? 'bg-primary text-white ring-4 ring-primary/10'
                     : isComplete
-                      ? 'bg-sage text-white'
+                      ? 'bg-primary text-on-primary'
                       : 'bg-surface-container-highest text-on-surface-variant'
                 }`}
               >
@@ -49,7 +49,7 @@ export default function StepIndicator({ current }: Props) {
                   isActive
                     ? 'text-on-surface'
                     : isComplete
-                      ? 'text-sage'
+                      ? 'text-primary'
                       : 'text-on-surface-variant'
                 }`}
               >

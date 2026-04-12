@@ -21,7 +21,7 @@ export default function LivePreview() {
   const imgSrc = config.type ? previewImages[config.type] : null
 
   return (
-    <div className="bg-surface-container rounded-2xl p-8 h-full flex flex-col">
+    <div className="rounded-2xl border border-outline-variant/12 bg-white p-8 h-full flex flex-col shadow-sm">
       <div className="flex items-center justify-between mb-6">
         <h3 className="font-bold text-deep-brown text-sm" style={{ fontFamily: 'var(--font-family-headline)' }}>
           תצוגה מקדימה

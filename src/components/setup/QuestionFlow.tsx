@@ -114,15 +114,15 @@ export default function QuestionFlow() {
           onClick={() => setConfigField('backgroundMode', 'white')}
           className={`flex-1 rounded-xl p-4 border-2 transition-colors text-right ${
             bgMode === 'white'
-              ? 'border-sage bg-sage/[0.04] shadow-md shadow-sage/10'
+              ? 'border-primary bg-primary/[0.04] shadow-md shadow-primary/10'
               : 'border-outline-variant/15 bg-surface-container-lowest hover:border-outline-variant/30'
           }`}
         >
           <div className="flex items-center gap-3 mb-2">
             <div className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center ${
-              bgMode === 'white' ? 'border-sage bg-white' : 'border-outline-variant/20 bg-white'
+              bgMode === 'white' ? 'border-primary bg-white' : 'border-outline-variant/20 bg-white'
             }`}>
-              <Icon name="crop_square" size={18} className={bgMode === 'white' ? 'text-sage' : 'text-warm-gray/40'} />
+              <Icon name="crop_square" size={18} className={bgMode === 'white' ? 'text-primary' : 'text-warm-gray/40'} />
             </div>
             <span className="text-sm font-bold text-deep-brown">רקע לבן</span>
           </div>
@@ -135,15 +135,15 @@ export default function QuestionFlow() {
           onClick={() => setConfigField('backgroundMode', 'ai-generated')}
           className={`flex-1 rounded-xl p-4 border-2 transition-colors text-right ${
             bgMode === 'ai-generated'
-              ? 'border-sage bg-sage/[0.04] shadow-md shadow-sage/10'
+              ? 'border-primary bg-primary/[0.04] shadow-md shadow-primary/10'
               : 'border-outline-variant/15 bg-surface-container-lowest hover:border-outline-variant/30'
           }`}
         >
           <div className="flex items-center gap-3 mb-2">
             <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
-              bgMode === 'ai-generated' ? 'bg-sage/10' : 'bg-surface-container-low'
+              bgMode === 'ai-generated' ? 'bg-primary/10' : 'bg-surface-container-low'
             }`}>
-              <Icon name="auto_awesome" size={18} className={bgMode === 'ai-generated' ? 'text-sage' : 'text-warm-gray/40'} />
+              <Icon name="auto_awesome" size={18} className={bgMode === 'ai-generated' ? 'text-primary' : 'text-warm-gray/40'} />
             </div>
             <span className="text-sm font-bold text-deep-brown">רקע AI</span>
           </div>
@@ -173,7 +173,7 @@ export default function QuestionFlow() {
                 rows={3}
                 dir="rtl"
                 className="w-full rounded-xl bg-surface-container-lowest border-2 border-outline-variant/20 
-                  focus:border-sage/50 focus:ring-2 focus:ring-sage/10 
+                  focus:border-primary/50 focus:ring-2 focus:ring-primary/10 
                   px-5 py-3.5 text-deep-brown text-sm leading-relaxed resize-none
                   placeholder:text-warm-gray/40 transition-all duration-200
                   font-medium"
@@ -195,8 +195,8 @@ export default function QuestionFlow() {
                   onClick={() => setConfigField('vibeText', chip.text)}
                     className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                     vibeText === chip.text
-                      ? 'bg-sage/15 text-sage border border-sage/30'
-                      : 'bg-surface-container-low text-warm-gray border border-transparent hover:bg-sage/8 hover:text-sage/80'
+                      ? 'bg-primary/15 text-primary border border-primary/30'
+                      : 'bg-surface-container-low text-warm-gray border border-transparent hover:bg-primary/8 hover:text-primary/80'
                   }`}
                 >
                   {chip.label}
@@ -251,11 +251,11 @@ export default function QuestionFlow() {
                     className={`btn-press w-16 h-16 rounded-lg border-2 border-dashed flex flex-col items-center justify-center
                       transition-colors shrink-0 cursor-pointer
                       ${isDragging
-                        ? 'border-sage bg-sage/10'
-                        : 'border-outline-variant/25 bg-surface-container-lowest hover:border-sage/40 hover:bg-sage/[0.03]'
+                        ? 'border-primary bg-primary/10'
+                        : 'border-outline-variant/25 bg-surface-container-lowest hover:border-primary/40 hover:bg-primary/[0.03]'
                       }`}
                   >
-                    <Icon name="add" size={20} className={isDragging ? 'text-sage' : 'text-warm-gray/35'} />
+                    <Icon name="add" size={20} className={isDragging ? 'text-primary' : 'text-warm-gray/35'} />
                   </button>
                 )}
               </div>
@@ -333,11 +333,11 @@ const FAMILY_ICONS: Record<string, string> = {
 }
 
 const FAMILY_ACCENTS: Record<string, string> = {
-  'contemporary-luxury': '#8A8570',
-  'japanese-airy': '#A09B8F',
-  'soft-personal': '#A89E92',
-  'parisian-editorial': '#B8A898',
-  'timeless-classic': '#B5A998',
+  'contemporary-luxury': '#2D2926',
+  'japanese-airy': '#2D2926',
+  'soft-personal': '#2D2926',
+  'parisian-editorial': '#2D2926',
+  'timeless-classic': '#2D2926',
 }
 
 function FamilyCard({
@@ -351,7 +351,7 @@ function FamilyCard({
   isRecommended: boolean
   onSelect: () => void
 }) {
-  const accent = FAMILY_ACCENTS[family.id] ?? '#8A8570'
+  const accent = FAMILY_ACCENTS[family.id] ?? '#2D2926'
   const icon = FAMILY_ICONS[family.id] ?? 'palette'
 
   return (
@@ -359,12 +359,12 @@ function FamilyCard({
       onClick={onSelect}
       className={`btn-press relative text-right rounded-xl p-4 transition-colors border-2 ${
         isSelected
-          ? 'border-sage bg-sage/[0.04] shadow-md shadow-sage/10'
+          ? 'border-primary bg-primary/[0.04] shadow-md shadow-primary/10'
           : 'border-outline-variant/15 bg-surface-container-lowest hover:border-outline-variant/30 hover:shadow-sm'
       }`}
     >
       {isRecommended && !isSelected && (
-        <span className="absolute -top-2 start-3 text-[9px] font-bold text-sage bg-sage/10 px-2 py-0.5 rounded-full">
+        <span className="absolute -top-2 start-3 text-[9px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
           מומלץ
         </span>
       )}
@@ -378,10 +378,10 @@ function FamilyCard({
         </div>
         <div
           className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
-            isSelected ? 'border-sage' : 'border-outline-variant/30'
+            isSelected ? 'border-primary' : 'border-outline-variant/30'
           }`}
         >
-          {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-sage" />}
+          {isSelected && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
         </div>
       </div>
 

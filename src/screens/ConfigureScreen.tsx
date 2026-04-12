@@ -69,20 +69,20 @@ export default function ConfigureScreen() {
                         onClick={() => setSelectedSize(size.id)}
                         className={`flex-1 rounded-xl p-5 transition-colors border-2 text-right ${
                           active
-                            ? 'border-sage bg-sage/5 shadow-md'
+                            ? 'border-primary bg-primary/[0.04] shadow-md'
                             : 'border-outline-variant/20 bg-surface-container-lowest hover:border-outline-variant/40'
                         }`}
                       >
                         <div className="flex items-start justify-between mb-3">
                           <div
                             className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${
-                              active ? 'border-sage' : 'border-outline-variant/40'
+                              active ? 'border-primary' : 'border-outline-variant/40'
                             }`}
                           >
-                            {active && <div className="w-2.5 h-2.5 rounded-full bg-sage" />}
+                            {active && <div className="w-2.5 h-2.5 rounded-full bg-primary" />}
                           </div>
                           {size.id === '60x60' && (
-                            <span className="text-[10px] font-bold text-sage bg-sage/10 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                               פרימיום
                             </span>
                           )}
@@ -113,7 +113,7 @@ export default function ConfigureScreen() {
                         onClick={() => { setSelectedPages(p); setExtraSpreads(0) }}
                         className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all duration-150 ${
                           active
-                            ? 'bg-sage text-white shadow-lg shadow-sage/20'
+                            ? 'bg-primary text-on-primary shadow-lg shadow-primary/25'
                             : 'bg-surface-container-highest text-on-surface-variant hover:bg-surface-variant'
                         }`}
                       >
@@ -218,7 +218,7 @@ export default function ConfigureScreen() {
               </div>
 
               {/* Summary card */}
-              <div className="bg-surface-container rounded-2xl p-6 space-y-4">
+              <div className="rounded-2xl border border-outline-variant/12 bg-white p-6 space-y-4 shadow-sm">
                 <h3
                   className="font-bold text-deep-brown text-sm"
                   style={{ fontFamily: 'var(--font-family-headline)' }}
@@ -240,7 +240,7 @@ export default function ConfigureScreen() {
                     <span className="font-medium">
                       {totalPages} עמודים
                       {extraSpreads > 0 && (
-                        <span className="text-sage text-xs mr-1">({selectedPages}+{extraSpreads * 2})</span>
+                        <span className="text-primary text-xs mr-1">({selectedPages}+{extraSpreads * 2})</span>
                       )}
                     </span>
                   </div>
