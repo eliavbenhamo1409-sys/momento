@@ -6,13 +6,7 @@ import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
 import BrandLogo from '../shared/BrandLogo'
 
-interface LandingHeaderProps {
-  /** When true, white nav on transparent bar (over dark hero / video intro). Overrides solid header while scrolling on dark. */
-  navLightOnDark?: boolean
-}
-
-export default function LandingHeader({ navLightOnDark }: LandingHeaderProps) {
-  const [scrolled, setScrolled] = useState(false)
+export default function LandingHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const navigate = useNavigate()
@@ -22,12 +16,6 @@ export default function LandingHeader({ navLightOnDark }: LandingHeaderProps) {
     openAuthModal: s.openAuthModal,
     logout: s.logout,
   })))
-
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 80)
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
@@ -53,62 +41,44 @@ export default function LandingHeader({ navLightOnDark }: LandingHeaderProps) {
 
   const initial = (userName || 'א')[0].toUpperCase()
 
-  const lightText =
-    typeof navLightOnDark === 'boolean' ? navLightOnDark : !scrolled
-  const solidBg =
-    typeof navLightOnDark === 'boolean' ? scrolled && !navLightOnDark : scrolled
-
-  const navColor = lightText
-    ? 'text-white/60 hover:text-white'
-    : 'text-warm-gray hover:text-deep-brown'
+  const navColor = 'text-warm-gray hover:text-deep-brown'
 
   return (
     <header
-      className={`fixed top-0 w-full z-50 flex justify-between items-center px-8 md:px-16 py-5 transition-all duration-700 ${
-        solidBg
-          ? 'glass-header border-b border-muted-border/10'
-          : 'bg-transparent'
-      }`}
+      className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-black/[0.06] bg-white/95 px-6 py-3 shadow-[0_1px_0_rgba(26,23,20,0.04)] backdrop-blur-md transition-colors duration-300 md:px-12 md:py-4 lg:px-16"
     >
       <BrandLogo
-        tone={lightText ? 'light' : 'dark'}
-        heightClass="h-10 sm:h-12"
+        tone="dark"
+        heightClass="h-14 sm:h-16 md:h-[4.5rem] lg:h-[5.25rem]"
         onClick={() => navigate('/')}
       />
 
-      <nav className="hidden md:flex items-center gap-10">
+      <nav className="hidden items-center gap-8 md:flex lg:gap-10">
         {['איך זה עובד', 'מחירים', 'שאלות נפוצות'].map((item) => (
           <a
             key={item}
             href={`#${item}`}
-            className={`${navColor} transition-colors duration-300 text-[13px] tracking-[0.05em] font-medium`}
+            className={`${navColor} text-[13px] font-medium tracking-[0.05em] transition-colors duration-300`}
           >
             {item}
           </a>
         ))}
       </nav>
 
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-4 md:gap-5">
         {isLoggedIn ? (
           <div className="relative" ref={menuRef}>
             <button
+              type="button"
               onClick={() => setMenuOpen(!menuOpen)}
-              className="btn-press flex items-center gap-2.5 py-1.5 px-2 rounded-full hover:bg-white/10 transition-colors"
+              className="btn-press flex items-center gap-2.5 rounded-full px-2 py-1.5 transition-colors hover:bg-surface-container-high"
             >
-              <span
-                className={`text-sm font-medium hidden sm:block transition-colors duration-300 ${
-                  lightText ? 'text-white/70' : 'text-deep-brown'
-                }`}
-              >
+              <span className="hidden text-sm font-medium text-deep-brown/80 transition-colors duration-300 sm:block">
                 {userName}
               </span>
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300"
-                style={{
-                  background: lightText ? 'rgba(255,255,255,0.15)' : '#2D2926',
-                  color: lightText ? 'rgba(255,255,255,0.8)' : '#fff',
-                  backdropFilter: lightText ? 'blur(8px)' : 'none',
-                }}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white transition-all duration-300"
+                style={{ background: '#2D2926' }}
               >
                 {initial}
               </div>
@@ -121,7 +91,7 @@ export default function LandingHeader({ navLightOnDark }: LandingHeaderProps) {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -4 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute left-0 top-full mt-2 w-56 rounded-2xl overflow-hidden py-2 px-2"
+                  className="absolute left-0 top-full mt-2 w-56 overflow-hidden rounded-2xl px-2 py-2"
                   style={{
                     background: 'rgba(255,255,255,0.95)',
                     backdropFilter: 'blur(24px)',
@@ -131,7 +101,7 @@ export default function LandingHeader({ navLightOnDark }: LandingHeaderProps) {
                 >
                   <DropdownItem icon="dashboard" label="דשבורד" onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} />
                   <DropdownItem icon="add_circle" label="אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
-                  <div className="h-px bg-muted-border/15 my-1 mx-2" />
+                  <div className="mx-2 my-1 h-px bg-muted-border/15" />
                   <DropdownItem icon="logout" label="התנתקות" onClick={handleLogout} danger />
                 </motion.div>
               )}
@@ -140,21 +110,21 @@ export default function LandingHeader({ navLightOnDark }: LandingHeaderProps) {
         ) : (
           <>
             <button
+              type="button"
               onClick={handleLogin}
-              className={`${navColor} font-medium transition-colors duration-300 text-[13px] tracking-wide`}
+              className={`${navColor} text-[13px] font-medium tracking-wide transition-colors duration-300`}
             >
               התחברות
             </button>
             <motion.button
+              type="button"
               onClick={handleCreate}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="px-7 py-2.5 text-[12px] font-medium tracking-[0.12em] transition-all duration-500"
+              className="px-6 py-2.5 text-[12px] font-medium tracking-[0.12em] text-white transition-all duration-500 md:px-7 md:py-2.5"
               style={{
-                background: lightText ? 'rgba(255,255,255,0.12)' : '#2D2926',
-                color: lightText ? 'rgba(255,255,255,0.85)' : '#fff',
-                backdropFilter: lightText ? 'blur(12px)' : 'none',
-                border: lightText ? '1px solid rgba(255,255,255,0.2)' : '1px solid transparent',
+                background: '#2D2926',
+                border: '1px solid transparent',
                 borderRadius: '2px',
               }}
             >
@@ -172,8 +142,9 @@ function DropdownItem({ icon, label, onClick, danger }: {
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
-      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
+      className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors ${
         danger ? 'text-error/80 hover:bg-error/5' : 'text-deep-brown hover:bg-surface-container/50'
       }`}
     >

@@ -13,7 +13,7 @@ export default function BrandLogo({
   heightClass = 'h-8',
   onClick,
 }: BrandLogoProps) {
-  const cap = 'max-w-[min(94vw,520px)]'
+  const cap = 'max-w-[min(96vw,800px)]'
   /** קובץ Momento: לבן על שחור — lighten מסיר שחור מעל רקע כהה; invert להצגה על רקע בהיר */
   const imgTone =
     tone === 'light'
@@ -24,8 +24,8 @@ export default function BrandLogo({
     <img
       src="/momento-logo.png"
       alt="Momento"
-      width={200}
-      height={48}
+      width={360}
+      height={90}
       className={imgTone}
       decoding="async"
     />
