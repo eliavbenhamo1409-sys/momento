@@ -43,6 +43,65 @@ function sanitizeCloneColors(doc: Document) {
 }
 
 /**
+ * html2canvas does not support object-fit:cover on <img> elements — it renders
+ * the raw image at natural pixel dimensions, producing extreme zoom-in artifacts.
+ * This walks the cloned DOM and replaces every object-fit:cover <img> with a
+ * <div> using background-image + background-size:cover, which html2canvas
+ * renders correctly.
+ */
+function fixObjectFitImages(doc: Document) {
+  const win = doc.defaultView
+  if (!win) return
+
+  const images = doc.querySelectorAll('img')
+  for (const img of images) {
+    const computed = win.getComputedStyle(img)
+    const objectFit = computed.objectFit
+    if (objectFit !== 'cover' && objectFit !== 'contain') continue
+
+    const src = img.getAttribute('src') || img.src
+    if (!src || src.startsWith('data:')) continue
+
+    const div = doc.createElement('div')
+
+    div.style.width = computed.width
+    div.style.height = computed.height
+    div.style.minWidth = computed.minWidth
+    div.style.minHeight = computed.minHeight
+    div.style.maxWidth = computed.maxWidth
+    div.style.maxHeight = computed.maxHeight
+    div.style.flexGrow = computed.flexGrow
+    div.style.flexShrink = computed.flexShrink
+    div.style.flexBasis = computed.flexBasis
+
+    div.style.backgroundImage = `url("${src}")`
+    div.style.backgroundSize = objectFit
+    div.style.backgroundPosition = computed.objectPosition || 'center'
+    div.style.backgroundRepeat = 'no-repeat'
+
+    if (computed.transform && computed.transform !== 'none') {
+      div.style.transform = computed.transform
+    }
+    if (computed.transformOrigin) {
+      div.style.transformOrigin = computed.transformOrigin
+    }
+
+    div.style.borderRadius = computed.borderRadius
+    div.style.overflow = computed.overflow
+
+    img.parentNode?.replaceChild(div, img)
+  }
+}
+
+/**
+ * All onclone fixups combined into a single pass.
+ */
+function prepareCloneForCapture(doc: Document) {
+  sanitizeCloneColors(doc)
+  fixObjectFitImages(doc)
+}
+
+/**
  * Pre-loads all images referenced in the element tree (both <img> tags and
  * CSS background-image urls) so html2canvas finds them already in the browser
  * cache and doesn't silently fail on slow / CORS-redirected fetches.
@@ -127,7 +186,7 @@ export async function exportSpreadToDataUrl(
       useCORS: true,
       allowTaint: true,
       logging: false,
-      onclone: (_doc, _el) => { sanitizeCloneColors(_doc) },
+      onclone: (_doc) => { prepareCloneForCapture(_doc) },
     }),
     EXPORT_TIMEOUT_MS,
     'html2canvas',
@@ -162,7 +221,7 @@ async function captureToBlob(
       useCORS: true,
       allowTaint: true,
       logging: false,
-      onclone: (_doc, _el) => { sanitizeCloneColors(_doc) },
+      onclone: (_doc) => { prepareCloneForCapture(_doc) },
     }),
     EXPORT_TIMEOUT_MS,
     'html2canvas',
