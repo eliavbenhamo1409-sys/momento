@@ -6,8 +6,9 @@ import Icon from '../shared/Icon'
 
 interface Slot {
   id: string
-  /** Replace with actual video src when ready */
   videoSrc?: string
+  /** Static image instead of video / placeholder (e.g. RTL visual left column) */
+  imageSrc?: string
   bg: string
   label: string
   caption: string
@@ -24,6 +25,8 @@ const slots: Slot[] = [
   },
   {
     id: 'v2',
+    /** RTL: second column = visual left */
+    imageSrc: '/showcase-left-shadow.png',
     bg: '#DDD7CE',
     label: 'מאחורי הקלעים',
     caption: 'האיכות שמרגישים ביד',
@@ -127,7 +130,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
             className="relative overflow-hidden group cursor-pointer"
             style={{ aspectRatio: '16 / 10' }}
           >
-            {/* Background / video */}
+            {/* Background: video, image, or placeholder */}
             {slot.videoSrc ? (
               <video
                 src={slot.videoSrc}
@@ -138,6 +141,20 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
                 playsInline
                 preload="metadata"
               />
+            ) : slot.imageSrc ? (
+              <>
+                <img
+                  src={slot.imageSrc}
+                  alt="צל אמנותי של ספר על קיר טקסטורי"
+                  className="absolute inset-0 h-full w-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <div
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"
+                  aria-hidden
+                />
+              </>
             ) : (
               <div
                 className="absolute inset-0"
@@ -145,7 +162,6 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
                   background: `linear-gradient(135deg, ${slot.bg} 0%, ${slot.bg}dd 100%)`,
                 }}
               >
-                {/* Subtle texture pattern for placeholder */}
                 <div
                   className="absolute inset-0 opacity-[0.03]"
                   style={{
@@ -158,7 +174,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
             )}
 
             {/* Play button — placeholder slots only */}
-            {!slot.videoSrc && (
+            {!slot.videoSrc && !slot.imageSrc && (
               <div className="absolute inset-0 z-10 flex items-center justify-center">
                 <motion.div
                   whileHover={{ scale: 1.1 }}
