@@ -814,7 +814,9 @@ export async function generateAlbum(
     const labelMap = new Map<string, string>()
     for (const s of allScores) {
       if (s.faceObservations?.length) {
-        labelMap.set(s.photoId, s.faceObservations[0].labelHe)
+        for (const obs of s.faceObservations) {
+          labelMap.set(`${s.photoId}:${obs.faceIndex}`, obs.labelHe)
+        }
       }
     }
 

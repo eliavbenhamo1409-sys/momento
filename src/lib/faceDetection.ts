@@ -9,6 +9,8 @@ export interface DetectedFace {
   box: [number, number, number, number]
   embedding: number[]
   cropDataUrl: string
+  /** 0-based index among faces detected in the same photo (sorted by box area desc) */
+  faceIndexInPhoto: number
 }
 
 type ProgressCb = (done: number, total: number, msg?: string) => void
@@ -135,12 +137,16 @@ export async function detectFacesInPhotos(
       const result = await human.detect(canvas)
 
       if (result.face && result.face.length > 0) {
-        for (const face of result.face) {
+        const validFaces = result.face
+          .filter((f) => f.embedding?.length && (f.score ?? 0) >= 0.3)
+          .sort((a, b) => (b.box[2] * b.box[3]) - (a.box[2] * a.box[3]))
+
+        for (let fi = 0; fi < validFaces.length; fi++) {
+          const face = validFaces[fi]
           if (!face.embedding || face.embedding.length === 0) {
             noEmbeddings++
             continue
           }
-          if ((face.score ?? 0) < 0.3) continue
 
           const cropUrl = cropFace(img, face.box, scale)
           all.push({
@@ -149,8 +155,11 @@ export async function detectFacesInPhotos(
             box: face.box,
             embedding: face.embedding,
             cropDataUrl: cropUrl,
+            faceIndexInPhoto: fi,
           })
         }
+
+        noEmbeddings += result.face.length - validFaces.length
       } else {
         detectFailures++
       }
@@ -198,6 +207,10 @@ function avgEmbedding(faces: DetectedFace[]): number[] {
   return avg
 }
 
+/**
+ * @param existingLabels  Key = `${photoId}:${faceIndex}` → Hebrew label.
+ *                        Falls back to legacy `photoId`-only key for compat.
+ */
 export function clusterFaces(
   faces: DetectedFace[],
   existingLabels?: Map<string, string>,
@@ -258,7 +271,19 @@ export function clusterFaces(
     }
 
     namedIdx++
-    const label = existingLabels?.get(best.photoId)
+
+    let label: string | undefined
+    if (existingLabels) {
+      const counts = new Map<string, number>()
+      for (const f of cluster) {
+        const perFaceKey = `${f.photoId}:${f.faceIndexInPhoto}`
+        const lbl = existingLabels.get(perFaceKey) ?? existingLabels.get(f.photoId)
+        if (lbl) counts.set(lbl, (counts.get(lbl) ?? 0) + 1)
+      }
+      if (counts.size > 0) {
+        label = [...counts.entries()].sort((a, b) => b[1] - a[1])[0][0]
+      }
+    }
     const displayName = label || `אדם ${namedIdx}`
 
     people.push({

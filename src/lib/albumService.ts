@@ -102,6 +102,44 @@ async function replaceBlobUrls(
   return result
 }
 
+function cleanRosterBlobUrls(
+  roster: AlbumPerson[],
+  cleanedSpreads: EditorSpread[],
+): AlbumPerson[] {
+  const hasBlobUrl = roster.some((p) =>
+    p.photoUrlLookup && Object.values(p.photoUrlLookup).some((u) => u?.startsWith('blob:')),
+  )
+  if (!hasBlobUrl) return roster
+
+  const spreadUrlMap = new Map<string, string>()
+  for (const s of cleanedSpreads) {
+    if (!s.design) continue
+    for (const el of s.design.elements) {
+      if (el.type === 'photo' && (el as { photoId?: string }).photoId && el.photoUrl) {
+        spreadUrlMap.set((el as { photoId: string }).photoId, el.photoUrl)
+      }
+    }
+  }
+
+  return roster.map((person) => {
+    if (!person.photoUrlLookup) return person
+    const newLookup: Record<string, string> = {}
+    let changed = false
+    for (const [pid, url] of Object.entries(person.photoUrlLookup)) {
+      if (url?.startsWith('blob:')) {
+        const spreadUrl = spreadUrlMap.get(pid)
+        if (spreadUrl) {
+          newLookup[pid] = spreadUrl
+          changed = true
+          continue
+        }
+      }
+      newLookup[pid] = url
+    }
+    return changed ? { ...person, photoUrlLookup: newLookup } : person
+  })
+}
+
 export async function saveAlbum(
   albumId: string | null,
   userId: string,
@@ -113,6 +151,7 @@ export async function saveAlbum(
   const id = albumId || crypto.randomUUID()
 
   const cleanedSpreads = await replaceBlobUrls(spreads, userId, id)
+  const cleanedRoster = cleanRosterBlobUrls(peopleRoster ?? [], cleanedSpreads)
 
   const coverUrl = findCoverUrl(cleanedSpreads)
 
@@ -123,7 +162,7 @@ export async function saveAlbum(
     cover_url: coverUrl,
     config: config as unknown as Record<string, unknown>,
     spreads: cleanedSpreads as unknown as Record<string, unknown>[],
-    people_roster: (peopleRoster ?? []) as unknown as Record<string, unknown>[],
+    people_roster: cleanedRoster as unknown as Record<string, unknown>[],
     status: 'draft',
     spread_count: cleanedSpreads.length,
     photo_count: countPhotosInSpreads(cleanedSpreads),

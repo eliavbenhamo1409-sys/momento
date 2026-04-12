@@ -30,13 +30,17 @@ function findSlotForPhotoUrl(
  * Build a comprehensive URL lookup for a person by merging:
  * 1. person.photoUrlLookup (embedded at detection time — primary)
  * 2. album store photos (fallback for any missing IDs)
+ * 3. spreads photoId→URL map (final fallback — always has current URLs)
  */
 function getPhotoUrl(
   photoId: string,
   personLookup: Record<string, string> | undefined,
   storeLookup: Map<string, string>,
+  spreadsLookup?: Map<string, string>,
 ): string | undefined {
-  return personLookup?.[photoId] || storeLookup.get(photoId)
+  const fromPerson = personLookup?.[photoId]
+  if (fromPerson && !fromPerson.startsWith('blob:')) return fromPerson
+  return storeLookup.get(photoId) || spreadsLookup?.get(photoId) || fromPerson
 }
 
 /* ─── Person Avatar (circle) ─────────────────────────────────────────── */
@@ -137,6 +141,8 @@ function PhotoThumb({
   revealDelay: number
   onSelect: (id: string) => void
 }) {
+  const [broken, setBroken] = useState(false)
+
   return (
     <button
       type="button"
@@ -154,12 +160,19 @@ function PhotoThumb({
         transitionDelay: isRevealed ? `${revealDelay}ms` : '0ms',
       }}
     >
-      <img
-        src={url}
-        alt=""
-        loading="lazy"
-        className="w-full h-full object-cover"
-      />
+      {broken ? (
+        <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
+          <Icon name="broken_image" size={16} className="text-secondary/30" />
+        </div>
+      ) : (
+        <img
+          src={url}
+          alt=""
+          loading="lazy"
+          className="w-full h-full object-cover"
+          onError={() => setBroken(true)}
+        />
+      )}
     </button>
   )
 }
@@ -169,12 +182,14 @@ function PhotoThumb({
 function PersonPhotosPanel({
   person,
   storeLookup,
+  spreadsLookup,
   onPhotoSelect,
   selectedPhotoId,
   onClose,
 }: {
   person: AlbumPerson
   storeLookup: Map<string, string>
+  spreadsLookup: Map<string, string>
   onPhotoSelect: (photoId: string, photoUrl: string) => void
   selectedPhotoId: string | null
   onClose: () => void
@@ -182,11 +197,11 @@ function PersonPhotosPanel({
   const photos = useMemo(() => {
     const result: { id: string; url: string }[] = []
     for (const id of person.photoIds) {
-      const url = getPhotoUrl(id, person.photoUrlLookup, storeLookup)
+      const url = getPhotoUrl(id, person.photoUrlLookup, storeLookup, spreadsLookup)
       if (url) result.push({ id, url })
     }
     return result
-  }, [person, storeLookup])
+  }, [person, storeLookup, spreadsLookup])
 
   const avatarSrc = person.avatarCropUrl
 
@@ -199,10 +214,10 @@ function PersonPhotosPanel({
 
   const handleSelect = useCallback(
     (photoId: string) => {
-      const url = getPhotoUrl(photoId, person.photoUrlLookup, storeLookup)
+      const url = getPhotoUrl(photoId, person.photoUrlLookup, storeLookup, spreadsLookup)
       if (url) onPhotoSelect(photoId, url)
     },
-    [person.photoUrlLookup, storeLookup, onPhotoSelect],
+    [person.photoUrlLookup, storeLookup, spreadsLookup, onPhotoSelect],
   )
 
   return (
@@ -325,6 +340,22 @@ export default function EditorPeopleStrip() {
     return map
   }, [storePhotos])
 
+  const spreadsLookup = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const s of spreads) {
+      if (!s.design) continue
+      for (const el of s.design.elements) {
+        if (el.type === 'photo') {
+          const pe = el as PhotoElement
+          if (pe.photoId && pe.photoUrl && !pe.photoUrl.startsWith('blob:')) {
+            map.set(pe.photoId, pe.photoUrl)
+          }
+        }
+      }
+    }
+    return map
+  }, [spreads])
+
   const handlePersonClick = useCallback((person: AlbumPerson) => {
     setSelectedPersonId((prev) => (prev === person.id ? null : person.id))
     setChosenPhotoId(null)
@@ -410,6 +441,7 @@ export default function EditorPeopleStrip() {
             key={`panel-${selectedPerson.id}`}
             person={selectedPerson}
             storeLookup={storeLookup}
+            spreadsLookup={spreadsLookup}
             onPhotoSelect={handlePhotoSelect}
             selectedPhotoId={chosenPhotoId}
             onClose={handleClose}

@@ -58,6 +58,9 @@ export function useAlbumSave() {
         if (freshAlbum) {
           useEditorStore.getState().setSpreads(freshAlbum.spreads)
           useEditorStore.setState({ isGenerated: true })
+          if (freshAlbum.people_roster?.length) {
+            useAlbumStore.getState().setPeopleRoster(freshAlbum.people_roster)
+          }
         }
       }
 
