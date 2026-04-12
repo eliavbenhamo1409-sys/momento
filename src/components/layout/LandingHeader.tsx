@@ -44,7 +44,7 @@ export default function LandingHeader() {
 
   return (
     <header
-      className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-black/[0.06] bg-white/95 px-4 py-1.5 shadow-[0_1px_0_rgba(26,23,20,0.04)] backdrop-blur-md transition-colors duration-300 md:px-8 md:py-2 lg:px-12"
+      className="fixed top-0 z-50 flex w-full items-center justify-between bg-white/95 px-4 py-1.5 backdrop-blur-md transition-colors duration-300 md:px-8 md:py-2 lg:px-12"
     >
       <button
         type="button"

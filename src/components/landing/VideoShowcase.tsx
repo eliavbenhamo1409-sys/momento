@@ -53,7 +53,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
         data-landing-video-intro={lead ? '' : undefined}
         className={
           lead
-            ? 'border-b border-black/[0.06] bg-white px-6 pt-32 pb-12 text-center md:pt-40 md:pb-16'
+            ? 'border-b border-black/[0.06] bg-white px-6 pt-24 pb-8 text-center md:pt-28 md:pb-10'
             : 'px-6 py-20 text-center md:py-28'
         }
       >
@@ -63,7 +63,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
           transition={{ duration: 0.8 }}
           className={
             lead
-              ? 'mb-5 text-[11px] uppercase tracking-[0.45em] text-secondary md:text-[12px]'
+              ? 'mb-3 text-[11px] uppercase tracking-[0.45em] text-secondary md:text-[12px]'
               : 'mb-5 text-[11px] uppercase tracking-[0.45em] text-warm-gray/60 md:text-[12px]'
           }
           style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
@@ -74,7 +74,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
           initial={{ opacity: 0, y: 16 }}
           animate={effectiveInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, delay: 0.15 }}
-          className="text-3xl leading-tight text-deep-brown sm:text-4xl md:text-5xl"
+          className="text-2xl leading-tight text-deep-brown sm:text-3xl md:text-4xl"
           style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
         >
           תראו בעצמכם.
@@ -85,7 +85,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
             initial={{ opacity: 0, y: 12 }}
             animate={effectiveInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.55, delay: 0.35 }}
-            className="mt-10 flex justify-center"
+            className="mt-6 flex justify-center md:mt-7"
           >
             <button
               type="button"
