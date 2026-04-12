@@ -113,7 +113,7 @@ export default function ConfirmationScreen() {
                 onClick={() => navigate('/upload')}
                 className="px-6 py-3 bg-primary text-on-primary rounded-xl font-semibold hover:opacity-90 active:scale-[0.98] transition-all"
               >
-                צור אלבום נוסף
+                הרכיבו זיכרון נוסף
               </button>
             </motion.div>
           </div>

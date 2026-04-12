@@ -100,7 +100,7 @@ export default function DashboardHeader() {
               {/* Menu items */}
               <div className="py-2 px-2">
                 <MenuItem icon="dashboard" label="דשבורד" onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} />
-                <MenuItem icon="add_circle" label="צור אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
+                <MenuItem icon="add_circle" label="הרכיבו זיכרון" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
                 <MenuItem icon="settings" label="הגדרות חשבון" onClick={() => setMenuOpen(false)} />
               </div>
 

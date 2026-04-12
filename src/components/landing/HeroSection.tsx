@@ -99,7 +99,7 @@ export default function HeroSection() {
               onClick={handleCreate}
               className="btn-press bg-deep-brown px-10 py-3.5 text-[11px] font-medium uppercase tracking-[0.18em] text-white shadow-sm transition-[background-color,transform] duration-300 hover:bg-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-deep-brown focus-visible:ring-offset-2 focus-visible:ring-offset-white md:px-12 md:py-4 md:text-[12px] md:tracking-[0.2em]"
             >
-              התחילו ליצור
+              הרכיבו זיכרון
             </button>
           </motion.div>
         </motion.div>

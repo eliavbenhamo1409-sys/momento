@@ -84,7 +84,7 @@ export default function ProductHeader({ showBack, backTo, backLabel, onBack }: P
                 }}
               >
                 <MenuBtn icon="dashboard" label="דשבורד" onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} />
-                <MenuBtn icon="add_circle" label="צור אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
+                <MenuBtn icon="add_circle" label="הרכיבו זיכרון" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
                 <div className="h-px bg-muted-border/15 my-1 mx-2" />
                 <MenuBtn icon="logout" label="התנתקות" onClick={() => { logout(); navigate('/'); setMenuOpen(false) }} danger />
               </motion.div>

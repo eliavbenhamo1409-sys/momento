@@ -110,7 +110,7 @@ export default function LandingHeader() {
                   }}
                 >
                   <DropdownItem icon="dashboard" label="דשבורד" onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} />
-                  <DropdownItem icon="add_circle" label="אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
+                  <DropdownItem icon="add_circle" label="זיכרון חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
                   <div className="mx-2 my-1 h-px bg-muted-border/15" />
                   <DropdownItem icon="logout" label="התנתקות" onClick={handleLogout} danger />
                 </motion.div>
@@ -138,7 +138,7 @@ export default function LandingHeader() {
                 borderRadius: '2px',
               }}
             >
-              התחל יצירה
+              הרכיבו זיכרון
             </motion.button>
           </>
         )}

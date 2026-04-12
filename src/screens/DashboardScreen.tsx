@@ -160,7 +160,7 @@ export default function DashboardScreen() {
               </div>
               <div>
                 <p className="text-lg font-semibold text-deep-brown mb-0.5" style={{ fontFamily: 'var(--font-family-headline)' }}>
-                  צור אלבום חדש
+                  הרכיבו זיכרון
                 </p>
                 <p className="text-sm text-secondary/80">שופכים תמונות, מקבלים אלבום. קל.</p>
               </div>
@@ -254,8 +254,8 @@ export default function DashboardScreen() {
                   <EmptyState
                     icon="palette"
                     title="פה עוד ריק"
-                    description="הגיע הזמן ליצור את האלבום הראשון שלך."
-                    actionLabel="בואו נתחיל"
+                    description="הגיע הזמן להרכיב את הזיכרון הראשון שלכם."
+                    actionLabel="הרכיבו זיכרון"
                     onAction={() => navigate('/upload')}
                   />
                 )}
