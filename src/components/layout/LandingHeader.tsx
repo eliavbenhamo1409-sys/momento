@@ -63,7 +63,7 @@ export default function LandingHeader() {
           scrolled ? 'glass-header border-b border-muted-border/15' : 'bg-transparent'
         }`}
       >
-        <BrandLogo heightClass="h-9 sm:h-10" onClick={() => navigate('/')} />
+        <BrandLogo heightClass="h-12 sm:h-14 md:h-16" onClick={() => navigate('/')} />
 
         <nav className="hidden md:flex items-center gap-8">
           {['איך זה עובד', 'מחירים', 'שאלות נפוצות'].map((item) => (

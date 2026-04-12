@@ -13,10 +13,11 @@ export default function BrandLogo({
   heightClass = 'h-8',
   onClick,
 }: BrandLogoProps) {
+  const cap = 'max-w-[min(92vw,360px)]'
   const imgTone =
     tone === 'light'
-      ? `${heightClass} w-auto max-w-[200px] object-contain brightness-0 invert opacity-90`
-      : `${heightClass} w-auto max-w-[200px] object-contain`
+      ? `${heightClass} w-auto ${cap} object-contain brightness-0 invert opacity-90`
+      : `${heightClass} w-auto ${cap} object-contain`
 
   const img = (
     <img
