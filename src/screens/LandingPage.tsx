@@ -2,6 +2,7 @@ import PageTransition from '../components/shared/PageTransition'
 import LandingHeader from '../components/layout/LandingHeader'
 import HeroSection from '../components/landing/HeroSection'
 import TrustStrip from '../components/landing/TrustStrip'
+import VideoShowcase from '../components/landing/VideoShowcase'
 import HowItWorks from '../components/landing/HowItWorks'
 import PricingSection from '../components/landing/PricingSection'
 import FaqSection from '../components/landing/FaqSection'
@@ -14,6 +15,7 @@ export default function LandingPage() {
         <LandingHeader />
         <HeroSection />
         <TrustStrip />
+        <VideoShowcase />
         <HowItWorks />
         <PricingSection />
         <FaqSection />

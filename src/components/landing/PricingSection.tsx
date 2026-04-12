@@ -34,100 +34,101 @@ export default function PricingSection() {
   }
 
   return (
-    <section ref={ref} id="מחירים" className="py-28 md:py-36 bg-surface relative">
+    <section ref={ref} id="מחירים" className="py-28 md:py-40 bg-surface relative">
       <div className="container mx-auto px-6 md:px-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          transition={{ duration: 0.6 }}
+          className="text-center mb-20"
         >
-          <p className="text-sage font-medium tracking-[0.2em] text-xs mb-4 uppercase">תמחור</p>
+          <p
+            className="text-[11px] tracking-[0.4em] uppercase text-warm-gray/50 mb-5"
+            style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}
+          >
+            Pricing
+          </p>
           <h2
-            className="text-4xl md:text-5xl text-deep-brown mb-4"
-            style={{ fontFamily: 'var(--font-family-headline)' }}
+            className="text-3xl sm:text-4xl md:text-5xl text-deep-brown mb-5"
+            style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
           >
             בלי אותיות קטנות.
           </h2>
-          <p className="text-warm-gray text-lg max-w-md mx-auto">
+          <p className="text-warm-gray/60 text-base md:text-lg max-w-md mx-auto leading-relaxed">
             הכל כלול. עיצוב, כריכה קשה, משלוח. נקודה.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-muted-border/10 max-w-5xl mx-auto items-stretch">
           {PRICING.map((plan, i) => (
             <motion.div
               key={plan.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 24 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{ y: -8, transition: { duration: 0.3 } }}
-              className={`tilt-card relative rounded-3xl p-8 flex flex-col cursor-default ${
-                plan.recommended ? 'md:scale-[1.04]' : ''
+              className={`relative p-10 md:p-12 flex flex-col cursor-default ${
+                plan.recommended ? 'bg-[#1A1714] text-white' : 'bg-white'
               }`}
-              style={{
-                background: plan.recommended ? '#1A1714' : 'white',
-                color: plan.recommended ? 'white' : undefined,
-                boxShadow: plan.recommended
-                  ? '0 20px 60px rgba(26,23,20,0.2)'
-                  : '0 2px 20px rgba(26,23,20,0.03)',
-                border: plan.recommended ? 'none' : '1px solid rgba(0,0,0,0.03)',
-              }}
             >
               {plan.recommended && (
                 <span
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-5 py-1.5 rounded-full bg-white text-deep-brown"
-                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
-                >
-                  הכי פופולרי
-                </span>
+                  className="absolute -top-px left-0 right-0 h-[2px]"
+                  style={{ background: 'linear-gradient(90deg, #B5A48A, #8B8573)' }}
+                />
               )}
 
-              <h3
-                className="text-lg font-bold mb-1"
-                style={{ fontFamily: 'var(--font-family-headline)' }}
-              >
-                {plan.name}
-              </h3>
-              <p className={`text-sm mb-6 ${plan.recommended ? 'text-white/50' : 'text-warm-gray'}`}>
-                {plan.id === 'basic' ? 'להתחלה' : plan.id === 'premium' ? 'הבחירה של רוב האנשים' : 'לרגעים שלא חוזרים'}
-              </p>
+              <div className="mb-8">
+                <p
+                  className={`text-[10px] tracking-[0.3em] uppercase mb-3 ${
+                    plan.recommended ? 'text-white/35' : 'text-warm-gray/40'
+                  }`}
+                  style={{ fontFamily: "'Cormorant Garamond', serif" }}
+                >
+                  {plan.id === 'basic' ? 'Essential' : plan.id === 'premium' ? 'Most Popular' : 'Deluxe'}
+                </p>
+                <h3
+                  className="text-lg font-semibold mb-1"
+                  style={{ fontFamily: 'var(--font-family-headline)' }}
+                >
+                  {plan.name}
+                </h3>
+                <p className={`text-sm ${plan.recommended ? 'text-white/40' : 'text-warm-gray/50'}`}>
+                  {plan.id === 'basic' ? 'להתחלה' : plan.id === 'premium' ? 'הבחירה של רוב האנשים' : 'לרגעים שלא חוזרים'}
+                </p>
+              </div>
 
               <div className="mb-8">
-                <span className="text-5xl font-bold tabular-nums" style={{ fontFamily: 'var(--font-family-headline)' }}>
+                <span
+                  className="text-4xl md:text-5xl tabular-nums"
+                  style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
+                >
                   ₪<AnimatedPrice target={plan.price} isInView={isInView} />
                 </span>
               </div>
 
-              <ul className="space-y-3 mb-8 flex-1">
+              <ul className="space-y-3.5 mb-10 flex-1">
                 {plan.features.map((f) => (
-                  <li key={f} className="flex items-center gap-2.5 text-sm">
+                  <li key={f} className="flex items-start gap-2.5 text-[14px]">
                     <Icon
                       name="check"
-                      size={16}
-                      className={plan.recommended ? 'text-white/40' : 'text-sage'}
+                      size={15}
+                      className={`mt-0.5 ${plan.recommended ? 'text-white/25' : 'text-sage/50'}`}
                     />
-                    <span className={plan.recommended ? 'text-white/80' : ''}>{f}</span>
+                    <span className={plan.recommended ? 'text-white/70' : 'text-warm-gray/70'}>{f}</span>
                   </li>
                 ))}
               </ul>
 
-              <motion.button
+              <button
                 onClick={handleSelect}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className={`w-full py-3.5 rounded-xl font-semibold transition-all ${
-                  plan.recommended ? 'text-deep-brown bg-white' : 'text-white'
+                className={`w-full py-3.5 text-[13px] tracking-[0.15em] uppercase font-medium transition-all duration-500 ${
+                  plan.recommended
+                    ? 'bg-white text-[#1A1714] hover:bg-white/90'
+                    : 'border border-deep-brown/15 text-deep-brown hover:bg-deep-brown hover:text-white'
                 }`}
-                style={{
-                  background: plan.recommended ? 'white' : '#2D2926',
-                  boxShadow: plan.recommended
-                    ? '0 4px 16px rgba(0,0,0,0.1)'
-                    : '0 4px 16px rgba(26,23,20,0.15)',
-                }}
               >
                 בחירה
-              </motion.button>
+              </button>
             </motion.div>
           ))}
         </div>

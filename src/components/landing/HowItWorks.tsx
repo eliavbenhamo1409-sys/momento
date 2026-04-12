@@ -8,35 +8,32 @@ const steps = [
     icon: 'cloud_upload',
     title: 'שופכים הכל',
     desc: 'בלי למיין. בלי לדאוג. פשוט שופכים את כל מה שיש בגלריה.',
-    accent: '#2D2926',
   },
   {
     num: '02',
     icon: 'auto_awesome',
     title: 'הקסם קורה',
     desc: 'ה-AI בוחר את התמונות הכי טובות, מסדר אותן בסיפור, ומעצב כל עמוד.',
-    accent: '#57534E',
   },
   {
     num: '03',
     icon: 'menu_book',
     title: 'מגיע הביתה',
     desc: 'אלבום מושלם בכריכה קשה, ישר לדלת. בלי לצאת מהבית.',
-    accent: '#8B8573',
   },
 ]
 
 const containerVariants = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.18, delayChildren: 0.1 } },
+  visible: { transition: { staggerChildren: 0.2, delayChildren: 0.15 } },
 }
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 40 },
+  hidden: { opacity: 0, y: 32 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] as const },
   },
 }
 
@@ -45,74 +42,64 @@ export default function HowItWorks() {
   const isInView = useInView(ref, { once: true, margin: '-80px' })
 
   return (
-    <section id="איך זה עובד" className="py-28 md:py-36 bg-surface relative overflow-hidden">
-      <div className="container mx-auto px-6 md:px-16" ref={ref}>
+    <section id="איך זה עובד" className="py-28 md:py-40 bg-surface relative overflow-hidden">
+      <div className="container mx-auto px-6 md:px-16 max-w-6xl" ref={ref}>
+        {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          className="mb-20"
+          transition={{ duration: 0.6 }}
+          className="mb-20 md:mb-28"
         >
-          <p className="text-sage font-medium tracking-[0.2em] text-xs mb-4 uppercase">
-            איך זה עובד
+          <p
+            className="text-[11px] tracking-[0.4em] uppercase text-warm-gray/50 mb-5"
+            style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}
+          >
+            How It Works
           </p>
           <h2
-            className="text-4xl md:text-5xl text-deep-brown leading-tight"
-            style={{ fontFamily: 'var(--font-family-headline)' }}
+            className="text-3xl sm:text-4xl md:text-5xl text-deep-brown leading-tight"
+            style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
           >
             שלושה צעדים.
             <br />
-            <span className="font-bold">אפס התעסקות.</span>
+            <span style={{ fontWeight: 600 }}>אפס התעסקות.</span>
           </h2>
         </motion.div>
 
+        {/* Steps grid */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate={isInView ? 'visible' : 'hidden'}
-          className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8"
+          className="grid grid-cols-1 md:grid-cols-3 gap-px bg-muted-border/10"
         >
           {steps.map((step) => (
             <motion.div
               key={step.num}
               variants={cardVariants}
-              whileHover={{ y: -8, transition: { duration: 0.3 } }}
-              className="tilt-card group relative bg-white rounded-3xl p-10 cursor-default"
-              style={{
-                boxShadow: '0 2px 20px rgba(26,23,20,0.03)',
-                border: '1px solid rgba(0,0,0,0.03)',
-              }}
+              className="group bg-surface p-10 md:p-12 cursor-default relative"
             >
-              <span
-                className="block text-[5rem] font-bold leading-none mb-6 select-none"
-                style={{
-                  fontFamily: 'var(--font-family-headline)',
-                  color: step.accent,
-                  opacity: 0.06,
-                }}
+              {/* Step number */}
+              <p
+                className="text-[11px] tracking-[0.3em] text-warm-gray/30 mb-8 uppercase"
+                style={{ fontFamily: "'Cormorant Garamond', serif" }}
               >
-                {step.num}
-              </span>
+                Step {step.num}
+              </p>
 
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
-                style={{ background: `${step.accent}0A` }}
-              >
-                <Icon name={step.icon} size={24} className="text-deep-brown" />
+              {/* Icon */}
+              <div className="w-11 h-11 rounded-full border border-muted-border/20 flex items-center justify-center mb-7 group-hover:border-deep-brown/15 transition-colors duration-500">
+                <Icon name={step.icon} size={20} className="text-deep-brown/50 group-hover:text-deep-brown/80 transition-colors duration-500" />
               </div>
 
               <h3
-                className="text-xl font-bold text-deep-brown mb-3"
-                style={{ fontFamily: 'var(--font-family-headline)' }}
+                className="text-xl md:text-2xl text-deep-brown mb-4"
+                style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 600 }}
               >
                 {step.title}
               </h3>
-              <p className="text-warm-gray leading-relaxed text-[15px]">{step.desc}</p>
-
-              <div
-                className="absolute bottom-0 left-0 right-0 h-1 rounded-b-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                style={{ background: `linear-gradient(90deg, ${step.accent}, transparent)` }}
-              />
+              <p className="text-warm-gray/70 leading-relaxed text-[15px]">{step.desc}</p>
             </motion.div>
           ))}
         </motion.div>

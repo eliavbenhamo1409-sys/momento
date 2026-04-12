@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
 import { useUIStore } from '../../store/uiStore'
 import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
@@ -17,9 +17,6 @@ export default function LandingHeader() {
     openAuthModal: s.openAuthModal,
     logout: s.logout,
   })))
-
-  const { scrollYProgress } = useScroll()
-  const progressScaleX = useTransform(scrollYProgress, [0, 1], [0, 1])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80)
@@ -51,93 +48,112 @@ export default function LandingHeader() {
 
   const initial = (userName || 'א')[0].toUpperCase()
 
+  const navColor = scrolled
+    ? 'text-warm-gray hover:text-deep-brown'
+    : 'text-white/60 hover:text-white'
+
   return (
-    <>
-      <motion.div
-        className="fixed top-0 left-0 right-0 h-[2px] z-[60] scroll-progress origin-left"
-        style={{ scaleX: progressScaleX }}
+    <header
+      className={`fixed top-0 w-full z-50 flex justify-between items-center px-8 md:px-16 py-5 transition-all duration-700 ${
+        scrolled
+          ? 'glass-header border-b border-muted-border/10'
+          : 'bg-transparent'
+      }`}
+    >
+      <BrandLogo
+        tone={scrolled ? 'dark' : 'light'}
+        heightClass="h-10 sm:h-12"
+        onClick={() => navigate('/')}
       />
 
-      <header
-        className={`fixed top-0 w-full z-50 flex justify-between items-center px-8 md:px-16 py-4 transition-all duration-500 ${
-          scrolled ? 'glass-header border-b border-muted-border/15' : 'bg-transparent'
-        }`}
-      >
-        <BrandLogo heightClass="h-16 sm:h-20 md:h-24" onClick={() => navigate('/')} />
+      <nav className="hidden md:flex items-center gap-10">
+        {['איך זה עובד', 'מחירים', 'שאלות נפוצות'].map((item) => (
+          <a
+            key={item}
+            href={`#${item}`}
+            className={`${navColor} transition-colors duration-300 text-[13px] tracking-[0.05em] font-medium`}
+          >
+            {item}
+          </a>
+        ))}
+      </nav>
 
-        <nav className="hidden md:flex items-center gap-8">
-          {['איך זה עובד', 'מחירים', 'שאלות נפוצות'].map((item) => (
-            <a
-              key={item}
-              href={`#${item}`}
-              className="hover-underline text-warm-gray hover:text-deep-brown transition-colors duration-300 text-sm font-medium"
+      <div className="flex items-center gap-5">
+        {isLoggedIn ? (
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              className="btn-press flex items-center gap-2.5 py-1.5 px-2 rounded-full hover:bg-white/10 transition-colors"
             >
-              {item}
-            </a>
-          ))}
-        </nav>
-
-        <div className="flex items-center gap-4">
-          {isLoggedIn ? (
-            <div className="relative" ref={menuRef}>
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                className="btn-press flex items-center gap-2.5 py-1.5 px-2 rounded-full hover:bg-surface-container/40 transition-colors"
+              <span
+                className={`text-sm font-medium hidden sm:block transition-colors duration-300 ${
+                  scrolled ? 'text-deep-brown' : 'text-white/70'
+                }`}
               >
-                <span className="text-sm font-medium text-deep-brown hidden sm:block">{userName}</span>
-                <div
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                  style={{ background: '#2D2926' }}
+                {userName}
+              </span>
+              <div
+                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300"
+                style={{
+                  background: scrolled ? '#2D2926' : 'rgba(255,255,255,0.15)',
+                  color: scrolled ? '#fff' : 'rgba(255,255,255,0.8)',
+                  backdropFilter: scrolled ? 'none' : 'blur(8px)',
+                }}
+              >
+                {initial}
+              </div>
+            </button>
+
+            <AnimatePresence>
+              {menuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute left-0 top-full mt-2 w-56 rounded-2xl overflow-hidden py-2 px-2"
+                  style={{
+                    background: 'rgba(255,255,255,0.95)',
+                    backdropFilter: 'blur(24px)',
+                    boxShadow: '0 8px 40px rgba(26,23,20,0.1), 0 2px 12px rgba(26,23,20,0.05)',
+                    border: '1px solid rgba(0,0,0,0.05)',
+                  }}
                 >
-                  {initial}
-                </div>
-              </button>
-
-              <AnimatePresence>
-                {menuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                    transition={{ duration: 0.2 }}
-                    className="absolute left-0 top-full mt-2 w-56 rounded-2xl overflow-hidden py-2 px-2"
-                    style={{
-                      background: 'rgba(255,255,255,0.92)',
-                      backdropFilter: 'blur(24px)',
-                      boxShadow: '0 8px 40px rgba(26,23,20,0.1), 0 2px 12px rgba(26,23,20,0.05)',
-                      border: '1px solid rgba(0,0,0,0.05)',
-                    }}
-                  >
-                    <DropdownItem icon="dashboard" label="דשבורד" onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} />
-                    <DropdownItem icon="add_circle" label="אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
-                    <div className="h-px bg-muted-border/15 my-1 mx-2" />
-                    <DropdownItem icon="logout" label="התנתקות" onClick={handleLogout} danger />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <>
-              <button
-                onClick={handleLogin}
-                className="hover-underline text-warm-gray font-medium hover:text-deep-brown transition-colors text-sm"
-              >
-                התחברות
-              </button>
-              <motion.button
-                onClick={handleCreate}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
-                className="text-white px-6 py-2.5 rounded-full font-medium text-sm"
-                style={{ background: '#2D2926' }}
-              >
-                התחל יצירה
-              </motion.button>
-            </>
-          )}
-        </div>
-      </header>
-    </>
+                  <DropdownItem icon="dashboard" label="דשבורד" onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} />
+                  <DropdownItem icon="add_circle" label="אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
+                  <div className="h-px bg-muted-border/15 my-1 mx-2" />
+                  <DropdownItem icon="logout" label="התנתקות" onClick={handleLogout} danger />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={handleLogin}
+              className={`${navColor} font-medium transition-colors duration-300 text-[13px] tracking-wide`}
+            >
+              התחברות
+            </button>
+            <motion.button
+              onClick={handleCreate}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              className="px-7 py-2.5 text-[12px] font-medium tracking-[0.12em] transition-all duration-500"
+              style={{
+                background: scrolled ? '#2D2926' : 'rgba(255,255,255,0.12)',
+                color: scrolled ? '#fff' : 'rgba(255,255,255,0.85)',
+                backdropFilter: scrolled ? 'none' : 'blur(12px)',
+                border: scrolled ? '1px solid transparent' : '1px solid rgba(255,255,255,0.2)',
+                borderRadius: '2px',
+              }}
+            >
+              התחל יצירה
+            </motion.button>
+          </>
+        )}
+      </div>
+    </header>
   )
 }
 

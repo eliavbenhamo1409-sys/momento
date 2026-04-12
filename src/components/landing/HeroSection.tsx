@@ -1,27 +1,21 @@
-import { useRef, useEffect, useState } from 'react'
-import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react'
+import { useRef } from 'react'
+import { motion, useScroll, useTransform } from 'motion/react'
 import { useNavigate } from 'react-router'
 import { useUIStore } from '../../store/uiStore'
-
-const ROTATING = ['מושלם', 'שלכם', 'אישי', 'אמיתי']
 
 export default function HeroSection() {
   const navigate = useNavigate()
   const isLoggedIn = useUIStore((s) => s.isLoggedIn)
   const openAuthModal = useUIStore((s) => s.openAuthModal)
   const sectionRef = useRef<HTMLElement>(null)
-  const [wordIdx, setWordIdx] = useState(0)
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start start', 'end start'],
   })
-  const textOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0])
-
-  useEffect(() => {
-    const t = setInterval(() => setWordIdx((i) => (i + 1) % ROTATING.length), 3000)
-    return () => clearInterval(t)
-  }, [])
+  const imgScale = useTransform(scrollYProgress, [0, 1], [1, 1.08])
+  const contentY = useTransform(scrollYProgress, [0, 0.5], [0, 60])
+  const contentOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0])
 
   const handleCreate = () => {
     if (isLoggedIn) navigate('/upload')
@@ -34,189 +28,100 @@ export default function HeroSection() {
   }
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative min-h-[96vh] pt-32 pb-24 flex items-center overflow-hidden"
-    >
-      {/* Warm neutral bg */}
-      <div className="absolute inset-0 hero-gradient pointer-events-none" />
+    <section ref={sectionRef} className="relative h-screen w-full overflow-hidden">
+      {/* Full-bleed background */}
+      <motion.div className="absolute inset-0" style={{ scale: imgScale }}>
+        <img
+          src="/hero-nature.png"
+          alt="אלבום תמונות בחיק הטבע"
+          className="w-full h-full object-cover"
+        />
+      </motion.div>
 
+      {/* Gradient overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'linear-gradient(to top, rgba(26,23,20,0.65) 0%, rgba(26,23,20,0.25) 35%, rgba(26,23,20,0.08) 70%, rgba(26,23,20,0.15) 100%)',
+        }}
+      />
+
+      {/* Content — anchored to bottom-center */}
       <motion.div
-        style={{ opacity: textOpacity }}
-        className="container mx-auto px-5 sm:px-8 md:px-12 lg:px-10 xl:px-14 relative z-10 max-w-[1400px]"
+        style={{ y: contentY, opacity: contentOpacity }}
+        className="relative z-10 h-full flex flex-col items-center justify-end pb-20 md:pb-28 lg:pb-32 text-center px-6"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.14fr)] gap-12 lg:gap-14 xl:gap-16 items-center">
+        {/* English editorial tagline */}
+        <motion.p
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+          className="text-[11px] md:text-[13px] tracking-[0.5em] uppercase text-white/50 mb-7"
+          style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}
+        >
+          The Art of Remembering
+        </motion.p>
 
-          {/* ── Text ──────────────────────────────── */}
-          <div className="order-2 lg:order-1 max-w-2xl lg:max-w-none">
-            <motion.div
-              initial={{ opacity: 0, y: 24 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <p
-                className="text-sm tracking-[0.2em] text-warm-gray mb-8 font-medium uppercase"
-                style={{ fontFamily: 'var(--font-family-body)' }}
-              >
-                נ.ב. — האלבום מכין את עצמו
-              </p>
+        {/* Hebrew headline */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.45, ease: [0.22, 1, 0.36, 1] }}
+          className="text-[2.6rem] sm:text-5xl md:text-6xl lg:text-7xl text-white leading-[1.08] mb-6"
+          style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
+        >
+          התמונות שלכם.
+          <br />
+          <span style={{ fontWeight: 600 }}>באלבום מושלם.</span>
+        </motion.h1>
 
-              <h1
-                className="text-[2.8rem] sm:text-[3.5rem] lg:text-[4.4rem] leading-[1.06] mb-8 text-deep-brown"
-                style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 400 }}
-              >
-                התמונות שלכם.
-                <br />
-                <span className="font-bold">באלבום </span>
-                <span className="relative inline-block min-w-[100px] sm:min-w-[140px]">
-                  <AnimatePresence mode="wait">
-                    <motion.span
-                      key={wordIdx}
-                      initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
-                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                      exit={{ opacity: 0, y: -20, filter: 'blur(4px)' }}
-                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
-                      className="absolute right-0 font-bold text-deep-brown"
-                    >
-                      {ROTATING[wordIdx]}.
-                    </motion.span>
-                  </AnimatePresence>
-                  <span className="invisible font-bold">ייחודי.</span>
-                </span>
-              </h1>
-            </motion.div>
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.7, delay: 0.75 }}
+          className="text-[15px] md:text-lg text-white/55 mb-12 max-w-md leading-relaxed"
+        >
+          שופכים תמונות מהטלפון. מקבלים אלבום מעוצב בדלת.
+          <br className="hidden sm:block" />
+          <span className="text-white/70">בין לבין — אפס עבודה.</span>
+        </motion.p>
 
-            <motion.p
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
-              className="text-lg sm:text-xl text-warm-gray leading-relaxed mb-10 max-w-lg"
-            >
-              שופכים תמונות מהטלפון.
-              <br />
-              מקבלים אלבום מעוצב בדלת.
-              <br />
-              <span className="text-deep-brown font-medium">בין לבין — אפס עבודה.</span>
-            </motion.p>
+        {/* CTAs */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 1 }}
+          className="flex flex-col sm:flex-row gap-5 items-center"
+        >
+          <button
+            onClick={handleCreate}
+            className="border border-white/70 text-white px-12 py-4 tracking-[0.2em] uppercase text-[12px] font-medium hover:bg-white hover:text-[#1A1714] transition-all duration-500 backdrop-blur-sm"
+          >
+            התחילו ליצור
+          </button>
+          <button
+            onClick={handleExisting}
+            className="text-white/40 hover:text-white/70 transition-colors duration-300 text-[13px] tracking-wide"
+          >
+            יש לי כבר חשבון
+          </button>
+        </motion.div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="flex flex-col sm:flex-row gap-4 items-start"
-            >
-              <motion.button
-                onClick={handleCreate}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="group relative py-4 px-10 rounded-full text-lg font-semibold text-white overflow-hidden"
-                style={{
-                  background: '#2D2926',
-                  boxShadow: '0 4px 24px rgba(26,23,20,0.2)',
-                }}
-              >
-                <span className="relative z-10 flex items-center gap-2">
-                  נתחיל?
-                  <motion.span
-                    className="inline-block"
-                    animate={{ x: [0, -4, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
-                  >
-                    ←
-                  </motion.span>
-                </span>
-              </motion.button>
-
-              <motion.button
-                onClick={handleExisting}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                className="py-4 px-8 rounded-full text-base font-medium text-deep-brown/70 hover:text-deep-brown transition-colors"
-              >
-                יש לי כבר אלבום
-              </motion.button>
-            </motion.div>
-
-            {/* Stats */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="mt-14 flex items-center gap-8"
-            >
-              {[
-                { num: '500+', label: 'אלבומים נוצרו' },
-                { num: '< 2 דק׳', label: 'זמן יצירה' },
-                { num: '4.9', label: 'דירוג ממוצע' },
-              ].map((stat, i) => (
-                <div key={i} className={i > 0 ? 'border-r border-muted-border/30 pr-8' : ''}>
-                  <p className="text-lg font-bold text-deep-brown tabular-nums" style={{ fontFamily: 'var(--font-family-headline)' }}>
-                    {stat.num}
-                  </p>
-                  <p className="text-xs text-warm-gray">{stat.label}</p>
-                </div>
-              ))}
-            </motion.div>
-          </div>
-
-          {/* ── Image ─────────────────────────────── */}
-          <div className="order-1 lg:order-2 flex justify-center lg:justify-end relative w-full">
-            <div className="relative">
-              {/* Soft glow behind */}
-              <div
-                className="absolute -inset-8 rounded-[2rem] -z-10 opacity-60"
-                style={{
-                  background: 'radial-gradient(ellipse at center, rgba(181,164,138,0.15) 0%, transparent 70%)',
-                  filter: 'blur(30px)',
-                }}
-              />
-
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full max-w-[min(94vw,440px)] aspect-[95/112] sm:max-w-[min(92vw,500px)] lg:max-w-none lg:w-[min(52vw,700px)] lg:aspect-auto lg:h-[min(62vh,720px)] rounded-2xl overflow-hidden"
-                style={{
-                  boxShadow: '0 30px 80px rgba(26,23,20,0.12), 0 10px 30px rgba(26,23,20,0.06)',
-                }}
-              >
-                <img
-                  src="/hero-nature.png"
-                  alt="אלבום תמונות בחיק הטבע"
-                  className="w-full h-full object-cover"
-                />
-              </motion.div>
-
-              {/* Floating badge - bottom left */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.8, type: 'spring', stiffness: 200, damping: 20 }}
-                className="absolute -bottom-4 -left-6 bg-white rounded-2xl py-3.5 px-5 z-10 flex items-center gap-3"
-                style={{ boxShadow: '0 12px 40px rgba(26,23,20,0.08)' }}
-              >
-                <span className="text-xl">✦</span>
-                <div>
-                  <p className="text-xs font-bold text-deep-brown" style={{ fontFamily: 'var(--font-family-headline)' }}>
-                    מוכן בדקות
-                  </p>
-                  <p className="text-[10px] text-warm-gray">AI עושה הכל</p>
-                </div>
-              </motion.div>
-
-              {/* Floating badge - top right */}
-              <motion.div
-                initial={{ opacity: 0, scale: 0.85, y: -20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 1, type: 'spring', stiffness: 200, damping: 20 }}
-                className="absolute -top-3 -right-5 bg-deep-brown text-white rounded-full py-2 px-4 z-10"
-                style={{ boxShadow: '0 8px 24px rgba(26,23,20,0.2)' }}
-              >
-                <p className="text-[11px] font-bold">משלוח חינם</p>
-              </motion.div>
-            </div>
-          </div>
-        </div>
+        {/* Scroll indicator */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1.8, duration: 0.8 }}
+          className="absolute bottom-6 left-1/2 -translate-x-1/2"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+            className="w-px h-8 bg-gradient-to-b from-transparent via-white/30 to-transparent"
+          />
+        </motion.div>
       </motion.div>
     </section>
   )

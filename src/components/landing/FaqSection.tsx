@@ -17,7 +17,7 @@ const faqs = [
   },
   {
     q: 'אפשר לערוך אחרי שה-AI סיים?',
-    a: 'ברור. להזיז תמונות, להחליף, להוסיף טקסט, לשנות כריכה — יש עורך drag & drop שמרגיש כמו משחק. לא כמו עבודה.',
+    a: 'ברור. להזיז תמונות, להוסיף טקסט, לשנות כריכה — יש עורך drag & drop שמרגיש כמו משחק. לא כמו עבודה.',
   },
   {
     q: 'למה לא לעשות את זה לבד ב-Canva?',
@@ -31,57 +31,62 @@ export default function FaqSection() {
   const isInView = useInView(ref, { once: true, margin: '-60px' })
 
   return (
-    <section ref={ref} id="שאלות נפוצות" className="py-28 md:py-36 bg-surface">
+    <section ref={ref} id="שאלות נפוצות" className="py-28 md:py-40 bg-surface">
       <div className="container mx-auto px-6 md:px-16 max-w-3xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.5 }}
-          className="mb-14"
+          transition={{ duration: 0.6 }}
+          className="mb-16 md:mb-20"
         >
-          <p className="text-sage font-medium tracking-[0.2em] text-xs mb-4 uppercase">שאלות</p>
+          <p
+            className="text-[11px] tracking-[0.4em] uppercase text-warm-gray/50 mb-5"
+            style={{ fontFamily: "'Cormorant Garamond', serif", fontWeight: 500 }}
+          >
+            Questions
+          </p>
           <h2
-            className="text-4xl md:text-5xl text-deep-brown leading-tight"
-            style={{ fontFamily: 'var(--font-family-headline)' }}
+            className="text-3xl sm:text-4xl md:text-5xl text-deep-brown leading-tight"
+            style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
           >
             עדיין מהססים?
             <br />
-            <span className="font-bold">בואו נסגור את זה.</span>
+            <span style={{ fontWeight: 600 }}>בואו נסגור את זה.</span>
           </h2>
         </motion.div>
 
-        <div className="space-y-3">
+        <div className="divide-y divide-muted-border/12">
           {faqs.map((faq, i) => {
             const isOpen = openIdx === i
             return (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 16 }}
+                initial={{ opacity: 0, y: 12 }}
                 animate={isInView ? { opacity: 1, y: 0 } : {}}
-                transition={{ delay: i * 0.08, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                className="rounded-2xl overflow-hidden transition-all duration-300"
-                style={{
-                  background: isOpen ? 'white' : 'rgba(255,255,255,0.5)',
-                  boxShadow: isOpen ? '0 8px 32px rgba(26,23,20,0.05)' : 'none',
-                  border: '1px solid rgba(0,0,0,0.03)',
-                }}
+                transition={{ delay: i * 0.06, duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
               >
                 <button
                   onClick={() => setOpenIdx(isOpen ? null : i)}
-                  className="w-full flex justify-between items-center p-6 text-right group"
+                  className="w-full flex justify-between items-center py-7 text-right group"
                 >
                   <span
-                    className="text-base font-semibold text-deep-brown group-hover:text-sage transition-colors"
-                    style={{ fontFamily: 'var(--font-family-headline)' }}
+                    className="text-[15px] md:text-base font-medium text-deep-brown group-hover:text-deep-brown/70 transition-colors duration-300"
+                    style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
                   >
                     {faq.q}
                   </span>
                   <motion.div
                     animate={{ rotate: isOpen ? 45 : 0 }}
-                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-                    className="shrink-0 mr-4"
+                    transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+                    className="shrink-0 mr-6"
                   >
-                    <Icon name="add" size={22} className={isOpen ? 'text-deep-brown' : 'text-warm-gray/40'} />
+                    <Icon
+                      name="add"
+                      size={20}
+                      className={`transition-colors duration-300 ${
+                        isOpen ? 'text-deep-brown/60' : 'text-warm-gray/25'
+                      }`}
+                    />
                   </motion.div>
                 </button>
 
@@ -97,7 +102,7 @@ export default function FaqSection() {
                       }}
                       className="overflow-hidden"
                     >
-                      <div className="px-6 pb-6 text-warm-gray leading-relaxed text-[15px]">
+                      <div className="pb-7 text-warm-gray/60 leading-relaxed text-[15px] max-w-xl">
                         {faq.a}
                       </div>
                     </motion.div>
