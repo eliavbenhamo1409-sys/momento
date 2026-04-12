@@ -25,7 +25,7 @@ export default function Footer() {
               <div className="flex flex-col gap-2.5">
                 <a href="#איך זה עובד" className="text-sm text-white/50 hover:text-white transition-colors">איך זה עובד</a>
                 <a href="#מחירים" className="text-sm text-white/50 hover:text-white transition-colors">מחירים</a>
-                <a href="#דוגמאות" className="text-sm text-white/50 hover:text-white transition-colors">דוגמאות</a>
+                <a href="#שאלות נפוצות" className="text-sm text-white/50 hover:text-white transition-colors">שאלות נפוצות</a>
               </div>
             </div>
             <div>

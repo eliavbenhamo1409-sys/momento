@@ -33,7 +33,11 @@ const containerVariants = {
 
 const cardVariants = {
   hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as const },
+  },
 }
 
 export default function HowItWorks() {
@@ -94,7 +98,7 @@ export default function HowItWorks() {
                 className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5 transition-transform duration-300 group-hover:scale-110"
                 style={{ background: `${step.accent}0A` }}
               >
-                <Icon name={step.icon} size={24} style={{ color: step.accent }} />
+                <Icon name={step.icon} size={24} className="text-deep-brown" />
               </div>
 
               <h3

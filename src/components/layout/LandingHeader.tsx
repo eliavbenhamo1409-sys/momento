@@ -71,7 +71,7 @@ export default function LandingHeader() {
         </div>
 
         <nav className="hidden md:flex items-center gap-8">
-          {['איך זה עובד', 'דוגמאות', 'מחירים', 'שאלות נפוצות'].map((item) => (
+          {['איך זה עובד', 'מחירים', 'שאלות נפוצות'].map((item) => (
             <a
               key={item}
               href={`#${item}`}

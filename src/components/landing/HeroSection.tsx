@@ -76,27 +76,23 @@ export default function HeroSection() {
                 className="text-[2.8rem] sm:text-[3.5rem] lg:text-[4.4rem] leading-[1.06] mb-8 text-deep-brown"
                 style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 400 }}
               >
-                אלף תמונות בגלריה
+                התמונות שלכם.
                 <br />
-                <span className="font-bold">ואף אחת על הקיר.</span>
-                <br />
-                <span className="relative inline-block mt-1">
-                  <span className="text-warm-gray font-light">זה נגמר </span>
-                  <span className="relative inline-block min-w-[100px] sm:min-w-[140px]">
-                    <AnimatePresence mode="wait">
-                      <motion.span
-                        key={wordIdx}
-                        initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
-                        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                        exit={{ opacity: 0, y: -20, filter: 'blur(4px)' }}
-                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-                        className="absolute right-0 font-bold text-deep-brown"
-                      >
-                        {ROTATING[wordIdx]}.
-                      </motion.span>
-                    </AnimatePresence>
-                    <span className="invisible font-bold">ייחודי.</span>
-                  </span>
+                <span className="font-bold">באלבום </span>
+                <span className="relative inline-block min-w-[100px] sm:min-w-[140px]">
+                  <AnimatePresence mode="wait">
+                    <motion.span
+                      key={wordIdx}
+                      initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
+                      animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                      exit={{ opacity: 0, y: -20, filter: 'blur(4px)' }}
+                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] as const }}
+                      className="absolute right-0 font-bold text-deep-brown"
+                    >
+                      {ROTATING[wordIdx]}.
+                    </motion.span>
+                  </AnimatePresence>
+                  <span className="invisible font-bold">ייחודי.</span>
                 </span>
               </h1>
             </motion.div>
@@ -160,7 +156,7 @@ export default function HeroSection() {
               className="mt-14 flex items-center gap-8"
             >
               {[
-                { num: '2,400+', label: 'אלבומים החודש' },
+                { num: '500+', label: 'אלבומים נוצרו' },
                 { num: '< 2 דק׳', label: 'זמן יצירה' },
                 { num: '4.9', label: 'דירוג ממוצע' },
               ].map((stat, i) => (
@@ -233,7 +229,7 @@ export default function HeroSection() {
                 className="absolute -top-3 -right-5 bg-deep-brown text-white rounded-full py-2 px-4 z-10"
                 style={{ boxShadow: '0 8px 24px rgba(26,23,20,0.2)' }}
               >
-                <p className="text-[11px] font-bold">משלוח חינם 🚀</p>
+                <p className="text-[11px] font-bold">משלוח חינם</p>
               </motion.div>
             </motion.div>
           </motion.div>
