@@ -137,79 +137,70 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
                 />
               )}
 
-              {/* Darkening veil for readability where steps sit */}
               <div
-                className="pointer-events-none absolute inset-0 bg-black/25"
+                className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/30 via-black/10 to-transparent"
                 aria-hidden
               />
             </motion.div>
           ))}
         </div>
 
-        {/* 3-step journey — centered overlay on the dividing line */}
+        {/* 3-step journey — horizontal strip centered on divider */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={effectiveInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 0.7, delay: 0.5 }}
-          className="pointer-events-none absolute inset-0 z-30 hidden items-center justify-center md:flex"
+          initial={{ opacity: 0 }}
+          animate={effectiveInView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="pointer-events-none absolute inset-x-0 bottom-0 top-0 z-30 hidden items-center justify-center md:flex"
         >
-          <div className="flex flex-col items-center gap-10">
+          <div className="flex items-center gap-5 lg:gap-7">
             {STEPS.map((step, i) => (
-              <div key={step.num} className="flex flex-col items-center gap-2.5">
-                {/* numbered circle */}
-                <span
-                  className="flex h-12 w-12 items-center justify-center rounded-full border border-white/30 text-[11px] font-medium tracking-widest text-white/80 backdrop-blur-md"
-                  style={{ background: 'rgba(255,255,255,0.06)' }}
-                >
-                  {step.num}
-                </span>
-                {/* label */}
-                <span
-                  className="text-center text-[13px] font-medium leading-snug tracking-wide text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]"
-                  style={{ fontFamily: "'Allura', cursive", fontSize: '1.15rem' }}
-                >
-                  {step.text}
-                </span>
-                {/* connector line */}
-                {i < STEPS.length - 1 && (
+              <div key={step.num} className="flex items-center gap-5 lg:gap-7">
+                <div className="flex items-center gap-2.5">
                   <span
-                    className="mt-1 block h-6 w-px bg-gradient-to-b from-white/30 to-transparent"
-                    aria-hidden
-                  />
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] font-light tracking-[0.15em] text-white/70"
+                  >
+                    {step.num}
+                  </span>
+                  <span
+                    className="whitespace-nowrap text-[13px] font-light tracking-[0.04em] text-white/85"
+                    style={{ fontFamily: 'var(--font-family-headline)' }}
+                  >
+                    {step.text}
+                  </span>
+                </div>
+                {i < STEPS.length - 1 && (
+                  <span className="block h-px w-6 bg-white/20 lg:w-8" aria-hidden />
                 )}
               </div>
             ))}
           </div>
         </motion.div>
 
-        {/* Mobile: steps strip below the media */}
+        {/* Mobile: compact steps row */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={effectiveInView ? { opacity: 1 } : {}}
           transition={{ duration: 0.6, delay: 0.55 }}
-          className="flex flex-col items-center gap-6 bg-deep-brown px-6 py-10 md:hidden"
+          className="flex items-center justify-center gap-3 bg-deep-brown px-4 py-5 md:hidden"
         >
-          <div className="flex w-full max-w-sm items-start justify-between gap-2">
-            {STEPS.map((step, i) => (
-              <div key={step.num} className="flex flex-1 flex-col items-center gap-2 text-center">
-                <span
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 text-[9px] font-medium tracking-widest text-white/80"
-                  style={{ background: 'rgba(255,255,255,0.06)' }}
-                >
+          {STEPS.map((step, i) => (
+            <div key={step.num} className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/20 text-[8px] font-light tracking-[0.15em] text-white/70">
                   {step.num}
                 </span>
                 <span
-                  className="text-[12px] leading-snug text-white/75"
-                  style={{ fontFamily: "'Allura', cursive", fontSize: '0.95rem' }}
+                  className="whitespace-nowrap text-[10px] font-light tracking-[0.02em] text-white/80"
+                  style={{ fontFamily: 'var(--font-family-headline)' }}
                 >
                   {step.text}
                 </span>
-                {i < STEPS.length - 1 && (
-                  <span className="sr-only">→</span>
-                )}
               </div>
-            ))}
-          </div>
+              {i < STEPS.length - 1 && (
+                <span className="block h-px w-3 bg-white/20" aria-hidden />
+              )}
+            </div>
+          ))}
         </motion.div>
       </div>
     </section>
