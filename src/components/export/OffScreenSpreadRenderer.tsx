@@ -3,19 +3,21 @@ import type {
   EditorSpread,
   SpreadDesign,
   ResolvedSpreadStyle,
+  ResolvedFrame,
   EnrichedSlotData,
+  PhotoElement,
+  TemplateVariant,
 } from '../../types'
 import {
-  AbsolutePhotoElement,
   AbsoluteQuoteElement,
   AbsoluteDecorativeElement,
-  LegacyPhotoSlot,
   LegacyQuoteBlock,
   LegacyCornerOrnaments,
 } from '../editor/EditorCanvas'
 import { useEditorStore } from '../../store/editorStore'
 import { DEFAULT_STYLE, getTexturePattern } from '../editor/editorDefaults'
 import { getTemplate } from '../../lib/layoutGrammar'
+import { applyPageMarginToPercentRect } from '../../lib/layoutInset'
 import { ALBUM_SIZES } from '../../lib/constants'
 
 const RENDER_WIDTH_PER_PAGE = 1200
@@ -27,6 +29,182 @@ interface OffScreenSpreadRendererProps {
   onComplete: () => void
   onError: (error: Error) => void
 }
+
+// ─── Export-only photo renderer (background-image, no <img>) ──────────
+
+function ExportPhoto({
+  src,
+  objectPosition,
+  objectFit,
+  transform,
+  transformOrigin,
+}: {
+  src: string
+  objectPosition?: string
+  objectFit?: string
+  transform?: string
+  transformOrigin?: string
+}) {
+  return (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        backgroundImage: `url("${src}")`,
+        backgroundSize: objectFit || 'cover',
+        backgroundPosition: objectPosition || '50% 35%',
+        backgroundRepeat: 'no-repeat',
+        transform,
+        transformOrigin,
+      }}
+    />
+  )
+}
+
+// ─── Export AbsolutePhotoElement (replaces editor's interactive version) ──
+
+function ExportAbsolutePhotoElement({
+  element,
+  layoutInsetPercent,
+  collectivePaddingPx,
+  collectiveBorderRadiusPx,
+}: {
+  element: PhotoElement
+  layoutInsetPercent: number
+  collectivePaddingPx: number | null
+  collectiveBorderRadiusPx: number | null
+}) {
+  if (!element.photoUrl) return null
+
+  const layoutRect = applyPageMarginToPercentRect(
+    element.x,
+    element.y,
+    element.width,
+    element.height,
+    layoutInsetPercent,
+  )
+  const pad = collectivePaddingPx != null ? collectivePaddingPx : element.padding
+  const radius = collectiveBorderRadiusPx != null ? collectiveBorderRadiusPx : element.borderRadius
+  const currentScale = element.scale ?? 1
+  const objPos = element.objectPosition || '50% 35%'
+
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        left: `${layoutRect.x}%`,
+        top: `${layoutRect.y}%`,
+        width: `${layoutRect.width}%`,
+        height: `${layoutRect.height}%`,
+        zIndex: element.zIndex,
+        borderWidth: element.borderWidth > 0 && !element.clipPath ? element.borderWidth : undefined,
+        borderColor: element.borderWidth > 0 && !element.clipPath ? element.borderColor : undefined,
+        borderStyle: element.borderWidth > 0 && !element.clipPath ? 'solid' : undefined,
+        borderRadius: element.clipPath ? undefined : radius,
+        boxShadow: element.shadow || undefined,
+        padding: pad > 0 && !element.clipPath ? pad : undefined,
+        backgroundColor: pad > 0 && !element.clipPath ? '#FFFFFF' : undefined,
+        transform: element.rotation !== 0 ? `rotate(${element.rotation.toFixed(1)}deg)` : undefined,
+        overflow: 'hidden',
+        clipPath: element.clipPath || undefined,
+        WebkitClipPath: element.clipPath || undefined,
+      }}
+    >
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          borderRadius: radius > 8
+            ? Math.max(4, radius * 0.6)
+            : Math.max(0, radius - pad),
+        }}
+      >
+        <ExportPhoto
+          src={element.photoUrl}
+          objectPosition={objPos}
+          objectFit={element.objectFit || 'cover'}
+          transform={`scale(${Math.max(1.12, currentScale)})`}
+          transformOrigin={objPos}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ─── Export LegacyPhotoSlot (replaces editor's motion.div + <img>) ────
+
+function ExportLegacyPhotoSlot({
+  src,
+  objectPosition,
+  transform,
+  frame,
+  variant,
+  slotImportance,
+}: {
+  src: string
+  objectPosition?: string
+  transform?: string
+  frame: ResolvedFrame
+  variant?: TemplateVariant | null
+  slotImportance?: string
+}) {
+  const adj = variant?.adjustments
+  const scale = adj?.scalePhotos ?? 1
+  const isHero = slotImportance === 'hero'
+  const offset = isHero && adj?.offsetPrimaryPhoto
+    ? adj.offsetPrimaryPhoto
+    : null
+
+  const rotation = useMemo(() => {
+    const range = adj?.photoRotation ?? frame.rotationRange
+    if (!range || (range[0] === 0 && range[1] === 0)) return 0
+    let hash = 0
+    for (let i = 0; i < src.length; i++) {
+      hash = ((hash << 5) - hash + src.charCodeAt(i)) | 0
+    }
+    const pseudo = ((hash >>> 0) % 10000) / 10000
+    return range[0] + pseudo * (range[1] - range[0])
+  }, [adj?.photoRotation, frame.rotationRange, src])
+
+  const frameStyle: React.CSSProperties = {
+    position: 'relative',
+    overflow: 'hidden',
+    borderWidth: frame.borderWidth > 0 ? frame.borderWidth : undefined,
+    borderColor: frame.borderWidth > 0 ? frame.borderColor : undefined,
+    borderStyle: frame.borderWidth > 0 ? 'solid' : undefined,
+    borderRadius: frame.borderRadius,
+    boxShadow: frame.shadow !== 'none' ? frame.shadow : undefined,
+    padding: frame.innerPadding > 0 ? frame.innerPadding : undefined,
+    transform: [
+      scale !== 1 ? `scale(${scale})` : '',
+      rotation !== 0 ? `rotate(${rotation.toFixed(1)}deg)` : '',
+      offset ? `translate(${offset.x}%, ${offset.y}%)` : '',
+    ].filter(Boolean).join(' ') || undefined,
+  }
+
+  return (
+    <div style={frameStyle}>
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          overflow: 'hidden',
+          borderRadius: Math.max(0, frame.borderRadius - frame.innerPadding),
+        }}
+      >
+        <ExportPhoto
+          src={src}
+          objectPosition={objectPosition || '50% 35%'}
+          objectFit="cover"
+          transform={transform || undefined}
+        />
+      </div>
+    </div>
+  )
+}
+
+// ─── Page Background ──────────────────────────────────────────────────
 
 function ExportPageBackground({
   design,
@@ -194,6 +372,8 @@ function ExportPageBackground({
   )
 }
 
+// ─── Absolute Elements ────────────────────────────────────────────────
+
 function ExportAbsoluteElements({
   spread,
   design,
@@ -216,14 +396,9 @@ function ExportAbsoluteElements({
       {elements.map((el, i) => {
         if (el.type === 'photo') {
           return (
-            <AbsolutePhotoElement
+            <ExportAbsolutePhotoElement
               key={`${spread.id}-${el.slotId}`}
               element={el}
-              spreadId={spread.id}
-              elementIndex={i}
-              isSelected={false}
-              isSwapping={false}
-              onSelect={() => {}}
               layoutInsetPercent={layoutInsetPercent}
               collectivePaddingPx={collectivePaddingPx}
               collectiveBorderRadiusPx={collectiveBorderRadiusPx}
@@ -254,6 +429,8 @@ function ExportAbsoluteElements({
   )
 }
 
+// ─── Overlay Template ─────────────────────────────────────────────────
+
 const OVERLAY_TEMPLATES: Record<string, 'left' | 'right'> = {
   'photo-over-photo': 'left',
   'photo-over-photo-right': 'right',
@@ -282,16 +459,18 @@ function ExportOverlayPageElements({
   const overlaySlotData = overlaySrc ? slotDataByUrl.get(overlaySrc) as EnrichedSlotData | undefined : undefined
 
   return (
-    <div className="w-full h-full relative z-[1]">
+    <div style={{ width: '100%', height: '100%', position: 'relative', zIndex: 1 }}>
       {bgSrc && (
         <div
-          className="absolute inset-0 overflow-hidden"
-          style={{ borderRadius: style.frame.borderRadius }}
+          style={{
+            position: 'absolute',
+            inset: 0,
+            overflow: 'hidden',
+            borderRadius: style.frame.borderRadius,
+          }}
         >
-          <LegacyPhotoSlot
+          <ExportLegacyPhotoSlot
             src={bgSrc}
-            isSelected={false}
-            onSelect={() => {}}
             objectPosition={bgSlotData?.objectPosition}
             transform={bgSlotData?.transform}
             frame={{ ...style.frame, borderWidth: 0, shadow: 'none', innerPadding: 0 }}
@@ -303,8 +482,9 @@ function ExportOverlayPageElements({
 
       {overlaySrc && (
         <div
-          className="absolute z-10"
           style={{
+            position: 'absolute',
+            zIndex: 10,
             right: side === 'left' ? '6%' : undefined,
             left: side === 'right' ? '6%' : undefined,
             bottom: '6%',
@@ -313,16 +493,17 @@ function ExportOverlayPageElements({
           }}
         >
           <div
-            className="w-full h-full rounded-xl overflow-hidden"
             style={{
+              width: '100%',
+              height: '100%',
+              borderRadius: 12,
+              overflow: 'hidden',
               boxShadow: '0 8px 32px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.15)',
               border: '3px solid rgba(255,255,255,0.85)',
             }}
           >
-            <LegacyPhotoSlot
+            <ExportLegacyPhotoSlot
               src={overlaySrc}
-              isSelected={false}
-              onSelect={() => {}}
               objectPosition={overlaySlotData?.objectPosition}
               transform={overlaySlotData?.transform}
               frame={{ ...style.frame, borderWidth: 0, borderRadius: 12, shadow: 'none', innerPadding: 0 }}
@@ -335,6 +516,8 @@ function ExportOverlayPageElements({
     </div>
   )
 }
+
+// ─── Legacy Elements ──────────────────────────────────────────────────
 
 function ExportLegacyElements({
   spread,
@@ -370,8 +553,8 @@ function ExportLegacyElements({
 
   if (template && pageSlots.length > 0 && photos.length > 0) {
     return (
-      <div className="w-full h-full relative z-[1]" style={{ padding: `${margin}%` }}>
-        <div className="w-full h-full relative">
+      <div style={{ width: '100%', height: '100%', position: 'relative', zIndex: 1, padding: `${margin}%` }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative' }}>
           {pageSlots.map((slot, i) => {
             const src = photos[i]
             if (!src) return null
@@ -380,18 +563,16 @@ function ExportLegacyElements({
             return (
               <div
                 key={`${spread.id}-${side}-${i}`}
-                className="absolute [&>*]:!w-full [&>*]:!h-full"
                 style={{
+                  position: 'absolute',
                   left: `${slot.x}%`,
                   top: `${slot.y}%`,
                   width: `${slot.width}%`,
                   height: `${slot.height}%`,
                 }}
               >
-                <LegacyPhotoSlot
+                <ExportLegacyPhotoSlot
                   src={src}
-                  isSelected={false}
-                  onSelect={() => {}}
                   objectPosition={slotData?.objectPosition}
                   transform={slotData?.transform}
                   frame={frame}
@@ -408,17 +589,15 @@ function ExportLegacyElements({
 
   if (side === 'left') {
     return (
-      <div className="w-full h-full flex flex-col relative z-[1]" style={{ padding: `${margin}%`, gap: 0 }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1, padding: `${margin}%`, gap: 0 }}>
         {photos.map((src, i) => {
-          if (!src) return <div key={`empty-${i}`} className="flex-1 min-h-0" />
+          if (!src) return <div key={`empty-${i}`} style={{ flex: 1, minHeight: 0 }} />
           const slotData = slotDataByUrl.get(src) as EnrichedSlotData | undefined
           const frame = slotData?.frame ?? style.frame
           return (
-            <LegacyPhotoSlot
+            <ExportLegacyPhotoSlot
               key={`${spread.id}-left-${i}`}
               src={src}
-              isSelected={false}
-              onSelect={() => {}}
               objectPosition={slotData?.objectPosition}
               transform={slotData?.transform}
               frame={frame}
@@ -432,17 +611,15 @@ function ExportLegacyElements({
   }
 
   return (
-    <div className="w-full h-full grid grid-cols-2 relative z-[1]" style={{ padding: `${margin}%`, gap: 0 }}>
+    <div style={{ width: '100%', height: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', position: 'relative', zIndex: 1, padding: `${margin}%`, gap: 0 }}>
       {photos.map((src, i) => {
         if (!src) return <div key={`empty-${i}`} />
         const slotData = slotDataByUrl.get(src) as EnrichedSlotData | undefined
         const frame = slotData?.frame ?? style.frame
         return (
-          <LegacyPhotoSlot
+          <ExportLegacyPhotoSlot
             key={`${spread.id}-right-${i}`}
             src={src}
-            isSelected={false}
-            onSelect={() => {}}
             objectPosition={slotData?.objectPosition}
             transform={slotData?.transform}
             frame={frame}
@@ -462,6 +639,8 @@ function ExportLegacyElements({
     </div>
   )
 }
+
+// ─── Single Page ──────────────────────────────────────────────────────
 
 function ExportSinglePage({
   spread,
@@ -546,11 +725,8 @@ function ExportSinglePage({
   )
 }
 
-/**
- * Renders album spreads off-screen one at a time for high-res export.
- * Mounts the current spread, calls onSpreadReady with the DOM element,
- * waits for the capture to complete, then advances to the next spread.
- */
+// ─── Main Renderer ────────────────────────────────────────────────────
+
 export default function OffScreenSpreadRenderer({
   spreads,
   albumSizeId,
