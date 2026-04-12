@@ -59,15 +59,17 @@ export default function PricingSection() {
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-muted-border/10 max-w-5xl mx-auto items-stretch">
+        <div className="grid grid-cols-1 md:grid-cols-3 max-w-5xl mx-auto items-stretch">
           {PRICING.map((plan, i) => (
             <motion.div
               key={plan.id}
               initial={{ opacity: 0, y: 24 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              className={`relative p-10 md:p-12 flex flex-col cursor-default ${
-                plan.recommended ? 'bg-[#1A1714] text-white' : 'bg-white'
+              className={`relative p-10 md:p-12 flex flex-col cursor-default border ${
+                plan.recommended
+                  ? 'bg-[#1A1714] text-white border-[#1A1714]'
+                  : 'bg-white border-deep-brown/10'
               }`}
             >
               {plan.recommended && (
