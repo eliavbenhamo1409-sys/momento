@@ -83,7 +83,7 @@ export default function HeroSection() {
             transition={{ duration: 0.65, delay: 0.5 }}
             className="max-w-md text-right text-[14px] leading-relaxed text-on-surface-variant md:text-[15px]"
           >
-            שופכים תמונות מהטלפון. מקבלים אלבום מעוצב בדלת.
+            מעלים את כל התמונות מהטלפון. מקבלים אלבום מעוצב בדלת.
             <br className="hidden sm:block" />
             <span className="text-secondary">בין לבין — אפס עבודה.</span>
           </motion.p>

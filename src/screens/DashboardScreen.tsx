@@ -162,7 +162,7 @@ export default function DashboardScreen() {
                 <p className="text-lg font-semibold text-deep-brown mb-0.5" style={{ fontFamily: 'var(--font-family-headline)' }}>
                   הרכיבו זיכרון
                 </p>
-                <p className="text-sm text-secondary/80">שופכים תמונות, מקבלים אלבום. קל.</p>
+                <p className="text-sm text-secondary/80">מעלים את כל התמונות, מקבלים אלבום. קל.</p>
               </div>
               <Icon name="arrow_back" size={22} className="text-sage/50 mr-auto group-hover:text-sage transition-colors" />
             </button>

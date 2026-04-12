@@ -22,7 +22,7 @@ export default function UploadScreen() {
             className="text-3xl md:text-4xl font-light text-center mb-3"
             style={{ fontFamily: 'var(--font-family-headline)' }}
           >
-            שופכים הכל פה
+            מעלים כאן את כל התמונות
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
