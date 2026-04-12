@@ -145,15 +145,15 @@ export default function DashboardScreen() {
               onClick={() => navigate('/upload')}
               className="btn-press group w-full relative overflow-hidden rounded-2xl p-7 md:p-8 flex items-center gap-5 text-right transition-shadow"
               style={{
-                background: 'linear-gradient(135deg, rgba(142,137,115,0.08) 0%, rgba(233,227,201,0.15) 50%, rgba(247,241,241,0.4) 100%)',
+                background: 'linear-gradient(135deg, rgba(196,135,109,0.08) 0%, rgba(242,224,214,0.15) 50%, rgba(250,246,243,0.4) 100%)',
                 boxShadow: '0 2px 20px rgba(90,80,70,0.05), inset 0 1px 0 rgba(255,255,255,0.6)',
               }}
             >
               <div
                 className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-transform group-hover:scale-105"
                 style={{
-                  background: 'linear-gradient(135deg, #8E8973 0%, #7B7660 100%)',
-                  boxShadow: '0 4px 16px rgba(142,137,115,0.3)',
+                  background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)',
+                  boxShadow: '0 4px 16px rgba(196,135,109,0.3)',
                 }}
               >
                 <Icon name="add" size={28} className="text-white" />

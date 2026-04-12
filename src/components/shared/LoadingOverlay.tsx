@@ -22,7 +22,7 @@ export default function LoadingOverlay({
         fullScreen ? 'fixed inset-0 z-50' : 'absolute inset-0 z-10'
       } flex flex-col items-center justify-center gap-5 ${className}`}
       style={{
-        background: 'radial-gradient(ellipse at 50% 40%, rgba(247,241,241,0.97) 0%, rgba(247,241,241,0.92) 100%)',
+        background: 'radial-gradient(ellipse at 50% 40%, rgba(250,246,243,0.97) 0%, rgba(250,246,243,0.92) 100%)',
         backdropFilter: 'blur(12px)',
       }}
     >

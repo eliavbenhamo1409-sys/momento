@@ -35,12 +35,19 @@ export default function PricingSection() {
               transition={{ duration: 0.5, delay: i * 0.15 }}
               className={`relative rounded-2xl p-8 flex flex-col ${
                 plan.recommended
-                  ? 'bg-primary text-on-primary ring-2 ring-primary editorial-shadow scale-105'
+                  ? 'ring-2 ring-sage editorial-shadow scale-105'
                   : 'bg-surface-container-lowest editorial-shadow'
               }`}
+              style={plan.recommended ? {
+                background: 'linear-gradient(160deg, #B8725A 0%, #C4876D 60%, #D09880 100%)',
+                color: 'white',
+              } : undefined}
             >
               {plan.recommended && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-sage text-white text-xs font-bold px-4 py-1 rounded-full">
+                <span
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 text-white text-xs font-bold px-4 py-1 rounded-full"
+                  style={{ background: 'linear-gradient(135deg, #A06048 0%, #B8725A 100%)' }}
+                >
                   מומלץ
                 </span>
               )}
@@ -64,7 +71,7 @@ export default function PricingSection() {
                     <Icon
                       name="check"
                       size={18}
-                      className={plan.recommended ? 'text-on-primary' : 'text-sage'}
+                      className={plan.recommended ? 'text-white/90' : 'text-sage'}
                     />
                     {f}
                   </li>
@@ -76,8 +83,11 @@ export default function PricingSection() {
                 className={`w-full py-3 rounded-xl font-semibold transition-all active:scale-[0.98] ${
                   plan.recommended
                     ? 'bg-white text-primary hover:bg-white/90'
-                    : 'bg-primary text-on-primary hover:opacity-90'
+                    : 'text-white hover:opacity-90'
                 }`}
+                style={!plan.recommended ? {
+                  background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
+                } : undefined}
               >
                 בחירה
               </button>

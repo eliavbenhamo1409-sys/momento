@@ -65,8 +65,8 @@ export default function ProductHeader({ showBack, backTo, backLabel, onBack }: P
             <div
               className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold text-white"
               style={{
-                background: 'linear-gradient(135deg, #8E8973 0%, #7B7660 100%)',
-                boxShadow: '0 2px 6px rgba(142,137,115,0.25)',
+                background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)',
+                boxShadow: '0 2px 6px rgba(196,135,109,0.25)',
               }}
             >
               {initial}

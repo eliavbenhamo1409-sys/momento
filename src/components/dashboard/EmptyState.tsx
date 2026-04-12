@@ -20,7 +20,7 @@ export default function EmptyState({ icon, title, description, actionLabel, onAc
       <div
         className="w-20 h-20 rounded-3xl flex items-center justify-center mb-6"
         style={{
-          background: 'linear-gradient(135deg, rgba(142,137,115,0.08) 0%, rgba(142,137,115,0.03) 100%)',
+          background: 'linear-gradient(135deg, rgba(196,135,109,0.08) 0%, rgba(196,135,109,0.03) 100%)',
         }}
       >
         <Icon name={icon} size={36} className="text-sage/50" />
@@ -39,8 +39,8 @@ export default function EmptyState({ icon, title, description, actionLabel, onAc
           onClick={onAction}
           className="btn-press px-6 py-3 rounded-xl text-sm font-semibold text-white transition-shadow"
           style={{
-            background: 'linear-gradient(135deg, #8E8973 0%, #7B7660 100%)',
-            boxShadow: '0 4px 16px rgba(142,137,115,0.25)',
+            background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)',
+            boxShadow: '0 4px 16px rgba(196,135,109,0.25)',
           }}
         >
           {actionLabel}

@@ -1,66 +1,66 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #605c48;
-  --color-primary-container: #797560;
-  --color-primary-fixed: #e9e3c9;
-  --color-primary-fixed-dim: #cdc7ae;
+  --color-primary: #B8725A;
+  --color-primary-container: #D09880;
+  --color-primary-fixed: #F2E0D6;
+  --color-primary-fixed-dim: #DEC4B4;
   --color-on-primary: #ffffff;
-  --color-on-primary-container: #fffbff;
-  --color-on-primary-fixed: #1e1c0c;
-  --color-on-primary-fixed-variant: #4b4734;
+  --color-on-primary-container: #FFF8F5;
+  --color-on-primary-fixed: #2E1A10;
+  --color-on-primary-fixed-variant: #6B4430;
 
-  --color-secondary: #635e52;
-  --color-secondary-container: #eae2d2;
-  --color-secondary-fixed: #eae2d2;
-  --color-secondary-fixed-dim: #cec6b7;
+  --color-secondary: #6B5D56;
+  --color-secondary-container: #F0E0D8;
+  --color-secondary-fixed: #F0E0D8;
+  --color-secondary-fixed-dim: #D4C4BA;
   --color-on-secondary: #ffffff;
-  --color-on-secondary-container: #696457;
-  --color-on-secondary-fixed: #1f1b12;
-  --color-on-secondary-fixed-variant: #4b463b;
+  --color-on-secondary-container: #76685F;
+  --color-on-secondary-fixed: #231A15;
+  --color-on-secondary-fixed-variant: #54463F;
 
-  --color-tertiary: #605967;
-  --color-tertiary-container: #797280;
-  --color-tertiary-fixed: #e9dff0;
-  --color-tertiary-fixed-dim: #cdc3d3;
+  --color-tertiary: #6B5D67;
+  --color-tertiary-container: #847C80;
+  --color-tertiary-fixed: #F0E0EC;
+  --color-tertiary-fixed-dim: #D4C4D0;
   --color-on-tertiary: #ffffff;
-  --color-on-tertiary-container: #fffbff;
-  --color-on-tertiary-fixed: #1e1925;
-  --color-on-tertiary-fixed-variant: #4a4451;
+  --color-on-tertiary-container: #FFF8FC;
+  --color-on-tertiary-fixed: #241A22;
+  --color-on-tertiary-fixed-variant: #524450;
 
   --color-error: #ba1a1a;
   --color-error-container: #ffdad6;
   --color-on-error: #ffffff;
   --color-on-error-container: #93000a;
 
-  --color-surface: #fef8f8;
-  --color-surface-dim: #ded9d9;
-  --color-surface-bright: #fef8f8;
-  --color-surface-container: #f2ecec;
-  --color-surface-container-low: #f8f2f2;
-  --color-surface-container-high: #ede7e7;
-  --color-surface-container-highest: #e7e1e1;
+  --color-surface: #FFFAF8;
+  --color-surface-dim: #E4DCDA;
+  --color-surface-bright: #FFFAF8;
+  --color-surface-container: #F5EDEA;
+  --color-surface-container-low: #FAF4F1;
+  --color-surface-container-high: #F0E8E4;
+  --color-surface-container-highest: #EAE2DE;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-variant: #e7e1e1;
-  --color-surface-tint: #635f4b;
+  --color-surface-variant: #EDE5E1;
+  --color-surface-tint: #B8725A;
 
-  --color-on-surface: #1d1b1b;
-  --color-on-surface-variant: #49473e;
-  --color-on-background: #1d1b1b;
-  --color-background: #fef8f8;
+  --color-on-surface: #201A18;
+  --color-on-surface-variant: #524440;
+  --color-on-background: #201A18;
+  --color-background: #FFFAF8;
 
-  --color-outline: #7a776d;
-  --color-outline-variant: #cbc6bb;
+  --color-outline: #857470;
+  --color-outline-variant: #D4C4BE;
 
-  --color-inverse-surface: #323030;
-  --color-inverse-on-surface: #f5efef;
-  --color-inverse-primary: #cdc7ae;
+  --color-inverse-surface: #362F2D;
+  --color-inverse-on-surface: #FBEEEA;
+  --color-inverse-primary: #DEC4B4;
 
-  --color-sage: #8E8973;
-  --color-warm-gray: #7B7873;
-  --color-deep-brown: #2F2E2B;
-  --color-soft-cream: #F7F1F1;
-  --color-muted-border: #D8D0CF;
+  --color-sage: #C4876D;
+  --color-warm-gray: #847872;
+  --color-deep-brown: #352F2B;
+  --color-soft-cream: #FAF6F3;
+  --color-muted-border: #DCD0CC;
 
   --font-family-headline: 'Heebo', sans-serif;
   --font-family-body: 'Plus Jakarta Sans', sans-serif;
@@ -105,7 +105,7 @@ body {
 
 /* Glass effect for headers */
 .glass-header {
-  background-color: rgba(247, 241, 241, 0.8);
+  background-color: rgba(250, 246, 243, 0.82);
   backdrop-filter: blur(20px);
 }
 
@@ -128,7 +128,7 @@ body {
 }
 
 .shimmer-bar {
-  background: linear-gradient(90deg, var(--color-sage) 0%, #A5A08C 50%, var(--color-sage) 100%);
+  background: linear-gradient(90deg, var(--color-sage) 0%, #D4A48A 50%, var(--color-sage) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear;
 }
@@ -241,8 +241,8 @@ body {
 .liquid-glass-active {
   background: rgba(255, 255, 255, 0.25);
   box-shadow:
-    0 0 0 2px rgba(142, 137, 115, 0.35),
-    0 2px 8px rgba(142, 137, 115, 0.15),
+    0 0 0 2px rgba(196, 135, 109, 0.35),
+    0 2px 8px rgba(196, 135, 109, 0.15),
     inset 0 1px 2px rgba(255, 255, 255, 0.4);
 }
 
@@ -254,8 +254,8 @@ body {
 
 .ambient-bg {
   background: 
-    radial-gradient(ellipse at 30% 40%, rgba(142, 137, 115, 0.03) 0%, transparent 70%),
-    radial-gradient(ellipse at 70% 60%, rgba(216, 208, 207, 0.05) 0%, transparent 70%);
+    radial-gradient(ellipse at 30% 40%, rgba(196, 135, 109, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse at 70% 60%, rgba(220, 208, 204, 0.06) 0%, transparent 70%);
   background-size: 200% 200%;
   animation: ambient-drift 20s ease-in-out infinite;
 }
@@ -307,7 +307,7 @@ body {
 
 .shadow-overview-card         { box-shadow: 0 2px 8px rgba(45,40,35,0.05); }
 .shadow-overview-card-hover   { box-shadow: 0 6px 20px rgba(45,40,35,0.10); }
-.shadow-overview-card-active  { box-shadow: 0 4px 20px rgba(96,92,72,0.12); }
+.shadow-overview-card-active  { box-shadow: 0 4px 20px rgba(184,114,90,0.12); }
 
 /* ── cover-active: hide flipbook so dot-grid background shows ──── */
 .book-cover-active .album-flipbook {

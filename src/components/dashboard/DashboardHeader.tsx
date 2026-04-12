@@ -63,8 +63,8 @@ export default function DashboardHeader() {
           <div
             className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
             style={{
-              background: 'linear-gradient(135deg, #8E8973 0%, #7B7660 100%)',
-              boxShadow: '0 2px 8px rgba(142,137,115,0.3)',
+              background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)',
+              boxShadow: '0 2px 8px rgba(196,135,109,0.3)',
             }}
           >
             {initial}
@@ -91,7 +91,7 @@ export default function DashboardHeader() {
                 <div className="flex items-center gap-3">
                   <div
                     className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #8E8973 0%, #7B7660 100%)' }}
+                    style={{ background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)' }}
                   >
                     {initial}
                   </div>

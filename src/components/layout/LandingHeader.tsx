@@ -92,8 +92,8 @@ export default function LandingHeader() {
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
                 style={{
-                  background: 'linear-gradient(135deg, #8E8973 0%, #7B7660 100%)',
-                  boxShadow: '0 2px 8px rgba(142,137,115,0.3)',
+                  background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)',
+                  boxShadow: '0 2px 8px rgba(196,135,109,0.3)',
                 }}
               >
                 {initial}
@@ -136,8 +136,8 @@ export default function LandingHeader() {
               onClick={handleCreate}
               className="btn-press text-on-primary px-6 py-2.5 rounded-full font-medium text-sm hover:opacity-90 transition-opacity"
               style={{
-                background: 'linear-gradient(135deg, #605c48 0%, #8E8973 100%)',
-                boxShadow: '0 4px 16px rgba(96,92,72,0.2)',
+                background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
+                boxShadow: '0 4px 16px rgba(184,114,90,0.25)',
               }}
             >
               התחל יצירה

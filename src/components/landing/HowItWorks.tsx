@@ -33,7 +33,7 @@ export default function HowItWorks() {
           <h2 className="text-4xl font-light mb-4" style={{ fontFamily: 'var(--font-family-headline)' }}>
             איך זה עובד?
           </h2>
-          <div className="w-12 h-1 bg-primary mx-auto rounded-full" />
+          <div className="w-12 h-1 bg-sage mx-auto rounded-full" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
