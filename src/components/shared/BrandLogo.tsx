@@ -1,5 +1,5 @@
 interface BrandLogoProps {
-  /** `light` = רקע כהה (חתימה לבנה). `dark` = רקע בהיר (אינוורט לחתימה כהה). */
+  /** `light` = רקע כהה (לוגו לבן, ללא פילטר). `dark` = רקע בהיר (invert כדי שהלבן יהפוך לכהה). */
   tone?: 'dark' | 'light'
   className?: string
   /** גובה הלוגו (רוחב אוטומטי לפי היחס) */
@@ -14,10 +14,10 @@ export default function BrandLogo({
   onClick,
 }: BrandLogoProps) {
   const cap = 'max-w-[min(96vw,800px)]'
-  /** קובץ Momento: לבן על שחור — lighten מסיר שחור מעל רקע כהה; invert להצגה על רקע בהיר */
+  /** קובץ: טקסט לבן על רקע שקוף — על בהיר משתמשים ב-invert לניגודיות */
   const imgTone =
     tone === 'light'
-      ? `${heightClass} w-auto ${cap} object-contain opacity-[0.95] mix-blend-lighten`
+      ? `${heightClass} w-auto ${cap} object-contain`
       : `${heightClass} w-auto ${cap} object-contain invert`
 
   const img = (
@@ -36,7 +36,7 @@ export default function BrandLogo({
       <button
         type="button"
         onClick={onClick}
-        className={`inline-flex items-center p-0 border-0 bg-transparent cursor-pointer ${className}`}
+        className={`inline-flex cursor-pointer items-center border-0 bg-transparent p-0 ${className}`}
       >
         {img}
       </button>
