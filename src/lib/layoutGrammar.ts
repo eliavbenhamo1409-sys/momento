@@ -412,6 +412,25 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
+  // ── 13b. Showcase Single — one stunning photo across the entire spread
+  {
+    id: 'showcase-single',
+    name: 'תמונה מרכזית',
+    category: 'hero',
+    minPhotos: 1,
+    maxPhotos: 1,
+    acceptsQuote: false,
+    cannotRepeatWithin: 999,
+    bestForMood: ['dramatic', 'serene', 'romantic', 'nostalgic', 'tender', 'joyful'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'portrait', 'group', 'detail'],
+    spanning: true,
+    slots: [
+      slot('showcase', 'left', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 8, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
   // ── 14. Six Grid Spanning (2x3 grid across both pages) ───
   {
     id: 'three-rows',

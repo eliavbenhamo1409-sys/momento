@@ -348,6 +348,54 @@ export function buildPageGroups(
     for (const g of rawGroups) g.sort((a, b) => b.overallQuality - a.overallQuality)
   }
 
+  // ── Showcase extraction: find the single best photo for a full two-page spread ──
+  // The showcase photo gets its own dedicated spread that spans both pages.
+  // Criteria: highest quality + highlight/hero flag. Only for albums with enough depth.
+  const SHOWCASE_MIN_QUALITY = 8
+
+  let showcaseGroup: PageGroup | null = null
+
+  if (scores.length >= 8 && targetSpreads >= 4) {
+    let bestScore: PhotoScore | null = null
+    let bestGroupIdx = -1
+    let bestComposite = -Infinity
+
+    for (let gi = 0; gi < rawGroups.length; gi++) {
+      for (const photo of rawGroups[gi]) {
+        if (photo.overallQuality < SHOWCASE_MIN_QUALITY) continue
+        if (!photo.isHighlight && !photo.isHeroCandidate) continue
+
+        const composite = photo.overallQuality * 2
+          + photo.composition * 1.5
+          + photo.sharpness
+          + (photo.isHighlight ? 3 : 0)
+          + (photo.isHeroCandidate ? 2 : 0)
+          + (photo.isCoverCandidate ? 1 : 0)
+
+        if (composite > bestComposite) {
+          bestComposite = composite
+          bestScore = photo
+          bestGroupIdx = gi
+        }
+      }
+    }
+
+    if (bestScore) {
+      rawGroups[bestGroupIdx] = rawGroups[bestGroupIdx].filter(
+        (p) => p.photoId !== bestScore!.photoId,
+      )
+      if (rawGroups[bestGroupIdx].length === 0) {
+        rawGroups.splice(bestGroupIdx, 1)
+      }
+
+      showcaseGroup = buildGroupMeta(
+        `showcase-${bestScore.photoId}`,
+        [bestScore],
+        'showcase',
+      )
+    }
+  }
+
   // Extract hero photos with a companion to fill both pages
   const heroGroups: PageGroup[] = []
   const normalGroups: PhotoScore[][] = []
@@ -442,9 +490,11 @@ export function buildPageGroups(
     }
   }
 
+  const reservedSpreads = heroGroups.length + (showcaseGroup ? 1 : 0)
+
   // Reduce groups if too many for target spread count (merge adjacent neighbors only)
-  if (merged.length + heroGroups.length > targetSpreads) {
-    while (merged.length + heroGroups.length > targetSpreads && merged.length > 1) {
+  if (merged.length + reservedSpreads > targetSpreads) {
+    while (merged.length + reservedSpreads > targetSpreads && merged.length > 1) {
       let bestPair = -1
       let bestPairSize = Infinity
       for (let i = 0; i < merged.length - 1; i++) {
@@ -464,7 +514,7 @@ export function buildPageGroups(
   }
 
   // Split groups if we need more spreads
-  while (merged.length + heroGroups.length < targetSpreads && merged.some((g) => g.length > MIN_GROUP)) {
+  while (merged.length + reservedSpreads < targetSpreads && merged.some((g) => g.length > MIN_GROUP)) {
     const largest = merged.reduce((maxI, g, i, arr) =>
       g.length > arr[maxI].length ? i : maxI, 0)
     if (merged[largest].length <= MIN_GROUP) break
@@ -508,7 +558,7 @@ export function buildPageGroups(
   // Collage pass: merge adjacent low-quality groups into collage-sized super-groups
   const COLLAGE_MAX = 12
   const LOW_QUALITY_THRESHOLD = 6
-  if (merged.length + heroGroups.length > targetSpreads) {
+  if (merged.length + reservedSpreads > targetSpreads) {
     let didMerge = true
     while (didMerge) {
       didMerge = false
@@ -525,12 +575,13 @@ export function buildPageGroups(
         didMerge = true
         break
       }
-      if (merged.length + heroGroups.length <= targetSpreads) break
+      if (merged.length + reservedSpreads <= targetSpreads) break
     }
   }
 
   // Build final PageGroup objects with eventId from dominant setting
   const result: PageGroup[] = [...heroGroups]
+  if (showcaseGroup) result.push(showcaseGroup)
   let groupIdx = 0
   for (const group of merged) {
     const settingCounts: Record<string, number> = {}
@@ -561,24 +612,46 @@ export function buildPageGroups(
       }
       return min === Infinity ? 0 : min
     }
-    // Keep hero groups at their natural position but sort normal groups chronologically
-    const heroes = result.filter((g) => g.groupId.startsWith('hero-'))
-    const normals = result.filter((g) => !g.groupId.startsWith('hero-'))
+    // Keep hero/showcase groups at their natural position but sort normal groups chronologically
+    const special = result.filter((g) => g.groupId.startsWith('hero-') || g.groupId.startsWith('showcase-'))
+    const normals = result.filter((g) => !g.groupId.startsWith('hero-') && !g.groupId.startsWith('showcase-'))
     normals.sort((a, b) => earliestDate(a) - earliestDate(b))
 
-    // Interleave heroes back near their chronological position
+    // Interleave special groups near their chronological position
     const sorted: PageGroup[] = []
     let ni = 0
-    for (const hero of heroes) {
-      const heroDate = earliestDate(hero)
-      while (ni < normals.length && earliestDate(normals[ni]) <= heroDate) {
+    for (const sp of special) {
+      const spDate = earliestDate(sp)
+      while (ni < normals.length && earliestDate(normals[ni]) <= spDate) {
         sorted.push(normals[ni++])
       }
-      sorted.push(hero)
+      sorted.push(sp)
     }
     while (ni < normals.length) sorted.push(normals[ni++])
 
+    // If showcase has no date info, place it around the 1/3 mark for dramatic pacing
+    if (showcaseGroup) {
+      const scIdx = sorted.findIndex((g) => g.groupId.startsWith('showcase-'))
+      if (scIdx === 0 && sorted.length > 3) {
+        const target = Math.max(1, Math.floor(sorted.length / 3))
+        const [sc] = sorted.splice(scIdx, 1)
+        sorted.splice(target, 0, sc)
+      }
+    }
+
     return sorted
+  }
+
+  // No date info: place showcase at ~1/3 of album
+  if (showcaseGroup) {
+    const scIdx = result.findIndex((g) => g.groupId.startsWith('showcase-'))
+    if (scIdx >= 0 && result.length > 3) {
+      const target = Math.max(1, Math.floor(result.length / 3))
+      if (scIdx !== target) {
+        const [sc] = result.splice(scIdx, 1)
+        result.splice(target, 0, sc)
+      }
+    }
   }
 
   return result

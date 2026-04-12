@@ -41,6 +41,7 @@ const PORTRAIT_TEMPLATES = [
 ]
 const LANDSCAPE_TEMPLATES = [
   'full-spread',
+  'showcase-single',
 ]
 const MIXED_TEMPLATES = [
   'mixed-top-bottom', 'hero-top-grid-bottom', 'mosaic-5',
@@ -221,6 +222,12 @@ export function pickBestTemplate(
 ): LayoutTemplate {
   const photoCount = group.photoIds.length
 
+  // Showcase group: single exceptional photo → full two-page spread
+  if (group.theme === 'showcase' && photoCount === 1) {
+    const showcase = getTemplate('showcase-single')
+    if (showcase) return showcase
+  }
+
   if (position === 0) return getTemplate('cover-hero')!
   if (position === totalSpreads - 1) {
     const closing = getTemplate('closing')!
@@ -295,6 +302,7 @@ export function buildSmartSpreadPlans(
 
       for (let donor = lastIdx - 1; donor >= 0 && lastGroup.photoIds.length < CLOSING_MIN_PHOTOS; donor--) {
         const donorGroup = mutableGroups[donor]
+        if (donorGroup.theme === 'showcase') continue
         const donorMinKeep = 2
         const canGive = Math.max(0, donorGroup.photoIds.length - donorMinKeep)
         const toTake = Math.min(canGive, deficit)
@@ -330,7 +338,7 @@ export function buildSmartSpreadPlans(
     const isLastSpread = i === effectiveSpreads - 1
 
     let template: LayoutTemplate
-    if (isLastSpread && i > 0) {
+    if (isLastSpread && i > 0 && group.theme !== 'showcase') {
       const closingTemplate = getTemplate('closing')!
       const closingSlotCount = closingTemplate.slots.filter(s => !s.id.endsWith('-mirror')).length
       if (group.photoIds.length >= closingSlotCount) {

@@ -9,9 +9,9 @@ type OrientedPhoto = {
 }
 
 const TEMPLATES_BY_PATTERN: Record<string, string[]> = {
-  '1-portrait':  ['single-portrait', 'full-spread'],
-  '1-landscape': ['full-spread'],
-  '1-square':    ['full-spread'],
+  '1-portrait':  ['showcase-single', 'single-portrait', 'full-spread'],
+  '1-landscape': ['showcase-single', 'full-spread'],
+  '1-square':    ['showcase-single', 'full-spread'],
 
   '2-landscape': ['panoramic', 'text-heavy'],
   '2-portrait':  ['text-heavy', 'panoramic'],
