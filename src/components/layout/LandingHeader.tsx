@@ -45,39 +45,39 @@ export default function LandingHeader() {
 
   return (
     <header
-      className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-black/[0.06] bg-white/95 px-6 py-3 shadow-[0_1px_0_rgba(26,23,20,0.04)] backdrop-blur-md transition-colors duration-300 md:px-12 md:py-4 lg:px-16"
+      className="fixed top-0 z-50 flex w-full items-center justify-between border-b border-black/[0.06] bg-white/95 px-4 py-1.5 shadow-[0_1px_0_rgba(26,23,20,0.04)] backdrop-blur-md transition-colors duration-300 md:px-8 md:py-2 lg:px-12"
     >
       <BrandLogo
         tone="dark"
-        heightClass="h-14 sm:h-16 md:h-[4.5rem] lg:h-[5.25rem]"
+        heightClass="h-[3.25rem] sm:h-[3.75rem] md:h-[4.75rem] lg:h-[5.5rem] xl:h-[6rem]"
         onClick={() => navigate('/')}
       />
 
-      <nav className="hidden items-center gap-8 md:flex lg:gap-10">
+      <nav className="hidden items-center gap-5 md:flex lg:gap-7">
         {['איך זה עובד', 'מחירים', 'שאלות נפוצות'].map((item) => (
           <a
             key={item}
             href={`#${item}`}
-            className={`${navColor} text-[13px] font-medium tracking-[0.05em] transition-colors duration-300`}
+            className={`${navColor} text-[11px] font-medium tracking-[0.04em] transition-colors duration-300 md:text-[12px] lg:tracking-[0.05em]`}
           >
             {item}
           </a>
         ))}
       </nav>
 
-      <div className="flex items-center gap-4 md:gap-5">
+      <div className="flex items-center gap-2.5 md:gap-3.5">
         {isLoggedIn ? (
           <div className="relative" ref={menuRef}>
             <button
               type="button"
               onClick={() => setMenuOpen(!menuOpen)}
-              className="btn-press flex items-center gap-2.5 rounded-full px-2 py-1.5 transition-colors hover:bg-surface-container-high"
+              className="btn-press flex items-center gap-2 rounded-full px-1.5 py-1 transition-colors hover:bg-surface-container-high"
             >
-              <span className="hidden text-sm font-medium text-deep-brown/80 transition-colors duration-300 sm:block">
+              <span className="hidden text-xs font-medium text-deep-brown/80 transition-colors duration-300 sm:block">
                 {userName}
               </span>
               <div
-                className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold text-white transition-all duration-300"
+                className="flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold text-white transition-all duration-300"
                 style={{ background: '#2D2926' }}
               >
                 {initial}
@@ -112,7 +112,7 @@ export default function LandingHeader() {
             <button
               type="button"
               onClick={handleLogin}
-              className={`${navColor} text-[13px] font-medium tracking-wide transition-colors duration-300`}
+              className={`${navColor} text-[11px] font-medium tracking-wide transition-colors duration-300 md:text-[12px]`}
             >
               התחברות
             </button>
@@ -121,7 +121,7 @@ export default function LandingHeader() {
               onClick={handleCreate}
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
-              className="px-6 py-2.5 text-[12px] font-medium tracking-[0.12em] text-white transition-all duration-500 md:px-7 md:py-2.5"
+              className="min-h-10 px-4 py-2 text-[10px] font-medium tracking-[0.1em] text-white transition-all duration-500 md:min-h-[2.75rem] md:px-5 md:text-[11px] md:tracking-[0.12em]"
               style={{
                 background: '#2D2926',
                 border: '1px solid transparent',
