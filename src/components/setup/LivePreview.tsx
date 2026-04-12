@@ -10,10 +10,9 @@ const previewImages: Record<string, string> = {
 }
 
 const styleLabels: Record<string, string> = {
-  classic: 'קלאסי',
-  modern: 'מודרני',
-  warm: 'חם',
-  minimal: 'מינימליסטי',
+  modern: 'יוקרה מודרנית',
+  warm: 'רך ואישי',
+  classic: 'קלאסי נצחי',
 }
 
 export default function LivePreview() {
@@ -49,7 +48,7 @@ export default function LivePreview() {
                     alt="Preview"
                     className={`w-full h-full object-cover ${
                       config.mood === 'nostalgic' ? 'sepia' : ''
-                    } ${config.style === 'minimal' ? 'grayscale-[20%]' : ''}`}
+                    } ${config.style === 'classic' ? 'grayscale-[10%]' : ''}`}
                     loading="lazy"
                     decoding="async"
                   />

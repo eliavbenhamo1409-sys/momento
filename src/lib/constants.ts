@@ -82,10 +82,9 @@ export const SETUP_QUESTIONS = [
     label: 'איזה סגנון עיצוב מדבר אליך?',
     multiSelect: false,
     options: [
-      { id: 'classic', label: 'קלאסי' },
-      { id: 'modern', label: 'מודרני' },
-      { id: 'warm', label: 'חם' },
-      { id: 'minimal', label: 'מינימליסטי' },
+      { id: 'modern', label: 'יוקרה מודרנית' },
+      { id: 'warm', label: 'רך ואישי' },
+      { id: 'classic', label: 'קלאסי נצחי' },
     ],
   },
   {

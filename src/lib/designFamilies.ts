@@ -11,7 +11,7 @@ const contemporaryLuxury: DesignFamily = {
 
   bestForType: ['wedding', 'portrait', 'family', 'newborn'],
   bestForMood: ['romantic', 'serene', 'dramatic', 'tender'],
-  bestForStyle: ['modern', 'minimal', 'elegant'],
+  bestForStyle: ['modern', 'elegant'],
 
   spacing: {
     pageMarginPercent: 8,
@@ -195,221 +195,25 @@ const contemporaryLuxury: DesignFamily = {
   },
 }
 
-// ─── 2. Japanese Airy Minimal ───────────────────────────────────────
+// ─── 2. Timeless Classic (Formal Heritage, Gold-Accented) ───────────
 
-const japaneseAiry: DesignFamily = {
-  id: 'japanese-airy',
-  name: 'Japanese Airy Minimal',
-  nameHe: 'מינימל יפני',
-  description: 'Ma (negative space) as a design element. Asymmetric, airy, intentionally sparse.',
-  descriptionHe: 'שטח ריק כאלמנט עיצובי. א-סימטרי, אוורירי, דליל במכוון.',
+const timelessClassic: DesignFamily = {
+  id: 'timeless-classic',
+  name: 'Timeless Classic',
+  nameHe: 'קלאסי נצחי',
+  description: 'Formal symmetry, champagne-gold accents, visible photo mats, ornamental dividers. The album your grandparents would have treasured.',
+  descriptionHe: 'סימטריה מושלמת, גוונים של שמפניה וזהב עתיק, מסגרות מט אלגנטיות, חוצצים עיטוריים. אלבום שגם הסבתא הייתה שומרת לנצח.',
 
-  bestForType: ['travel', 'portrait', 'art', 'nature'],
-  bestForMood: ['serene', 'nostalgic', 'tender'],
-  bestForStyle: ['minimal', 'artistic', 'zen'],
-
-  spacing: {
-    pageMarginPercent: 14,
-    photoGapPx: 20,
-    whiteSpaceRatio: 0.50,
-    breathingRoom: 'airy',
-    asymmetric: true,
-  },
-
-  typography: {
-    quoteFont: 'Dancing Script',
-    quoteWeight: 400,
-    quoteSizeClass: 'text-lg',
-    quoteItalic: false,
-    quoteLineHeight: 1.7,
-    quoteLetterSpacing: '0.02em',
-    quoteAlign: 'center',
-    captionFont: 'Plus Jakarta Sans',
-    captionWeight: 300,
-    captionSizeClass: 'text-[9px]',
-  },
-
-  composition: {
-    symmetry: 'asymmetric',
-    density: 'sparse',
-    preferredTemplates: [
-      'panoramic',
-      'full-bleed-quote',
-      'hero-left-grid-right',
-      'hero-right-stack-left',
-      'balanced-4',
-      'portrait-trio',
-      'full-spread',
-      'three-rows',
-      'trio-left-hero-right',
-    ],
-    avoidedTemplates: ['detail-grid', 'mosaic-5'],
-    maxPhotosPerSpread: 4,
-    heroFrequency: 2,
-  },
-
-  photoFrame: {
-    borderWidth: 0,
-    borderColor: 'transparent',
-    borderRadius: 0,
-    shadow: 'none',
-    rotationRange: [0, 0],
-    innerPadding: 8,
-  },
-
-  slotFrameOverrides: {
-    hero: {
-      shadow: 'none',
-      innerPadding: 12,
-    },
-    secondary: {
-      borderWidth: 0.5,
-      borderColor: 'rgba(160,155,145,0.15)',
-      innerPadding: 6,
-    },
-    accent: {
-      innerPadding: 4,
-    },
-  },
-
-  background: {
-    color: '#F0EDE8',
-    allowPhotoBlur: false,
-    photoBlurOpacity: 0,
-    photoBlurPx: 0,
-    allowTexture: true,
-    textureType: 'paper',
-    textureOpacity: 0.03,
-  },
-
-  decorative: {
-    philosophy: 'none',
-    quoteMarks: 'none',
-    dividers: 'none',
-    cornerOrnaments: false,
-    scriptOverlays: {
-      words: ['Breathe', 'Still', 'Light', 'Silence'],
-      font: 'Dancing Script',
-      weight: 400,
-      sizeRange: [22, 46],
-      roles: ['hero', 'standard', 'breathing', 'closing', 'text', 'cover', 'opening', 'grid', 'collage'],
-      placements: ['page-edge'],
-      color: '#D0CCC5',
-      opacity: 0.25,
-      italic: false,
-    },
-    accentLines: true,
-    accentLineColor: 'rgba(180,175,168,0.25)',
-    gradientWash: {
-      type: 'radial',
-      color: '#E5DDD4',
-      opacity: 0.25,
-      position: 'top-right',
-      roles: ['hero', 'standard', 'breathing', 'closing', 'text', 'cover'],
-    },
-    flourishes: false,
-  },
-
-  palette: {
-    background: '#F0EDE8',
-    surface: '#F6F4F0',
-    accent: '#B5AFA5',
-    text: '#3A3530',
-    textMuted: '#C0BBB3',
-    border: 'rgba(160,155,145,0.08)',
-  },
-
-  rhythm: {
-    pace: 'slow',
-    quoteEveryN: 4,
-    breathingSpreadEveryN: 3,
-    fullBleedEveryN: 4,
-  },
-
-  layoutBehavior: {
-    canOffsetPhotos: true,
-    canOverlapPhotos: false,
-    canRotatePhotos: false,
-    canBreakGrid: true,
-    preferredQuotePlacement: ['corner', 'floating'],
-  },
-
-  textBehavior: {
-    showCaptions: false,
-    showDates: false,
-    showLocationLabels: false,
-    quoteMaxLength: 50,
-    textDensity: 'low',
-  },
-
-  spreadRoles: {
-    cover: {
-      spacingOverride: {
-        pageMarginPercent: 20,
-        whiteSpaceRatio: 0.6,
-      },
-      frameOverride: {
-        shadow: 'none',
-        borderWidth: 0,
-      },
-    },
-    opening: {
-      spacingOverride: {
-        pageMarginPercent: 18,
-        whiteSpaceRatio: 0.55,
-        breathingRoom: 'airy',
-      },
-    },
-    breathing: {
-      spacingOverride: {
-        pageMarginPercent: 22,
-        whiteSpaceRatio: 0.65,
-      },
-    },
-    hero: {
-      spacingOverride: {
-        pageMarginPercent: 10,
-      },
-    },
-    closing: {
-      spacingOverride: {
-        pageMarginPercent: 20,
-        whiteSpaceRatio: 0.6,
-      },
-      typographyOverride: {
-        quoteLetterSpacing: '0.08em',
-      },
-    },
-  },
-
-  constraints: {
-    forbidDarkBackgrounds: true,
-    maxPhotosHardLimit: 3,
-    requireSymmetryOnCover: false,
-    avoidFaceNearGutter: true,
-    minPhotoQualityForHero: 7,
-  },
-}
-
-// ─── 3. Parisian Editorial Romance ──────────────────────────────────
-
-const parisianEditorial: DesignFamily = {
-  id: 'parisian-editorial',
-  name: 'Parisian Editorial Romance',
-  nameHe: 'רומנטיקה אדיטוריאלית',
-  description: 'Magazine-editorial energy. Slight rotations, overlaps, bold captions, cinematic drama.',
-  descriptionHe: 'אנרגיה של מגזין יוקרה. סיבובים עדינים, חפיפות, כותרות נועזות, דרמה קולנועית.',
-
-  bestForType: ['wedding', 'couple', 'event', 'fashion'],
-  bestForMood: ['romantic', 'dramatic', 'energetic', 'joyful'],
-  bestForStyle: ['editorial', 'romantic', 'cinematic'],
+  bestForType: ['wedding', 'bar_mitzvah', 'family', 'memorial', 'event'],
+  bestForMood: ['romantic', 'tender', 'nostalgic', 'serene', 'dramatic'],
+  bestForStyle: ['classic', 'traditional', 'elegant'],
 
   spacing: {
-    pageMarginPercent: 5,
-    photoGapPx: 6,
-    whiteSpaceRatio: 0.20,
-    breathingRoom: 'tight',
-    asymmetric: true,
+    pageMarginPercent: 10,
+    photoGapPx: 16,
+    whiteSpaceRatio: 0.32,
+    breathingRoom: 'normal',
+    asymmetric: false,
   },
 
   typography: {
@@ -422,231 +226,6 @@ const parisianEditorial: DesignFamily = {
     quoteAlign: 'center',
     captionFont: 'Plus Jakarta Sans',
     captionWeight: 500,
-    captionSizeClass: 'text-[11px]',
-  },
-
-  composition: {
-    symmetry: 'dynamic',
-    density: 'dense',
-    preferredTemplates: [
-      'hero-left-grid-right',
-      'hero-right-stack-left',
-      'mosaic-5',
-      'trio-left-hero-right',
-      'detail-grid',
-      'full-bleed-quote',
-      'hero-top-grid-bottom',
-      'grid-3x2',
-      'mixed-top-bottom',
-      'portrait-hero-grid',
-      'portrait-trio',
-      'three-rows',
-      'grid-2x2',
-      'balanced-4',
-      'portrait-grid-4',
-    ],
-    avoidedTemplates: [],
-    maxPhotosPerSpread: 6,
-    heroFrequency: 3,
-  },
-
-  photoFrame: {
-    borderWidth: 1,
-    borderColor: 'rgba(180,170,155,0.25)',
-    borderRadius: 2,
-    shadow: '0 2px 8px rgba(0,0,0,0.08)',
-    rotationRange: [-1.5, 1.5],
-    innerPadding: 5,
-  },
-
-  slotFrameOverrides: {
-    hero: {
-      borderWidth: 0,
-      shadow: 'none',
-      borderRadius: 0,
-      rotationRange: [0, 0],
-      innerPadding: 10,
-    },
-    primary: {
-      borderWidth: 1,
-      borderColor: '#D4C9BE',
-      borderRadius: 2,
-      innerPadding: 6,
-    },
-    secondary: {
-      innerPadding: 8,
-      shadow: '0 2px 8px rgba(0,0,0,0.08)',
-      borderColor: '#E8E2D8',
-      rotationRange: [-1, 1.5],
-    },
-    accent: {
-      borderWidth: 0,
-      borderRadius: 6,
-      shadow: '0 1px 4px rgba(0,0,0,0.06)',
-      innerPadding: 4,
-    },
-  },
-
-  background: {
-    color: '#F2E8DF',
-    allowPhotoBlur: true,
-    photoBlurOpacity: 0.10,
-    photoBlurPx: 40,
-    allowTexture: true,
-    textureType: 'linen',
-    textureOpacity: 0.04,
-  },
-
-  decorative: {
-    philosophy: 'subtle',
-    quoteMarks: 'elegant',
-    dividers: 'thin-line',
-    cornerOrnaments: false,
-    scriptOverlays: {
-      words: ['Amour', 'Rêve', 'Belle', 'Toujours', 'Mon Coeur', 'La Vie'],
-      font: 'Great Vibes',
-      weight: 400,
-      sizeRange: [32, 66],
-      roles: ['hero', 'standard', 'breathing', 'closing', 'text', 'cover', 'opening', 'grid', 'collage'],
-      placements: ['behind-photo', 'corner', 'page-edge', 'centered'],
-      color: '#D4C5B5',
-      opacity: 0.25,
-      italic: false,
-    },
-    accentLines: true,
-    accentLineColor: 'rgba(200,185,168,0.25)',
-    gradientWash: {
-      type: 'radial',
-      color: '#EDE4D8',
-      opacity: 0.4,
-      position: 'bottom-right',
-      roles: ['hero', 'standard', 'breathing', 'closing', 'text', 'cover'],
-    },
-    flourishes: true,
-    flourishColor: 'rgba(212,197,181,0.38)',
-  },
-
-  palette: {
-    background: '#F2E8DF',
-    surface: '#F7F1EA',
-    accent: '#C4AD9A',
-    text: '#2A2420',
-    textMuted: '#9A8E82',
-    border: 'rgba(196,173,154,0.16)',
-  },
-
-  rhythm: {
-    pace: 'fast',
-    quoteEveryN: 3,
-    breathingSpreadEveryN: 5,
-    fullBleedEveryN: 4,
-  },
-
-  layoutBehavior: {
-    canOffsetPhotos: true,
-    canOverlapPhotos: true,
-    canRotatePhotos: true,
-    canBreakGrid: true,
-    preferredQuotePlacement: ['sidebar', 'floating', 'corner'],
-  },
-
-  textBehavior: {
-    showCaptions: true,
-    showDates: true,
-    showLocationLabels: false,
-    quoteMaxLength: 120,
-    textDensity: 'medium',
-  },
-
-  spreadRoles: {
-    cover: {
-      backgroundOverride: {
-        allowPhotoBlur: true,
-        photoBlurOpacity: 0.08,
-      },
-      frameOverride: {
-        borderWidth: 0,
-        shadow: 'none',
-        rotationRange: [0, 0],
-      },
-      typographyOverride: {
-        quoteSizeClass: 'text-2xl',
-        quoteWeight: 700,
-      },
-    },
-    hero: {
-      frameOverride: {
-        borderWidth: 0,
-        shadow: 'none',
-        borderRadius: 0,
-      },
-    },
-    collage: {
-      spacingOverride: {
-        photoGapPx: 4,
-      },
-      frameOverride: {
-        rotationRange: [-2, 2],
-      },
-    },
-    breathing: {
-      spacingOverride: {
-        pageMarginPercent: 12,
-        whiteSpaceRatio: 0.45,
-      },
-      decorativeOverride: {
-        dividers: 'ornamental',
-      },
-    },
-    closing: {
-      typographyOverride: {
-        quoteSizeClass: 'text-2xl',
-        quoteItalic: true,
-        quoteWeight: 300,
-      },
-    },
-  },
-
-  constraints: {
-    forbidDarkBackgrounds: false,
-    maxPhotosHardLimit: 6,
-    requireSymmetryOnCover: false,
-    avoidFaceNearGutter: true,
-    minPhotoQualityForHero: 6,
-  },
-}
-
-// ─── 4. Timeless Classic Wedding ────────────────────────────────────
-
-const timelessClassic: DesignFamily = {
-  id: 'timeless-classic',
-  name: 'Timeless Classic',
-  nameHe: 'קלאסי נצחי',
-  description: 'Formal symmetry, elegant frames, traditional album craft. Never goes out of style.',
-  descriptionHe: 'סימטריה רשמית, מסגרות אלגנטיות, עבודת אלבום מסורתית. לא יוצא מהאופנה.',
-
-  bestForType: ['wedding', 'bar_mitzvah', 'family', 'memorial'],
-  bestForMood: ['romantic', 'tender', 'nostalgic', 'serene'],
-  bestForStyle: ['classic', 'traditional', 'elegant'],
-
-  spacing: {
-    pageMarginPercent: 10,
-    photoGapPx: 14,
-    whiteSpaceRatio: 0.30,
-    breathingRoom: 'normal',
-    asymmetric: false,
-  },
-
-  typography: {
-    quoteFont: 'Great Vibes',
-    quoteWeight: 400,
-    quoteSizeClass: 'text-xl',
-    quoteItalic: false,
-    quoteLineHeight: 1.6,
-    quoteLetterSpacing: '0.02em',
-    quoteAlign: 'center',
-    captionFont: 'Plus Jakarta Sans',
-    captionWeight: 400,
     captionSizeClass: 'text-[10px]',
   },
 
@@ -658,7 +237,6 @@ const timelessClassic: DesignFamily = {
       'hero-left-grid-right',
       'hero-right-stack-left',
       'grid-2x2',
-      'trio-left-hero-right',
       'full-bleed-quote',
       'text-heavy',
       'panoramic',
@@ -668,49 +246,56 @@ const timelessClassic: DesignFamily = {
       'three-rows',
       'mixed-top-bottom',
       'full-spread',
+      'trio-left-hero-right',
     ],
-    avoidedTemplates: [],
+    avoidedTemplates: ['mosaic-5'],
     maxPhotosPerSpread: 5,
     heroFrequency: 3,
   },
 
   photoFrame: {
-    borderWidth: 1,
-    borderColor: 'rgba(180,175,165,0.30)',
-    borderRadius: 3,
-    shadow: '0 1px 6px rgba(45,40,35,0.06)',
+    borderWidth: 2,
+    borderColor: 'rgba(195,175,140,0.35)',
+    borderRadius: 2,
+    shadow: '0 2px 10px rgba(60,50,35,0.10), 0 0 0 1px rgba(195,175,140,0.12)',
     rotationRange: [0, 0],
-    innerPadding: 8,
+    innerPadding: 10,
   },
 
   slotFrameOverrides: {
     hero: {
-      borderWidth: 2,
-      borderColor: 'rgba(180,175,165,0.35)',
-      shadow: '0 3px 14px rgba(45,40,35,0.10)',
-      innerPadding: 12,
+      borderWidth: 3,
+      borderColor: 'rgba(195,175,140,0.40)',
+      shadow: '0 4px 18px rgba(60,50,35,0.12), 0 0 0 1px rgba(195,175,140,0.15)',
+      innerPadding: 14,
     },
     primary: {
-      borderWidth: 1,
-      innerPadding: 8,
+      borderWidth: 2,
+      borderColor: 'rgba(195,175,140,0.30)',
+      shadow: '0 2px 12px rgba(60,50,35,0.08)',
+      innerPadding: 10,
     },
     secondary: {
-      innerPadding: 6,
+      borderWidth: 1,
+      borderColor: 'rgba(195,175,140,0.25)',
+      innerPadding: 8,
     },
     accent: {
-      borderRadius: 4,
-      innerPadding: 4,
+      borderWidth: 1,
+      borderColor: 'rgba(195,175,140,0.20)',
+      borderRadius: 2,
+      innerPadding: 6,
     },
   },
 
   background: {
-    color: '#EDE6DC',
+    color: '#F0E8DA',
     allowPhotoBlur: true,
     photoBlurOpacity: 0.04,
-    photoBlurPx: 70,
+    photoBlurPx: 60,
     allowTexture: true,
     textureType: 'linen',
-    textureOpacity: 0.025,
+    textureOpacity: 0.035,
   },
 
   decorative: {
@@ -719,36 +304,36 @@ const timelessClassic: DesignFamily = {
     dividers: 'ornamental',
     cornerOrnaments: true,
     scriptOverlays: {
-      words: ['Forever', 'Beloved', 'Eternal', 'Devotion', 'Our Story'],
+      words: ['לנצח', 'אהובים', 'הסיפור שלנו', 'נצחיות', 'מסורת'],
       font: 'Great Vibes',
       weight: 400,
-      sizeRange: [26, 54],
+      sizeRange: [28, 60],
       roles: ['hero', 'standard', 'breathing', 'closing', 'text', 'cover', 'opening', 'grid', 'collage'],
       placements: ['centered', 'corner'],
-      color: '#C8BBA8',
-      opacity: 0.25,
+      color: '#C8B898',
+      opacity: 0.22,
       italic: false,
     },
     accentLines: true,
-    accentLineColor: 'rgba(180,175,165,0.25)',
+    accentLineColor: 'rgba(195,175,140,0.30)',
     gradientWash: {
       type: 'radial',
-      color: '#F0E8DD',
-      opacity: 0.3,
+      color: '#EDE2D0',
+      opacity: 0.35,
       position: 'center',
       roles: ['hero', 'standard', 'breathing', 'closing', 'text', 'cover'],
     },
     flourishes: true,
-    flourishColor: 'rgba(200,187,168,0.38)',
+    flourishColor: 'rgba(195,175,140,0.35)',
   },
 
   palette: {
-    background: '#EDE6DC',
-    surface: '#F3EEE8',
-    accent: '#BFB09E',
-    text: '#2D2823',
-    textMuted: '#A09788',
-    border: 'rgba(191,176,158,0.20)',
+    background: '#F0E8DA',
+    surface: '#F7F1E6',
+    accent: '#B5A080',
+    text: '#2A2418',
+    textMuted: '#968A74',
+    border: 'rgba(195,175,140,0.22)',
   },
 
   rhythm: {
@@ -770,7 +355,7 @@ const timelessClassic: DesignFamily = {
     showCaptions: true,
     showDates: true,
     showLocationLabels: true,
-    quoteMaxLength: 100,
+    quoteMaxLength: 110,
     textDensity: 'medium',
   },
 
@@ -780,10 +365,10 @@ const timelessClassic: DesignFamily = {
         pageMarginPercent: 12,
       },
       frameOverride: {
-        borderWidth: 3,
-        borderColor: 'rgba(180,175,165,0.30)',
-        innerPadding: 8,
-        shadow: '0 4px 18px rgba(45,40,35,0.10)',
+        borderWidth: 4,
+        borderColor: 'rgba(195,175,140,0.45)',
+        innerPadding: 12,
+        shadow: '0 6px 24px rgba(60,50,35,0.14), 0 0 0 2px rgba(195,175,140,0.18)',
       },
       decorativeOverride: {
         cornerOrnaments: true,
@@ -791,14 +376,18 @@ const timelessClassic: DesignFamily = {
     },
     hero: {
       frameOverride: {
-        borderWidth: 2,
-        innerPadding: 6,
+        borderWidth: 3,
+        borderColor: 'rgba(195,175,140,0.38)',
+        innerPadding: 10,
       },
     },
     breathing: {
       spacingOverride: {
         pageMarginPercent: 16,
         whiteSpaceRatio: 0.50,
+      },
+      decorativeOverride: {
+        cornerOrnaments: true,
       },
     },
     closing: {
@@ -807,8 +396,9 @@ const timelessClassic: DesignFamily = {
         dividers: 'ornamental',
       },
       typographyOverride: {
-        quoteSizeClass: 'text-lg',
+        quoteSizeClass: 'text-2xl',
         quoteItalic: true,
+        quoteWeight: 400,
       },
     },
   },
@@ -822,37 +412,37 @@ const timelessClassic: DesignFamily = {
   },
 }
 
-// ─── 5. Soft Personal (Rounded, Airy, Scrapbook-Modern) ─────────────
+// ─── 5. Soft Personal (Warm Blush, Rounded, Scrapbook-Modern) ────────
 
 const softPersonal: DesignFamily = {
   id: 'soft-personal',
   name: 'Soft Personal',
   nameHe: 'רך ואישי',
-  description: 'Generous whitespace, rounded photo corners, mat-style framing. Feels handcrafted and intimate — room to breathe and room to write.',
-  descriptionHe: 'מרווח נדיב, פינות מעוגלות, מסגור סטייל מט. מרגיש אישי ואינטימי — מקום לנשום ומקום לכתוב.',
+  description: 'Warm blush tones, cloud-soft shadows, generous rounded corners. Like a handwritten letter — intimate, tactile, and full of heart.',
+  descriptionHe: 'גוונים חמים של בלאש וורוד עתיק, צללים רכים כענן, פינות מעוגלות בנדיבות. כמו מכתב בכתב יד — אינטימי, מוחשי, מלא לב.',
 
-  bestForType: ['wedding', 'family', 'newborn', 'travel', 'portrait', 'couple', 'general'],
-  bestForMood: ['tender', 'serene', 'nostalgic', 'romantic', 'joyful'],
-  bestForStyle: ['personal', 'cozy', 'modern', 'minimal', 'scrapbook'],
+  bestForType: ['wedding', 'family', 'newborn', 'baby', 'couple', 'general'],
+  bestForMood: ['tender', 'romantic', 'nostalgic', 'joyful', 'serene'],
+  bestForStyle: ['warm', 'personal', 'cozy', 'scrapbook'],
 
   spacing: {
-    pageMarginPercent: 14,
-    photoGapPx: 18,
-    whiteSpaceRatio: 0.48,
+    pageMarginPercent: 16,
+    photoGapPx: 20,
+    whiteSpaceRatio: 0.52,
     breathingRoom: 'airy',
     asymmetric: false,
   },
 
   typography: {
     quoteFont: 'Dancing Script',
-    quoteWeight: 400,
+    quoteWeight: 500,
     quoteSizeClass: 'text-lg',
     quoteItalic: false,
-    quoteLineHeight: 1.7,
-    quoteLetterSpacing: '0.015em',
+    quoteLineHeight: 1.8,
+    quoteLetterSpacing: '0.02em',
     quoteAlign: 'center',
     captionFont: 'Plus Jakarta Sans',
-    captionWeight: 400,
+    captionWeight: 300,
     captionSizeClass: 'text-[10px]',
   },
 
@@ -866,102 +456,99 @@ const softPersonal: DesignFamily = {
       'panoramic',
       'full-bleed-quote',
       'portrait-trio',
-      'portrait-hero-grid',
       'full-spread',
-      'three-rows',
       'hero-top-grid-bottom',
       'trio-left-hero-right',
-      'mixed-top-bottom',
     ],
-    avoidedTemplates: ['detail-grid', 'mosaic-5'],
-    maxPhotosPerSpread: 5,
-    heroFrequency: 3,
+    avoidedTemplates: ['detail-grid', 'mosaic-5', 'grid-3x2'],
+    maxPhotosPerSpread: 4,
+    heroFrequency: 2,
   },
 
   photoFrame: {
     borderWidth: 0,
     borderColor: 'transparent',
-    borderRadius: 14,
-    shadow: '0 2px 16px rgba(45,40,35,0.07)',
+    borderRadius: 18,
+    shadow: '0 4px 20px rgba(180,140,130,0.12), 0 1px 4px rgba(180,140,130,0.08)',
     rotationRange: [0, 0],
-    innerPadding: 10,
+    innerPadding: 12,
   },
 
   slotFrameOverrides: {
     hero: {
-      borderRadius: 16,
-      shadow: '0 4px 24px rgba(45,40,35,0.09)',
-      innerPadding: 14,
+      borderRadius: 22,
+      shadow: '0 8px 32px rgba(180,140,130,0.14), 0 2px 8px rgba(180,140,130,0.08)',
+      innerPadding: 16,
     },
     primary: {
-      borderRadius: 14,
-      shadow: '0 2px 14px rgba(45,40,35,0.06)',
-      innerPadding: 10,
+      borderRadius: 18,
+      shadow: '0 4px 20px rgba(180,140,130,0.10), 0 1px 4px rgba(180,140,130,0.06)',
+      innerPadding: 12,
     },
     secondary: {
-      borderRadius: 12,
-      shadow: '0 2px 10px rgba(45,40,35,0.05)',
-      innerPadding: 8,
+      borderRadius: 14,
+      shadow: '0 3px 14px rgba(180,140,130,0.09)',
+      innerPadding: 10,
     },
     accent: {
-      borderRadius: 10,
-      shadow: '0 1px 8px rgba(45,40,35,0.04)',
-      innerPadding: 6,
+      borderRadius: 12,
+      shadow: '0 2px 10px rgba(180,140,130,0.07)',
+      innerPadding: 8,
     },
   },
 
   background: {
-    color: '#F6F1EB',
+    color: '#FBF4F0',
     allowPhotoBlur: true,
-    photoBlurOpacity: 0.04,
-    photoBlurPx: 70,
+    photoBlurOpacity: 0.05,
+    photoBlurPx: 80,
     allowTexture: true,
     textureType: 'paper',
-    textureOpacity: 0.018,
+    textureOpacity: 0.025,
   },
 
   decorative: {
     philosophy: 'minimal',
     quoteMarks: 'simple',
-    dividers: 'thin-line',
+    dividers: 'none',
     cornerOrnaments: false,
     scriptOverlays: {
-      words: ['Memories', 'Love', 'Ours', 'Moments', 'Home'],
+      words: ['זכרונות', 'אהבה', 'שלנו', 'רגעים', 'בית', 'ביחד'],
       font: 'Dancing Script',
       weight: 400,
-      sizeRange: [24, 48],
-      roles: ['hero', 'standard', 'breathing', 'closing', 'text', 'cover', 'opening'],
+      sizeRange: [22, 44],
+      roles: ['hero', 'breathing', 'closing', 'text', 'cover', 'opening'],
       placements: ['corner', 'page-edge'],
-      color: '#D5CEC4',
-      opacity: 0.2,
+      color: '#DBBFB8',
+      opacity: 0.18,
       italic: false,
     },
-    accentLines: true,
-    accentLineColor: 'rgba(190,182,172,0.2)',
+    accentLines: false,
+    accentLineColor: 'transparent',
     gradientWash: {
       type: 'radial',
-      color: '#EDE7DF',
-      opacity: 0.28,
+      color: '#F0DDD8',
+      opacity: 0.30,
       position: 'top-right',
-      roles: ['hero', 'standard', 'breathing', 'closing', 'text', 'cover'],
+      roles: ['hero', 'breathing', 'closing', 'cover'],
     },
     flourishes: false,
   },
 
   palette: {
-    background: '#F6F1EB',
-    surface: '#FBF7F2',
-    accent: '#A89E92',
-    text: '#3A3530',
-    textMuted: '#B5ADA3',
-    border: 'rgba(45,40,35,0.05)',
+    background: '#FBF4F0',
+    surface: '#FFF8F5',
+    accent: '#C4A39B',
+    text: '#4A3F3A',
+    textMuted: '#C0AEA6',
+    border: 'rgba(196,163,155,0.10)',
   },
 
   rhythm: {
     pace: 'slow',
     quoteEveryN: 3,
     breathingSpreadEveryN: 3,
-    fullBleedEveryN: 5,
+    fullBleedEveryN: 4,
   },
 
   layoutBehavior: {
@@ -976,57 +563,57 @@ const softPersonal: DesignFamily = {
     showCaptions: true,
     showDates: false,
     showLocationLabels: false,
-    quoteMaxLength: 90,
+    quoteMaxLength: 80,
     textDensity: 'low',
   },
 
   spreadRoles: {
     cover: {
       spacingOverride: {
-        pageMarginPercent: 18,
-        whiteSpaceRatio: 0.55,
+        pageMarginPercent: 20,
+        whiteSpaceRatio: 0.58,
       },
       frameOverride: {
-        borderRadius: 18,
-        shadow: '0 6px 30px rgba(45,40,35,0.10)',
-        innerPadding: 16,
+        borderRadius: 24,
+        shadow: '0 10px 40px rgba(180,140,130,0.14), 0 3px 10px rgba(180,140,130,0.08)',
+        innerPadding: 18,
       },
     },
     opening: {
       spacingOverride: {
-        pageMarginPercent: 16,
-        whiteSpaceRatio: 0.52,
+        pageMarginPercent: 18,
+        whiteSpaceRatio: 0.55,
       },
     },
     hero: {
       frameOverride: {
-        borderRadius: 16,
-        shadow: '0 4px 24px rgba(45,40,35,0.09)',
+        borderRadius: 22,
+        shadow: '0 8px 32px rgba(180,140,130,0.12)',
       },
     },
     breathing: {
       spacingOverride: {
-        pageMarginPercent: 20,
-        whiteSpaceRatio: 0.60,
+        pageMarginPercent: 22,
+        whiteSpaceRatio: 0.62,
       },
       frameOverride: {
-        borderRadius: 18,
-        shadow: '0 6px 28px rgba(45,40,35,0.08)',
-        innerPadding: 16,
+        borderRadius: 24,
+        shadow: '0 8px 36px rgba(180,140,130,0.10)',
+        innerPadding: 18,
       },
     },
     closing: {
       spacingOverride: {
-        pageMarginPercent: 18,
-        whiteSpaceRatio: 0.55,
+        pageMarginPercent: 20,
+        whiteSpaceRatio: 0.58,
       },
       frameOverride: {
-        borderRadius: 18,
-        innerPadding: 14,
+        borderRadius: 24,
+        innerPadding: 16,
       },
       typographyOverride: {
-        quoteSizeClass: 'text-lg',
-        quoteWeight: 300,
+        quoteSizeClass: 'text-xl',
+        quoteWeight: 500,
         quoteLetterSpacing: '0.03em',
       },
     },
@@ -1045,9 +632,7 @@ const softPersonal: DesignFamily = {
 
 export const DESIGN_FAMILIES: DesignFamily[] = [
   contemporaryLuxury,
-  japaneseAiry,
   softPersonal,
-  parisianEditorial,
   timelessClassic,
 ]
 

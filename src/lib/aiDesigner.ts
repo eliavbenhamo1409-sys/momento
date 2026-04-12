@@ -158,20 +158,20 @@ Example 1 — Hero spread (contemporary luxury):
   ]
 }
 
-Example 2 — Breathing spread (japanese airy):
+Example 2 — Breathing spread (soft personal):
 {
   "spreadIndex": 5,
   "concept": "quiet pause",
-  "mood": "serene",
-  "background": { "baseColor": "#FAFAF8", "gradient": { "type": "radial", "colors": ["rgba(168,176,160,0.06)", "transparent"], "position": "50% 50%" } },
+  "mood": "tender",
+  "background": { "baseColor": "#FBF4F0", "gradient": { "type": "radial", "colors": ["rgba(219,191,184,0.08)", "transparent"], "position": "50% 50%" } },
   "photoSlots": [
-    { "id": "s0", "page": "right", "x": 58, "y": 15, "w": 32, "h": 55, "rotation": 0, "radius": 0, "role": "hero", "frame": { "borderWidth": 0, "borderColor": "transparent", "shadow": "none", "padding": 0 }, "zIndex": 2, "accepts": ["any"] }
+    { "id": "s0", "page": "right", "x": 58, "y": 15, "w": 32, "h": 55, "rotation": 0, "radius": 18, "role": "hero", "frame": { "borderWidth": 0, "borderColor": "transparent", "shadow": "0 4px 20px rgba(180,140,130,0.12)", "padding": 12 }, "zIndex": 2, "accepts": ["any"] }
   ],
   "textBlocks": [],
   "decorations": []
 }
 
-Example 3 — Grid with quote (parisian editorial):
+Example 3 — Grid with quote (timeless classic):
 {
   "spreadIndex": 4,
   "concept": "editorial grid with quote",

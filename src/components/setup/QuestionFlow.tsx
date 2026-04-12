@@ -326,18 +326,14 @@ export default function QuestionFlow() {
 
 const FAMILY_ICONS: Record<string, string> = {
   'contemporary-luxury': 'diamond',
-  'japanese-airy': 'spa',
   'soft-personal': 'favorite',
-  'parisian-editorial': 'auto_stories',
   'timeless-classic': 'photo_album',
 }
 
 const FAMILY_ACCENTS: Record<string, string> = {
   'contemporary-luxury': '#2D2926',
-  'japanese-airy': '#2D2926',
-  'soft-personal': '#2D2926',
-  'parisian-editorial': '#2D2926',
-  'timeless-classic': '#2D2926',
+  'soft-personal': '#9E6B5E',
+  'timeless-classic': '#8B7A5E',
 }
 
 function FamilyCard({
