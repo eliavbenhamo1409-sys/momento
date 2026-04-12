@@ -2,39 +2,34 @@ import { useRef } from 'react'
 import { motion, useInView } from 'motion/react'
 import { useNavigate } from 'react-router'
 import { useUIStore } from '../../store/uiStore'
-import Icon from '../shared/Icon'
 
 interface Slot {
   id: string
   videoSrc?: string
-  /** Static image instead of video / placeholder (e.g. RTL visual left column) */
   imageSrc?: string
   bg: string
-  label: string
-  caption: string
 }
 
 const slots: Slot[] = [
   {
     id: 'v1',
-    /** RTL: first column = visual right */
     videoSrc: '/static-wooden.mp4',
     bg: '#E8E3DC',
-    label: 'מדריך קצר',
-    caption: 'איך יוצרים אלבום ב-2 דקות',
   },
   {
     id: 'v2',
-    /** RTL: second column = visual left */
     imageSrc: '/showcase-left-shadow.png',
     bg: '#DDD7CE',
-    label: 'מאחורי הקלעים',
-    caption: 'האיכות שמרגישים ביד',
   },
 ]
 
+const STEPS = [
+  { num: '01', text: 'מעלים את התמונות' },
+  { num: '02', text: 'AI מעצב ומסנן' },
+  { num: '03', text: 'אלבום מוכן לעריכה מלאה' },
+]
+
 interface VideoShowcaseProps {
-  /** First on page: intro band under fixed header */
   lead?: boolean
 }
 
@@ -53,13 +48,13 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
 
   return (
     <section ref={ref} className="w-full">
-      {/* Editorial heading above the videos */}
+      {/* Intro band */}
       <div
         data-landing-video-intro={lead ? '' : undefined}
         className={
           lead
-            ? 'border-b border-black/[0.06] bg-white text-center px-6 pt-32 pb-12 md:pt-40 md:pb-16'
-            : 'text-center py-20 md:py-28 px-6'
+            ? 'border-b border-black/[0.06] bg-white px-6 pt-32 pb-12 text-center md:pt-40 md:pb-16'
+            : 'px-6 py-20 text-center md:py-28'
         }
       >
         <motion.p
@@ -69,7 +64,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
           className={
             lead
               ? 'mb-5 text-[11px] uppercase tracking-[0.45em] text-secondary md:text-[12px]'
-              : 'text-[11px] md:text-[12px] tracking-[0.45em] uppercase text-warm-gray/60 mb-5'
+              : 'mb-5 text-[11px] uppercase tracking-[0.45em] text-warm-gray/60 md:text-[12px]'
           }
           style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 500 }}
         >
@@ -79,11 +74,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
           initial={{ opacity: 0, y: 16 }}
           animate={effectiveInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, delay: 0.15 }}
-          className={
-            lead
-              ? 'text-3xl leading-tight text-deep-brown sm:text-4xl md:text-5xl'
-              : 'text-3xl sm:text-4xl md:text-5xl text-deep-brown leading-tight'
-          }
+          className="text-3xl leading-tight text-deep-brown sm:text-4xl md:text-5xl"
           style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 300 }}
         >
           תראו בעצמכם.
@@ -107,99 +98,119 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
         )}
       </div>
 
-      {/* Two-up video grid — Artifact Uprising split style */}
-      <div className="grid grid-cols-1 md:grid-cols-2">
-        {slots.map((slot, i) => (
-          <motion.div
-            key={slot.id}
-            initial={{ opacity: 0 }}
-            animate={effectiveInView ? { opacity: 1 } : {}}
-            transition={{ duration: 0.8, delay: 0.2 + i * 0.15 }}
-            className="relative overflow-hidden group cursor-pointer"
-            style={{ aspectRatio: '16 / 10' }}
-          >
-            {/* Background: video, image, or placeholder */}
-            {slot.videoSrc ? (
-              <video
-                src={slot.videoSrc}
-                className="absolute inset-0 h-full w-full object-cover"
-                autoPlay
-                muted
-                loop
-                playsInline
-                preload="metadata"
-              />
-            ) : slot.imageSrc ? (
-              <>
+      {/* Two-up media grid with center steps overlay */}
+      <div className="relative">
+        <div className="grid grid-cols-1 md:grid-cols-2">
+          {slots.map((slot, i) => (
+            <motion.div
+              key={slot.id}
+              initial={{ opacity: 0 }}
+              animate={effectiveInView ? { opacity: 1 } : {}}
+              transition={{ duration: 0.8, delay: 0.2 + i * 0.15 }}
+              className="relative overflow-hidden"
+              style={{ aspectRatio: '16 / 10' }}
+            >
+              {slot.videoSrc ? (
+                <video
+                  src={slot.videoSrc}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="metadata"
+                />
+              ) : slot.imageSrc ? (
                 <img
                   src={slot.imageSrc}
-                  alt="צל אמנותי של ספר על קיר טקסטורי"
+                  alt=""
                   className="absolute inset-0 h-full w-full object-cover"
                   loading="lazy"
                   decoding="async"
                 />
+              ) : (
                 <div
-                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent"
-                  aria-hidden
-                />
-              </>
-            ) : (
-              <div
-                className="absolute inset-0"
-                style={{
-                  background: `linear-gradient(135deg, ${slot.bg} 0%, ${slot.bg}dd 100%)`,
-                }}
-              >
-                <div
-                  className="absolute inset-0 opacity-[0.03]"
+                  className="absolute inset-0"
                   style={{
-                    backgroundImage:
-                      'radial-gradient(circle at 1px 1px, #2D2926 0.5px, transparent 0)',
-                    backgroundSize: '24px 24px',
+                    background: `linear-gradient(135deg, ${slot.bg} 0%, ${slot.bg}dd 100%)`,
                   }}
                 />
-              </div>
-            )}
+              )}
 
-            {/* Play button — placeholder slots only */}
-            {!slot.videoSrc && !slot.imageSrc && (
-              <div className="absolute inset-0 z-10 flex items-center justify-center">
-                <motion.div
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex h-20 w-20 items-center justify-center rounded-full border border-deep-brown/15 backdrop-blur-sm transition-all duration-500 group-hover:border-deep-brown/30 group-hover:bg-white/10 md:h-24 md:w-24"
+              {/* Darkening veil for readability where steps sit */}
+              <div
+                className="pointer-events-none absolute inset-0 bg-black/25"
+                aria-hidden
+              />
+            </motion.div>
+          ))}
+        </div>
+
+        {/* 3-step journey — centered overlay on the dividing line */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={effectiveInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, delay: 0.5 }}
+          className="pointer-events-none absolute inset-0 z-30 hidden items-center justify-center md:flex"
+        >
+          <div className="flex flex-col items-center gap-10">
+            {STEPS.map((step, i) => (
+              <div key={step.num} className="flex flex-col items-center gap-2.5">
+                {/* numbered circle */}
+                <span
+                  className="flex h-12 w-12 items-center justify-center rounded-full border border-white/30 text-[11px] font-medium tracking-widest text-white/80 backdrop-blur-md"
+                  style={{ background: 'rgba(255,255,255,0.06)' }}
                 >
-                  <Icon
-                    name="play_arrow"
-                    size={36}
-                    className="mr-[-2px] text-deep-brown/35 transition-colors duration-500 group-hover:text-deep-brown/60"
+                  {step.num}
+                </span>
+                {/* label */}
+                <span
+                  className="text-center text-[13px] font-medium leading-snug tracking-wide text-white drop-shadow-[0_1px_6px_rgba(0,0,0,0.5)]"
+                  style={{ fontFamily: "'Allura', cursive", fontSize: '1.15rem' }}
+                >
+                  {step.text}
+                </span>
+                {/* connector line */}
+                {i < STEPS.length - 1 && (
+                  <span
+                    className="mt-1 block h-6 w-px bg-gradient-to-b from-white/30 to-transparent"
+                    aria-hidden
                   />
-                </motion.div>
+                )}
               </div>
-            )}
+            ))}
+          </div>
+        </motion.div>
 
-            {/* Caption — bottom-left */}
-            <div className="absolute bottom-6 right-6 left-6 md:bottom-8 md:right-8 md:left-8 z-10">
-              <p
-                className="text-[10px] tracking-[0.35em] uppercase text-deep-brown/30 mb-1.5"
-                style={{ fontFamily: 'var(--font-family-label)' }}
-              >
-                {slot.label}
-              </p>
-              <p
-                className="text-base md:text-lg text-deep-brown/60 leading-snug"
-                style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 400 }}
-              >
-                {slot.caption}
-              </p>
-            </div>
-
-            {/* Hairline separator between slots */}
-            {i === 0 && (
-              <div className="hidden md:block absolute top-0 left-0 bottom-0 w-px bg-deep-brown/[0.06] z-20" />
-            )}
-          </motion.div>
-        ))}
+        {/* Mobile: steps strip below the media */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={effectiveInView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.6, delay: 0.55 }}
+          className="flex flex-col items-center gap-6 bg-deep-brown px-6 py-10 md:hidden"
+        >
+          <div className="flex w-full max-w-sm items-start justify-between gap-2">
+            {STEPS.map((step, i) => (
+              <div key={step.num} className="flex flex-1 flex-col items-center gap-2 text-center">
+                <span
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/25 text-[9px] font-medium tracking-widest text-white/80"
+                  style={{ background: 'rgba(255,255,255,0.06)' }}
+                >
+                  {step.num}
+                </span>
+                <span
+                  className="text-[12px] leading-snug text-white/75"
+                  style={{ fontFamily: "'Allura', cursive", fontSize: '0.95rem' }}
+                >
+                  {step.text}
+                </span>
+                {i < STEPS.length - 1 && (
+                  <span className="sr-only">→</span>
+                )}
+              </div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </section>
   )
