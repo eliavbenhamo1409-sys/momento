@@ -58,7 +58,7 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
         data-landing-video-intro={lead ? '' : undefined}
         className={
           lead
-            ? 'border-b border-black/[0.06] bg-white text-center px-6 pt-32 pb-12 md:pt-40 md:pb-16'
+            ? 'border-b border-black/[0.06] bg-white text-center px-6 pt-28 pb-12 md:pt-36 md:pb-16'
             : 'text-center py-20 md:py-28 px-6'
         }
       >
