@@ -59,7 +59,7 @@ export default function HeroSection() {
         style={{ opacity: textOpacity }}
         className="container mx-auto px-5 sm:px-8 md:px-12 lg:px-10 xl:px-14 relative z-10 max-w-[1400px]"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.22fr)] gap-12 lg:gap-14 xl:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.32fr)] gap-12 lg:gap-14 xl:gap-16 items-center">
 
           {/* ── Text ──────────────────────────────── */}
           <div className="order-2 lg:order-1 max-w-2xl lg:max-w-none">
@@ -195,7 +195,7 @@ export default function HeroSection() {
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-                className="w-full max-w-[min(94vw,440px)] aspect-[95/112] sm:max-w-[min(92vw,500px)] lg:max-w-none lg:w-[min(58vw,760px)] lg:aspect-auto lg:h-[min(68vh,820px)] rounded-2xl overflow-hidden"
+                className="w-full max-w-[min(94vw,440px)] aspect-[95/112] sm:max-w-[min(92vw,500px)] lg:max-w-none lg:w-[min(64vw,820px)] lg:aspect-auto lg:h-[min(68vh,820px)] rounded-2xl overflow-hidden"
                 style={{
                   boxShadow: '0 30px 80px rgba(26,23,20,0.12), 0 10px 30px rgba(26,23,20,0.06)',
                 }}
