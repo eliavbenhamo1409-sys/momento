@@ -7,7 +7,7 @@ export default function TermsPage() {
       <div className="min-h-screen bg-surface" dir="rtl">
         <header className="sticky top-0 z-50 backdrop-blur-xl bg-surface/80 border-b border-outline-variant/20">
           <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
-            <Link to="/" className="inline-flex items-center"><img src="/momento-logo.png" alt="Momento" className="h-8 w-auto object-contain" decoding="async" /></Link>
+            <Link to="/" className="inline-flex items-center"><img src="/momento-logo.png" alt="Momento" className="h-8 w-auto object-contain invert" decoding="async" /></Link>
             <Link to="/" className="text-sm text-primary hover:underline">חזרה לדף הבית</Link>
           </div>
         </header>
