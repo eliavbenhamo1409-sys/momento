@@ -22,7 +22,7 @@ export default function UploadScreen() {
             className="text-3xl md:text-4xl font-light text-center mb-3"
             style={{ fontFamily: 'var(--font-family-headline)' }}
           >
-            בוא נתחיל
+            שופכים הכל פה
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 16 }}
@@ -30,7 +30,7 @@ export default function UploadScreen() {
             transition={{ duration: 0.4, delay: 0.2 }}
             className="text-secondary text-center mb-10 max-w-md"
           >
-            העלה את התמונות שלך ואנחנו נדאג לכל השאר
+            תמונות מהטלפון, מהמחשב, מהענן — פשוט הכל. אנחנו נעשה סדר.
           </motion.p>
 
           <AnimatePresence mode="wait">

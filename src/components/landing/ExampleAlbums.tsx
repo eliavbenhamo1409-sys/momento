@@ -1,67 +1,99 @@
-import { motion } from 'motion/react'
-import { useScrollReveal } from '../../hooks/useScrollReveal'
+import { motion, useInView } from 'motion/react'
+import { useRef } from 'react'
 
 const examples = [
   {
-    title: 'החתונה שלנו',
-    style: 'נקי וקלאסי',
-    img: 'https://picsum.photos/seed/wedding-ex/600/400',
+    title: 'החתונה של דנה ואיתי',
+    style: 'קלאסי רומנטי',
+    img: 'https://picsum.photos/seed/wedding-ex/600/750',
+    rotate: '-2deg',
   },
   {
-    title: 'זכרונות משפחתיים',
-    style: 'חם ואורגני',
-    img: 'https://picsum.photos/seed/family-ex/600/400',
+    title: 'השנה הראשונה של עידו',
+    style: 'חמים ומשפחתי',
+    img: 'https://picsum.photos/seed/family-ex/600/750',
+    rotate: '1deg',
   },
   {
-    title: 'מסעות בעולם',
-    style: 'אדיטוריאלי מודרני',
-    img: 'https://picsum.photos/seed/travel-ex/600/400',
+    title: 'חודש בדרום אמריקה',
+    style: 'אדיטוריאלי',
+    img: 'https://picsum.photos/seed/travel-ex/600/750',
+    rotate: '-1.5deg',
   },
 ]
 
 export default function ExampleAlbums() {
-  const { ref, isVisible } = useScrollReveal()
+  const ref = useRef<HTMLDivElement>(null)
+  const isInView = useInView(ref, { once: true, margin: '-60px' })
 
   return (
-    <section ref={ref} id="דוגמאות" className="py-32 bg-surface-container-low">
-      <div className="container mx-auto px-6">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-4">
-          <div className="max-w-xl">
-            <h2 className="text-4xl font-light mb-4" style={{ fontFamily: 'var(--font-family-headline)' }}>
-              השראה לעיצובים
-            </h2>
-            <p className="text-secondary italic">
-              גלו איך הלקוחות שלנו מנציחים את הרגעים היפים שלהם
-            </p>
-          </div>
-        </div>
+    <section ref={ref} id="דוגמאות" className="py-28 md:py-36 bg-surface-container-low overflow-hidden">
+      <div className="container mx-auto px-6 md:px-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
+          className="mb-16 max-w-xl"
+        >
+          <p className="text-sage font-medium tracking-widest text-sm mb-4 uppercase">
+            השראה
+          </p>
+          <h2
+            className="text-4xl md:text-5xl text-deep-brown leading-tight mb-4"
+            style={{ fontFamily: 'var(--font-family-headline)' }}
+          >
+            אלבומים שנוצרו
+            <br />
+            <span className="font-bold">על ידי אנשים אמיתיים.</span>
+          </h2>
+          <p className="text-warm-gray text-lg leading-relaxed">
+            לא מוקאפים. לא פוטושופ. אלבומים אמיתיים שהלקוחות שלנו יצרו תוך דקות.
+          </p>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-8">
           {examples.map((ex, i) => (
             <motion.div
               key={ex.title}
-              initial={{ opacity: 0, y: 20 }}
-              animate={isVisible ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.5, delay: i * 0.15 }}
-              className="bg-surface-container-lowest rounded-2xl overflow-hidden editorial-shadow group cursor-pointer"
+              initial={{ opacity: 0, y: 50, rotate: 0 }}
+              animate={isInView ? { opacity: 1, y: 0, rotate: parseFloat(ex.rotate) } : {}}
+              transition={{ duration: 0.7, delay: i * 0.15, ease: [0.22, 1, 0.36, 1] }}
+              whileHover={{ y: -12, rotate: 0, scale: 1.02, transition: { duration: 0.35 } }}
+              className="tilt-card group cursor-pointer bg-white rounded-2xl overflow-hidden"
+              style={{
+                boxShadow: '0 8px 40px rgba(53,47,43,0.07)',
+              }}
             >
-              <div className="h-72 overflow-hidden bg-surface-container">
+              <div className="h-80 overflow-hidden relative">
                 <img
                   src={ex.img}
                   alt={ex.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-all duration-700"
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   loading="lazy"
                   decoding="async"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <motion.div
+                  className="absolute bottom-4 right-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                >
+                  <span
+                    className="inline-block px-4 py-2 bg-white/90 backdrop-blur-sm rounded-xl text-sm font-semibold text-deep-brown"
+                    style={{ fontFamily: 'var(--font-family-headline)' }}
+                  >
+                    צפה באלבום
+                  </span>
+                </motion.div>
               </div>
-              <div className="p-8">
-                <h4 className="text-xl font-semibold mb-1" style={{ fontFamily: 'var(--font-family-headline)' }}>
+              <div className="p-6">
+                <h4
+                  className="text-lg font-bold mb-1 text-deep-brown"
+                  style={{ fontFamily: 'var(--font-family-headline)' }}
+                >
                   {ex.title}
                 </h4>
-                <p className="text-sm text-outline mb-4">סגנון: {ex.style}</p>
-                <button className="w-full py-3 border border-outline-variant/30 rounded-xl text-sm font-medium hover:bg-surface-container transition-colors">
-                  צפייה בדוגמה
-                </button>
+                <p className="text-sm text-warm-gray">
+                  סגנון {ex.style}
+                </p>
               </div>
             </motion.div>
           ))}

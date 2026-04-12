@@ -11,7 +11,7 @@ import Footer from '../components/layout/Footer'
 export default function LandingPage() {
   return (
     <PageTransition>
-      <div className="min-h-screen">
+      <div className="min-h-screen grain-overlay">
         <LandingHeader />
         <HeroSection />
         <TrustStrip />

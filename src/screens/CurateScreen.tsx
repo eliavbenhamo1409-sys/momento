@@ -85,10 +85,10 @@ function ModeSelector({ onSelect }: { onSelect: (mode: CurateMode) => void }) {
             className="text-3xl font-bold text-deep-brown"
             style={{ fontFamily: 'var(--font-family-headline)' }}
           >
-            כיצד תרצה לסנן?
+            מי בוחר מה נכנס?
           </h1>
           <p className="text-warm-gray text-base max-w-md mx-auto leading-relaxed">
-            בחר את שיטת הסינון המועדפת עליך לפני שנמשיך
+            ה-AI שלנו יודע לזהות תמונות מטושטשות וכפילויות — או שתבחרו בעצמכם.
           </p>
         </div>
 
@@ -103,10 +103,10 @@ function ModeSelector({ onSelect }: { onSelect: (mode: CurateMode) => void }) {
             </div>
             <div className="space-y-1.5">
               <h2 className="text-lg font-bold text-deep-brown" style={{ fontFamily: 'var(--font-family-headline)' }}>
-                סינון בסיוע AI
+                תן ל-AI לעשות סדר
               </h2>
               <p className="text-sm text-warm-gray leading-relaxed">
-                הבינה המלאכותית תנתח את התמונות, תזהה כפילויות ואיכות נמוכה, ותציע סינון חכם
+                ינתח, יזהה כפילויות ותמונות מטושטשות, ויבחר את הטובות
               </p>
             </div>
           </button>
@@ -121,10 +121,10 @@ function ModeSelector({ onSelect }: { onSelect: (mode: CurateMode) => void }) {
             </div>
             <div className="space-y-1.5">
               <h2 className="text-lg font-bold text-deep-brown" style={{ fontFamily: 'var(--font-family-headline)' }}>
-                סינון ידני
+                אני אבחר בעצמי
               </h2>
               <p className="text-sm text-warm-gray leading-relaxed">
-                כל התמונות ייכנסו לאלבום ותוכל לבחור ידנית מה להוציא
+                כל התמונות נכנסות — אתם מחליטים מה נשאר ומה יוצא
               </p>
             </div>
           </button>

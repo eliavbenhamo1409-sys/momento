@@ -100,10 +100,10 @@ export default function QuestionFlow() {
           className="text-2xl font-bold text-deep-brown mb-2"
           style={{ fontFamily: 'var(--font-family-headline)' }}
         >
-          עיצוב הרקע
+          איזה אווירה?
         </h2>
         <p className="text-warm-gray text-sm leading-relaxed">
-          בחרו רקע לבן נקי או תנו ל-AI ליצור רקעים ייחודיים.
+          רקע לבן ונקי, או משהו עם אופי? אתם בוחרים.
         </p>
       </div>
 
@@ -316,7 +316,7 @@ export default function QuestionFlow() {
         disabled={!canProceed}
         className="w-full py-4 bg-primary text-on-primary rounded-xl text-lg font-bold shadow-xl shadow-primary/20 transition-all disabled:opacity-40 mt-auto shrink-0"
       >
-        צור אלבום אוטומטי
+        יאללה, תייצרו לי
       </LoadingButton>
     </motion.div>
   )

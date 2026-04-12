@@ -147,12 +147,12 @@ export default function AuthModal() {
                       className="text-2xl font-bold text-deep-brown mb-1.5"
                       style={{ fontFamily: 'var(--font-family-headline)' }}
                     >
-                      {authMode === 'login' ? 'ברוכים השבים' : 'יצירת חשבון'}
+                      {authMode === 'login' ? 'חזרת!' : 'בואו נכיר'}
                     </h2>
                     <p className="text-sm text-warm-gray">
                       {authMode === 'login'
-                        ? 'התחבר כדי לגשת לאלבומים שלך'
-                        : 'הרשם כדי להתחיל ליצור אלבומים'}
+                        ? 'האלבומים שלך מחכים לך.'
+                        : 'רגע אחד ויש לך חשבון.'}
                     </p>
                   </div>
 

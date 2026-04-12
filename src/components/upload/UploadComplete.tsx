@@ -61,7 +61,7 @@ export default function UploadComplete() {
         className="text-xl font-bold text-deep-brown"
         style={{ fontFamily: 'var(--font-family-headline)' }}
       >
-        {photos.length} תמונות הועלו בהצלחה
+        {photos.length} תמונות — מעולה!
       </motion.h3>
 
       {/* Thumbnail strip */}
@@ -191,9 +191,9 @@ export default function UploadComplete() {
           <Icon name="auto_awesome" filled size={18} className="text-sage" />
         </div>
         <div className="text-sm pt-0.5">
-          <p className="font-semibold text-deep-brown mb-1">ה-AI שלנו ידאג לשאר</p>
+          <p className="font-semibold text-deep-brown mb-1">מפה אנחנו לוקחים</p>
           <p className="text-secondary/80 text-[13px] leading-relaxed">
-            סינון כפילויות, בחירת תמונות חזקות ויצירת רצף סיפורי.
+            נסנן כפילויות, נבחר את הטובות, ונסדר לפי הסיפור שלכם.
           </p>
         </div>
       </motion.div>

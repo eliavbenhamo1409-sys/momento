@@ -131,7 +131,7 @@ export default function DashboardScreen() {
               {greeting}, <span className="font-bold">{userName || 'אורח'}</span>
             </h1>
             <p className="text-secondary text-[15px]">
-              כאן תוכל לנהל את כל האלבומים והזמנות שלך
+              מה עושים היום? ממשיכים לערוך, או מתחילים משהו חדש?
             </p>
           </motion.div>
 
@@ -162,7 +162,7 @@ export default function DashboardScreen() {
                 <p className="text-lg font-semibold text-deep-brown mb-0.5" style={{ fontFamily: 'var(--font-family-headline)' }}>
                   צור אלבום חדש
                 </p>
-                <p className="text-sm text-secondary/80">העלה תמונות וה-AI יעצב עבורך אלבום מושלם</p>
+                <p className="text-sm text-secondary/80">שופכים תמונות, מקבלים אלבום. קל.</p>
               </div>
               <Icon name="arrow_back" size={22} className="text-sage/50 mr-auto group-hover:text-sage transition-colors" />
             </button>
@@ -253,9 +253,9 @@ export default function DashboardScreen() {
                 ) : (
                   <EmptyState
                     icon="palette"
-                    title="אין אלבומים עדיין"
-                    description="צור אלבום חדש כדי להתחיל"
-                    actionLabel="צור אלבום"
+                    title="פה עוד ריק"
+                    description="הגיע הזמן ליצור את האלבום הראשון שלך."
+                    actionLabel="בואו נתחיל"
                     onAction={() => navigate('/upload')}
                   />
                 )}
@@ -277,8 +277,8 @@ export default function DashboardScreen() {
                 ) : (
                   <EmptyState
                     icon="local_shipping"
-                    title="אין הזמנות עדיין"
-                    description="לאחר שתזמין אלבום, הוא יופיע כאן"
+                    title="עדיין בלי הזמנות"
+                    description="ברגע שתזמינו אלבום, הוא יופיע פה."
                   />
                 )}
               </motion.div>

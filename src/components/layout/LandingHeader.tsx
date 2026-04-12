@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react'
 import { useUIStore } from '../../store/uiStore'
 import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
@@ -16,6 +16,9 @@ export default function LandingHeader() {
     openAuthModal: s.openAuthModal,
     logout: s.logout,
   })))
+
+  const { scrollYProgress } = useScroll()
+  const progressScaleX = useTransform(scrollYProgress, [0, 1], [0, 1])
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 80)
@@ -34,11 +37,8 @@ export default function LandingHeader() {
   }, [menuOpen])
 
   const handleCreate = () => {
-    if (isLoggedIn) {
-      navigate('/upload')
-    } else {
-      openAuthModal('login', '/upload')
-    }
+    if (isLoggedIn) navigate('/upload')
+    else openAuthModal('login', '/upload')
   }
 
   const handleLogin = () => {
@@ -53,99 +53,107 @@ export default function LandingHeader() {
   const initial = (userName || 'א')[0].toUpperCase()
 
   return (
-    <header
-      className={`fixed top-0 w-full z-50 flex justify-between items-center px-8 md:px-16 py-4 transition-all duration-300 ${
-        scrolled
-          ? 'glass-header border-b border-muted-border/15'
-          : 'bg-transparent'
-      }`}
-    >
-      <div
-        className="text-xl font-semibold text-deep-brown tracking-tight cursor-pointer"
-        style={{ fontFamily: 'var(--font-family-headline)' }}
-        onClick={() => navigate('/')}
+    <>
+      {/* Scroll progress line */}
+      <motion.div
+        className="fixed top-0 left-0 right-0 h-[2px] z-[60] scroll-progress origin-left"
+        style={{ scaleX: progressScaleX }}
+      />
+
+      <header
+        className={`fixed top-0 w-full z-50 flex justify-between items-center px-8 md:px-16 py-4 transition-all duration-500 ${
+          scrolled
+            ? 'glass-header border-b border-muted-border/15'
+            : 'bg-transparent'
+        }`}
       >
-        Momento
-      </div>
+        <div
+          className="text-xl font-bold text-deep-brown tracking-tight cursor-pointer"
+          style={{ fontFamily: 'var(--font-family-headline)' }}
+          onClick={() => navigate('/')}
+        >
+          Momento
+        </div>
 
-      <nav className="hidden md:flex items-center gap-8">
-        {['איך זה עובד', 'דוגמאות', 'מחירים', 'שאלות נפוצות'].map((item) => (
-          <a
-            key={item}
-            href={`#${item}`}
-            className="text-warm-gray hover:text-deep-brown transition-colors duration-300 text-sm"
-          >
-            {item}
-          </a>
-        ))}
-      </nav>
-
-      <div className="flex items-center gap-4">
-        {isLoggedIn ? (
-          /* Authenticated state — avatar with dropdown */
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="btn-press flex items-center gap-2.5 py-1.5 px-2 rounded-full hover:bg-surface-container/40 transition-colors"
+        <nav className="hidden md:flex items-center gap-8">
+          {['איך זה עובד', 'דוגמאות', 'מחירים', 'שאלות נפוצות'].map((item) => (
+            <a
+              key={item}
+              href={`#${item}`}
+              className="hover-underline text-warm-gray hover:text-deep-brown transition-colors duration-300 text-sm font-medium"
             >
-              <span className="text-sm font-medium text-deep-brown hidden sm:block">{userName}</span>
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                style={{
-                  background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)',
-                  boxShadow: '0 2px 8px rgba(196,135,109,0.3)',
-                }}
-              >
-                {initial}
-              </div>
-            </button>
+              {item}
+            </a>
+          ))}
+        </nav>
 
-            <AnimatePresence>
-              {menuOpen && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95, y: -4 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: -4 }}
-                  transition={{ duration: 0.2 }}
-                  className="absolute left-0 top-full mt-2 w-56 rounded-2xl overflow-hidden py-2 px-2"
+        <div className="flex items-center gap-4">
+          {isLoggedIn ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                className="btn-press flex items-center gap-2.5 py-1.5 px-2 rounded-full hover:bg-surface-container/40 transition-colors"
+              >
+                <span className="text-sm font-medium text-deep-brown hidden sm:block">{userName}</span>
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
                   style={{
-                    background: 'rgba(255,255,255,0.92)',
-                    backdropFilter: 'blur(24px)',
-                    boxShadow: '0 8px 40px rgba(90,80,70,0.12), 0 2px 12px rgba(90,80,70,0.06)',
-                    border: '1px solid rgba(216,208,207,0.3)',
+                    background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)',
+                    boxShadow: '0 2px 8px rgba(196,135,109,0.3)',
                   }}
                 >
-                  <DropdownItem icon="dashboard" label="דשבורד" onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} />
-                  <DropdownItem icon="add_circle" label="צור אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
-                  <div className="h-px bg-muted-border/15 my-1 mx-2" />
-                  <DropdownItem icon="logout" label="התנתקות" onClick={handleLogout} danger />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        ) : (
-          /* Guest state */
-          <>
-            <button
-              onClick={handleLogin}
-              className="text-sage font-medium hover:text-deep-brown transition-colors text-sm"
-            >
-              התחברות
-            </button>
-            <button
-              onClick={handleCreate}
-              className="btn-press text-on-primary px-6 py-2.5 rounded-full font-medium text-sm hover:opacity-90 transition-opacity"
-              style={{
-                background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
-                boxShadow: '0 4px 16px rgba(184,114,90,0.25)',
-              }}
-            >
-              התחל יצירה
-            </button>
-          </>
-        )}
-      </div>
-    </header>
+                  {initial}
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {menuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -4 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -4 }}
+                    transition={{ duration: 0.2 }}
+                    className="absolute left-0 top-full mt-2 w-56 rounded-2xl overflow-hidden py-2 px-2"
+                    style={{
+                      background: 'rgba(255,255,255,0.92)',
+                      backdropFilter: 'blur(24px)',
+                      boxShadow: '0 8px 40px rgba(90,80,70,0.12), 0 2px 12px rgba(90,80,70,0.06)',
+                      border: '1px solid rgba(216,208,207,0.3)',
+                    }}
+                  >
+                    <DropdownItem icon="dashboard" label="דשבורד" onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} />
+                    <DropdownItem icon="add_circle" label="צור אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
+                    <div className="h-px bg-muted-border/15 my-1 mx-2" />
+                    <DropdownItem icon="logout" label="התנתקות" onClick={handleLogout} danger />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          ) : (
+            <>
+              <button
+                onClick={handleLogin}
+                className="hover-underline text-warm-gray font-medium hover:text-deep-brown transition-colors text-sm"
+              >
+                התחברות
+              </button>
+              <motion.button
+                onClick={handleCreate}
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                className="text-on-primary px-6 py-2.5 rounded-full font-medium text-sm"
+                style={{
+                  background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
+                  boxShadow: '0 4px 16px rgba(184,114,90,0.25)',
+                }}
+              >
+                התחל יצירה
+              </motion.button>
+            </>
+          )}
+        </div>
+      </header>
+    </>
   )
 }
 

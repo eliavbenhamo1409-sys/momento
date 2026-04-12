@@ -49,10 +49,10 @@ export default function ConfigureScreen() {
                 className="text-3xl font-bold text-deep-brown mb-2"
                 style={{ fontFamily: 'var(--font-family-headline)' }}
               >
-                בחרו את המפרט לאלבום
+                מה יהיה הגודל?
               </h1>
               <p className="text-secondary text-sm mb-8">
-                גודל, מספר עמודים ותוספות — הכל ניתן לשינוי גם אחר כך.
+                בחרו גודל ומספר עמודים. אל דאגה — תמיד אפשר לשנות.
               </p>
 
               {/* Album Size */}

@@ -65,10 +65,10 @@ export default function UploadDropzone() {
         </div>
 
         <h3 className="text-xl font-medium mb-2" style={{ fontFamily: 'var(--font-family-headline)' }}>
-          {isDragging ? 'שחרר כדי להעלות' : 'גרור תמונות לכאן'}
+          {isDragging ? 'יאללה, שחרר!' : 'זרוק תמונות לפה'}
         </h3>
         <p className="text-secondary text-sm mb-6">
-          או לחץ לבחירה מהמחשב או מהטלפון
+          או לחץ לבחירה מהגלריה
         </p>
 
         <div className="flex gap-3">
