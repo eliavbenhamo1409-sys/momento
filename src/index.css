@@ -1,66 +1,67 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #B8725A;
-  --color-primary-container: #D09880;
-  --color-primary-fixed: #F2E0D6;
-  --color-primary-fixed-dim: #DEC4B4;
+  --color-primary: #2D2926;
+  --color-primary-container: #44403C;
+  --color-primary-fixed: #E7E0D8;
+  --color-primary-fixed-dim: #C8BFB4;
   --color-on-primary: #ffffff;
-  --color-on-primary-container: #FFF8F5;
-  --color-on-primary-fixed: #2E1A10;
-  --color-on-primary-fixed-variant: #6B4430;
+  --color-on-primary-container: #FAF8F5;
+  --color-on-primary-fixed: #1A1714;
+  --color-on-primary-fixed-variant: #57534E;
 
-  --color-secondary: #6B5D56;
-  --color-secondary-container: #F0E0D8;
-  --color-secondary-fixed: #F0E0D8;
-  --color-secondary-fixed-dim: #D4C4BA;
+  --color-secondary: #6B6560;
+  --color-secondary-container: #EDEBE8;
+  --color-secondary-fixed: #EDEBE8;
+  --color-secondary-fixed-dim: #D4D0CC;
   --color-on-secondary: #ffffff;
-  --color-on-secondary-container: #76685F;
-  --color-on-secondary-fixed: #231A15;
-  --color-on-secondary-fixed-variant: #54463F;
+  --color-on-secondary-container: #78736E;
+  --color-on-secondary-fixed: #1C1A17;
+  --color-on-secondary-fixed-variant: #57534E;
 
-  --color-tertiary: #6B5D67;
-  --color-tertiary-container: #847C80;
-  --color-tertiary-fixed: #F0E0EC;
-  --color-tertiary-fixed-dim: #D4C4D0;
+  --color-tertiary: #5C6356;
+  --color-tertiary-container: #7A8272;
+  --color-tertiary-fixed: #E2E8DC;
+  --color-tertiary-fixed-dim: #C4CCC0;
   --color-on-tertiary: #ffffff;
-  --color-on-tertiary-container: #FFF8FC;
-  --color-on-tertiary-fixed: #241A22;
-  --color-on-tertiary-fixed-variant: #524450;
+  --color-on-tertiary-container: #F4F8F0;
+  --color-on-tertiary-fixed: #1A1E16;
+  --color-on-tertiary-fixed-variant: #444A3E;
 
   --color-error: #ba1a1a;
   --color-error-container: #ffdad6;
   --color-on-error: #ffffff;
   --color-on-error-container: #93000a;
 
-  --color-surface: #FFFAF8;
-  --color-surface-dim: #E4DCDA;
-  --color-surface-bright: #FFFAF8;
-  --color-surface-container: #F5EDEA;
-  --color-surface-container-low: #FAF4F1;
-  --color-surface-container-high: #F0E8E4;
-  --color-surface-container-highest: #EAE2DE;
+  --color-surface: #FEFCF9;
+  --color-surface-dim: #E0DDD8;
+  --color-surface-bright: #FEFCF9;
+  --color-surface-container: #F3F0EC;
+  --color-surface-container-low: #F8F6F2;
+  --color-surface-container-high: #EDEAE6;
+  --color-surface-container-highest: #E7E4E0;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-variant: #EDE5E1;
-  --color-surface-tint: #B8725A;
+  --color-surface-variant: #EBEBEA;
+  --color-surface-tint: #2D2926;
 
-  --color-on-surface: #201A18;
-  --color-on-surface-variant: #524440;
-  --color-on-background: #201A18;
-  --color-background: #FFFAF8;
+  --color-on-surface: #1A1714;
+  --color-on-surface-variant: #4A4642;
+  --color-on-background: #1A1714;
+  --color-background: #FEFCF9;
 
-  --color-outline: #857470;
-  --color-outline-variant: #D4C4BE;
+  --color-outline: #7C7772;
+  --color-outline-variant: #D0CBC6;
 
-  --color-inverse-surface: #362F2D;
-  --color-inverse-on-surface: #FBEEEA;
-  --color-inverse-primary: #DEC4B4;
+  --color-inverse-surface: #322F2C;
+  --color-inverse-on-surface: #F5F2EE;
+  --color-inverse-primary: #C8BFB4;
 
-  --color-sage: #C4876D;
-  --color-warm-gray: #847872;
-  --color-deep-brown: #352F2B;
-  --color-soft-cream: #FAF6F3;
-  --color-muted-border: #DCD0CC;
+  --color-sage: #8B8573;
+  --color-warm-gray: #87827C;
+  --color-deep-brown: #1A1714;
+  --color-soft-cream: #FAFAF7;
+  --color-muted-border: #E0DCD6;
+  --color-accent: #B5A48A;
 
   --font-family-headline: 'Frank Ruhl Libre', 'Heebo', serif;
   --font-family-body: 'Rubik', 'Assistant', sans-serif;
@@ -125,11 +126,11 @@ body {
 .hero-gradient {
   background: linear-gradient(
     135deg,
-    rgba(196,135,109,0.06) 0%,
-    rgba(184,114,90,0.04) 25%,
-    rgba(242,224,214,0.08) 50%,
-    rgba(208,152,128,0.05) 75%,
-    rgba(196,135,109,0.06) 100%
+    rgba(139,133,115,0.04) 0%,
+    rgba(181,164,138,0.03) 25%,
+    rgba(232,228,220,0.06) 50%,
+    rgba(139,133,115,0.03) 75%,
+    rgba(181,164,138,0.04) 100%
   );
   background-size: 400% 400%;
   animation: gradient-drift 12s ease-in-out infinite;
@@ -138,7 +139,7 @@ body {
 /* ── Scroll progress bar at top ───────────────────── */
 .scroll-progress {
   transform-origin: left;
-  background: linear-gradient(90deg, #B8725A, #C4876D, #D4A48A);
+  background: linear-gradient(90deg, #2D2926, #57534E, #8B8573);
 }
 
 /* ── Magnetic hover effect for cards ──────────────── */
@@ -183,7 +184,7 @@ body {
 
 /* Glass effect for headers */
 .glass-header {
-  background-color: rgba(250, 246, 243, 0.82);
+  background-color: rgba(250, 250, 247, 0.82);
   backdrop-filter: blur(20px);
 }
 
@@ -206,7 +207,7 @@ body {
 }
 
 .shimmer-bar {
-  background: linear-gradient(90deg, var(--color-sage) 0%, #D4A48A 50%, var(--color-sage) 100%);
+  background: linear-gradient(90deg, var(--color-sage) 0%, #B5A48A 50%, var(--color-sage) 100%);
   background-size: 200% 100%;
   animation: shimmer 2s infinite linear;
 }
@@ -319,8 +320,8 @@ body {
 .liquid-glass-active {
   background: rgba(255, 255, 255, 0.25);
   box-shadow:
-    0 0 0 2px rgba(196, 135, 109, 0.35),
-    0 2px 8px rgba(196, 135, 109, 0.15),
+    0 0 0 2px rgba(45, 41, 38, 0.25),
+    0 2px 8px rgba(45, 41, 38, 0.1),
     inset 0 1px 2px rgba(255, 255, 255, 0.4);
 }
 
@@ -332,8 +333,8 @@ body {
 
 .ambient-bg {
   background: 
-    radial-gradient(ellipse at 30% 40%, rgba(196, 135, 109, 0.04) 0%, transparent 70%),
-    radial-gradient(ellipse at 70% 60%, rgba(220, 208, 204, 0.06) 0%, transparent 70%);
+    radial-gradient(ellipse at 30% 40%, rgba(139,133,115, 0.04) 0%, transparent 70%),
+    radial-gradient(ellipse at 70% 60%, rgba(208,204,196, 0.06) 0%, transparent 70%);
   background-size: 200% 200%;
   animation: ambient-drift 20s ease-in-out infinite;
 }
@@ -385,7 +386,7 @@ body {
 
 .shadow-overview-card         { box-shadow: 0 2px 8px rgba(45,40,35,0.05); }
 .shadow-overview-card-hover   { box-shadow: 0 6px 20px rgba(45,40,35,0.10); }
-.shadow-overview-card-active  { box-shadow: 0 4px 20px rgba(184,114,90,0.12); }
+.shadow-overview-card-active  { box-shadow: 0 4px 20px rgba(45,41,38,0.1); }
 
 /* ── cover-active: hide flipbook so dot-grid background shows ──── */
 .book-cover-active .album-flipbook {

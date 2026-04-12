@@ -73,7 +73,7 @@ export default function ProjectCard({ project, index, onDelete }: Props) {
           }}
         >
           <div className="w-1.5 h-1.5 rounded-full" style={{
-            background: project.status === 'ordered' ? '#C4876D' : '#D4A48A',
+            background: project.status === 'ordered' ? '#2D2926' : '#8B8573',
           }} />
           <span className="text-deep-brown">{project.status === 'draft' ? 'טיוטה' : 'הוזמן'}</span>
         </div>

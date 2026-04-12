@@ -1,9 +1,9 @@
-import { useRef, useEffect, useState } from 'react'
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'motion/react'
+import { useRef, useEffect, useState, useCallback } from 'react'
+import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from 'motion/react'
 import { useNavigate } from 'react-router'
 import { useUIStore } from '../../store/uiStore'
 
-const WORDS = ['מושלם', 'אישי', 'ייחודי', 'שלכם']
+const ROTATING = ['מושלם', 'שלכם', 'אישי', 'אמיתי']
 
 export default function HeroSection() {
   const navigate = useNavigate()
@@ -14,29 +14,27 @@ export default function HeroSection() {
 
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
-  const springX = useSpring(mouseX, { stiffness: 50, damping: 20 })
-  const springY = useSpring(mouseY, { stiffness: 50, damping: 20 })
+  const imgX = useSpring(mouseX, { stiffness: 40, damping: 25 })
+  const imgY = useSpring(mouseY, { stiffness: 40, damping: 25 })
 
   const { scrollYProgress } = useScroll({
     target: sectionRef,
     offset: ['start start', 'end start'],
   })
-  const imgY = useTransform(scrollYProgress, [0, 1], [0, 120])
-  const textY = useTransform(scrollYProgress, [0, 1], [0, -40])
+  const parallaxY = useTransform(scrollYProgress, [0, 1], [0, 100])
+  const textOpacity = useTransform(scrollYProgress, [0, 0.4], [1, 0])
 
   useEffect(() => {
-    const interval = setInterval(() => setWordIdx((i) => (i + 1) % WORDS.length), 2800)
-    return () => clearInterval(interval)
+    const t = setInterval(() => setWordIdx((i) => (i + 1) % ROTATING.length), 3000)
+    return () => clearInterval(t)
   }, [])
 
-  const handleMouseMove = (e: React.MouseEvent) => {
-    const rect = sectionRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 20
-    const y = ((e.clientY - rect.top) / rect.height - 0.5) * 20
-    mouseX.set(x)
-    mouseY.set(y)
-  }
+  const onMouseMove = useCallback((e: React.MouseEvent) => {
+    const r = sectionRef.current?.getBoundingClientRect()
+    if (!r) return
+    mouseX.set(((e.clientX - r.left) / r.width - 0.5) * 24)
+    mouseY.set(((e.clientY - r.top) / r.height - 0.5) * 16)
+  }, [mouseX, mouseY])
 
   const handleCreate = () => {
     if (isLoggedIn) navigate('/upload')
@@ -51,216 +49,196 @@ export default function HeroSection() {
   return (
     <section
       ref={sectionRef}
-      onMouseMove={handleMouseMove}
-      className="relative min-h-[94vh] pt-28 pb-24 flex items-center overflow-hidden hero-gradient"
+      onMouseMove={onMouseMove}
+      className="relative min-h-[96vh] pt-32 pb-24 flex items-center overflow-hidden"
     >
-      <div className="container mx-auto px-6 md:px-16 relative z-10">
-        <div className="flex flex-col md:flex-row-reverse items-center gap-16 lg:gap-24">
+      {/* Warm neutral bg */}
+      <div className="absolute inset-0 hero-gradient pointer-events-none" />
 
-          {/* ── Text side ────────────────────────── */}
-          <motion.div style={{ y: textY }} className="flex-1 max-w-2xl">
-            <motion.p
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="text-sage font-medium tracking-widest text-sm mb-6 uppercase"
-            >
-              אלבומים שנולדו מתמונות אמיתיות
-            </motion.p>
+      <motion.div style={{ opacity: textOpacity }} className="container mx-auto px-6 md:px-16 relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
 
-            <motion.h1
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              className="text-[3.2rem] md:text-[4.2rem] lg:text-[5rem] leading-[1.05] mb-8 text-deep-brown"
-              style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 400 }}
+          {/* ── Text ──────────────────────────────── */}
+          <div className="order-2 lg:order-1 max-w-2xl lg:max-w-none">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             >
-              הבלגן שבגלריה?
-              <br />
-              <span className="font-bold">הפך לאלבום</span>{' '}
-              <span className="relative inline-block min-w-[140px]">
-                {WORDS.map((w, i) => (
-                  <motion.span
-                    key={w}
-                    initial={false}
-                    animate={{
-                      opacity: i === wordIdx ? 1 : 0,
-                      y: i === wordIdx ? 0 : 16,
-                      rotateX: i === wordIdx ? 0 : -40,
-                    }}
-                    transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-                    className="absolute right-0 top-0 font-bold"
-                    style={{
-                      background: 'linear-gradient(135deg, #B8725A 20%, #D4A48A 80%)',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}
-                  >
-                    {w}
-                  </motion.span>
-                ))}
-                <span className="invisible font-bold">ייחודי</span>
-              </span>
-            </motion.h1>
+              <p
+                className="text-sm tracking-[0.2em] text-warm-gray mb-8 font-medium uppercase"
+                style={{ fontFamily: 'var(--font-family-body)' }}
+              >
+                נ.ב. — האלבום מכין את עצמו
+              </p>
+
+              <h1
+                className="text-[2.8rem] sm:text-[3.5rem] lg:text-[4.4rem] leading-[1.06] mb-8 text-deep-brown"
+                style={{ fontFamily: 'var(--font-family-headline)', fontWeight: 400 }}
+              >
+                אלף תמונות בגלריה
+                <br />
+                <span className="font-bold">ואף אחת על הקיר.</span>
+                <br />
+                <span className="relative inline-block mt-1">
+                  <span className="text-warm-gray font-light">זה נגמר </span>
+                  <span className="relative inline-block min-w-[100px] sm:min-w-[140px]">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={wordIdx}
+                        initial={{ opacity: 0, y: 20, filter: 'blur(4px)' }}
+                        animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+                        exit={{ opacity: 0, y: -20, filter: 'blur(4px)' }}
+                        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                        className="absolute right-0 font-bold text-deep-brown"
+                      >
+                        {ROTATING[wordIdx]}.
+                      </motion.span>
+                    </AnimatePresence>
+                    <span className="invisible font-bold">ייחודי.</span>
+                  </span>
+                </span>
+              </h1>
+            </motion.div>
 
             <motion.p
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.45 }}
-              className="text-lg md:text-xl text-warm-gray leading-relaxed mb-10 max-w-lg"
-              style={{ fontFamily: 'var(--font-family-body)' }}
+              transition={{ duration: 0.5, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="text-lg sm:text-xl text-warm-gray leading-relaxed mb-10 max-w-lg"
             >
-              תעלו את התמונות — אנחנו נדאג לסדר, לעצב ולהדפיס.
+              שופכים תמונות מהטלפון.
               <br />
-              <span className="text-deep-brown font-medium">ובלי שתרגישו שעבדתם.</span>
+              מקבלים אלבום מעוצב בדלת.
+              <br />
+              <span className="text-deep-brown font-medium">בין לבין — אפס עבודה.</span>
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.6 }}
-              className="flex flex-col sm:flex-row gap-4"
+              transition={{ duration: 0.5, delay: 0.4 }}
+              className="flex flex-col sm:flex-row gap-4 items-start"
             >
               <motion.button
                 onClick={handleCreate}
-                whileHover={{ scale: 1.03 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                className="group relative py-4 px-10 rounded-2xl text-lg font-semibold text-white overflow-hidden"
+                className="group relative py-4 px-10 rounded-full text-lg font-semibold text-white overflow-hidden"
                 style={{
-                  background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
-                  boxShadow: '0 8px 32px rgba(184,114,90,0.3)',
+                  background: '#2D2926',
+                  boxShadow: '0 4px 24px rgba(26,23,20,0.2)',
                 }}
               >
-                <span className="relative z-10">בואו נתחיל</span>
-                <motion.div
-                  className="absolute inset-0"
-                  style={{
-                    background: 'linear-gradient(135deg, #A06048 0%, #B8725A 100%)',
-                  }}
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: 1 }}
-                  transition={{ duration: 0.3 }}
-                />
+                <span className="relative z-10 flex items-center gap-2">
+                  נתחיל?
+                  <motion.span
+                    className="inline-block"
+                    animate={{ x: [0, -4, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 2 }}
+                  >
+                    ←
+                  </motion.span>
+                </span>
               </motion.button>
 
               <motion.button
                 onClick={handleExisting}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
-                className="py-4 px-8 rounded-2xl text-lg font-medium text-deep-brown hover-underline"
+                className="py-4 px-8 rounded-full text-base font-medium text-deep-brown/70 hover:text-deep-brown transition-colors"
               >
-                יש לי כבר אלבום →
+                יש לי כבר אלבום
               </motion.button>
             </motion.div>
 
-            {/* ── Social proof nugget ─────────────── */}
+            {/* Stats */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.9 }}
-              className="mt-12 flex items-center gap-4"
+              transition={{ duration: 0.6, delay: 0.7 }}
+              className="mt-14 flex items-center gap-8"
             >
-              <div className="flex -space-x-2 rtl:space-x-reverse">
-                {[1, 2, 3, 4].map((i) => (
-                  <div
-                    key={i}
-                    className="w-8 h-8 rounded-full border-2 border-soft-cream bg-surface-container-high"
-                    style={{
-                      backgroundImage: `url(https://i.pravatar.cc/64?img=${20 + i})`,
-                      backgroundSize: 'cover',
-                    }}
-                  />
-                ))}
-              </div>
-              <p className="text-sm text-warm-gray">
-                <span className="font-bold text-deep-brown">2,400+</span> אלבומים נוצרו החודש
-              </p>
+              {[
+                { num: '2,400+', label: 'אלבומים החודש' },
+                { num: '< 2 דק׳', label: 'זמן יצירה' },
+                { num: '4.9', label: 'דירוג ממוצע' },
+              ].map((stat, i) => (
+                <div key={i} className={i > 0 ? 'border-r border-muted-border/30 pr-8' : ''}>
+                  <p className="text-lg font-bold text-deep-brown tabular-nums" style={{ fontFamily: 'var(--font-family-headline)' }}>
+                    {stat.num}
+                  </p>
+                  <p className="text-xs text-warm-gray">{stat.label}</p>
+                </div>
+              ))}
             </motion.div>
-          </motion.div>
+          </div>
 
-          {/* ── Image side with parallax ──────────── */}
+          {/* ── Image ─────────────────────────────── */}
           <motion.div
-            style={{ y: imgY }}
-            className="flex-1 flex items-center justify-center relative"
+            style={{ y: parallaxY }}
+            className="order-1 lg:order-2 flex justify-center relative"
           >
             <motion.div
-              style={{ x: springX, y: springY }}
-              className="relative w-[340px] h-[420px] md:w-[400px] md:h-[500px]"
+              style={{ x: imgX, y: imgY }}
+              className="relative"
             >
-              {/* Shadow card behind */}
+              {/* Soft glow behind */}
               <div
-                className="absolute -inset-3 rounded-3xl -z-10"
+                className="absolute -inset-8 rounded-[2rem] -z-10 opacity-60"
                 style={{
-                  background: 'linear-gradient(160deg, rgba(196,135,109,0.12) 0%, rgba(242,224,214,0.2) 100%)',
-                  filter: 'blur(40px)',
+                  background: 'radial-gradient(ellipse at center, rgba(181,164,138,0.15) 0%, transparent 70%)',
+                  filter: 'blur(30px)',
                 }}
               />
 
-              {/* Main photo */}
               <motion.div
-                initial={{ opacity: 0, y: 40, rotate: 2 }}
-                animate={{ opacity: 1, y: 0, rotate: 2 }}
-                transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute inset-0 rounded-2xl overflow-hidden"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+                className="w-[340px] h-[400px] sm:w-[400px] sm:h-[470px] rounded-2xl overflow-hidden"
                 style={{
-                  boxShadow: '0 32px 80px rgba(53,47,43,0.14), 0 12px 32px rgba(53,47,43,0.08)',
-                }}
-              >
-                <img src="/hero-bg.png" alt="" className="w-full h-full object-cover" />
-              </motion.div>
-
-              {/* Second photo peeking */}
-              <motion.div
-                initial={{ opacity: 0, x: 60 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.7, delay: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute -right-10 top-8 w-[160px] h-[200px] rounded-xl overflow-hidden"
-                style={{
-                  boxShadow: '0 20px 50px rgba(53,47,43,0.12)',
-                  transform: 'rotate(-4deg)',
+                  boxShadow: '0 30px 80px rgba(26,23,20,0.12), 0 10px 30px rgba(26,23,20,0.06)',
                 }}
               >
                 <img
-                  src="https://picsum.photos/seed/momento-hero-2/320/400"
-                  alt=""
+                  src="/hero-nature.png"
+                  alt="אלבום תמונות בחיק הטבע"
                   className="w-full h-full object-cover"
                 />
               </motion.div>
 
-              {/* Floating badge */}
+              {/* Floating badge - bottom left */}
               <motion.div
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{
-                  duration: 0.5,
-                  delay: 0.9,
-                  type: 'spring',
-                  stiffness: 300,
-                  damping: 20,
-                }}
-                className="absolute -bottom-5 -left-5 bg-white rounded-2xl py-3 px-5 flex items-center gap-3 z-10"
-                style={{
-                  boxShadow: '0 16px 48px rgba(53,47,43,0.1)',
-                }}
+                initial={{ opacity: 0, scale: 0.85, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.8, type: 'spring', stiffness: 200, damping: 20 }}
+                className="absolute -bottom-4 -left-6 bg-white rounded-2xl py-3.5 px-5 z-10 flex items-center gap-3"
+                style={{ boxShadow: '0 12px 40px rgba(26,23,20,0.08)' }}
               >
-                <motion.span
-                  animate={{ rotate: [0, 10, -10, 0] }}
-                  transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 3 }}
-                  className="text-2xl"
-                >
-                  ✨
-                </motion.span>
+                <span className="text-xl">✦</span>
                 <div>
                   <p className="text-xs font-bold text-deep-brown" style={{ fontFamily: 'var(--font-family-headline)' }}>
-                    נראה מדהים
+                    מוכן בדקות
                   </p>
-                  <p className="text-[10px] text-warm-gray">עוצב אוטומטית ב-2 דקות</p>
+                  <p className="text-[10px] text-warm-gray">AI עושה הכל</p>
                 </div>
+              </motion.div>
+
+              {/* Floating badge - top right */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.85, y: -20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 1, type: 'spring', stiffness: 200, damping: 20 }}
+                className="absolute -top-3 -right-5 bg-deep-brown text-white rounded-full py-2 px-4 z-10"
+                style={{ boxShadow: '0 8px 24px rgba(26,23,20,0.2)' }}
+              >
+                <p className="text-[11px] font-bold">משלוח חינם 🚀</p>
               </motion.div>
             </motion.div>
           </motion.div>
         </div>
-      </div>
+      </motion.div>
     </section>
   )
 }

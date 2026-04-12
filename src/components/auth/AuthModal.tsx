@@ -107,12 +107,12 @@ export default function AuthModal() {
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="relative w-[440px] max-w-[95vw] rounded-3xl overflow-hidden"
             style={{
-              background: 'linear-gradient(180deg, #FFFAF8 0%, #FAF6F3 100%)',
+              background: 'linear-gradient(180deg, #FEFCF9 0%, #FAFAF7 100%)',
               boxShadow: '0 24px 80px rgba(47,46,43,0.2), 0 8px 24px rgba(47,46,43,0.1)',
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #C4876D 0%, #DEC4B4 50%, #C4876D 100%)' }} />
+            <div className="h-1 w-full" style={{ background: 'linear-gradient(90deg, #2D2926 0%, #8B8573 50%, #2D2926 100%)' }} />
 
             <div className="p-10 pt-8">
               <button
@@ -134,7 +134,7 @@ export default function AuthModal() {
                     <div
                       className="w-12 h-12 rounded-2xl flex items-center justify-center mb-5"
                       style={{
-                        background: 'linear-gradient(135deg, rgba(196,135,109,0.1) 0%, rgba(196,135,109,0.03) 100%)',
+                        background: 'linear-gradient(135deg, rgba(139,133,115,0.1) 0%, rgba(139,133,115,0.03) 100%)',
                       }}
                     >
                       <Icon
@@ -248,8 +248,8 @@ export default function AuthModal() {
                       loadingLabel="מתחבר..."
                       className="w-full py-3.5 rounded-xl font-semibold text-white transition-all mt-2"
                       style={{
-                        background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
-                        boxShadow: '0 4px 16px rgba(184,114,90,0.25)',
+                        background: '#2D2926',
+                        boxShadow: '0 4px 16px rgba(26,23,20,0.2)',
                       }}
                     >
                       {authMode === 'login' ? 'התחבר' : 'צור חשבון'}

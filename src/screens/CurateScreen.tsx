@@ -527,7 +527,7 @@ export default function CurateScreen() {
               <div
                 className="shrink-0 px-6 py-4 flex items-center justify-between border-b border-muted-border/10"
                   style={{
-                    background: 'linear-gradient(180deg, rgba(250,246,243,0.95) 0%, rgba(250,246,243,0.8) 100%)',
+                    background: 'linear-gradient(180deg, rgba(250,250,247,0.95) 0%, rgba(250,250,247,0.8) 100%)',
                     backdropFilter: 'blur(12px)',
                   }}
               >
@@ -578,7 +578,7 @@ export default function CurateScreen() {
                   <div
                     className="shrink-0 px-5 py-3 flex items-center gap-2 border-b border-muted-border/8"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(196,135,109,0.06) 0%, rgba(250,246,243,0.5) 100%)',
+                      background: 'linear-gradient(135deg, rgba(139,133,115,0.06) 0%, rgba(250,250,247,0.5) 100%)',
                     }}
                   >
                     <div className="w-2 h-2 rounded-full bg-sage" />
@@ -609,7 +609,7 @@ export default function CurateScreen() {
                   <div
                     className="shrink-0 px-5 py-3 flex items-center gap-2 border-b border-muted-border/8"
                     style={{
-                      background: 'linear-gradient(135deg, rgba(212,196,190,0.08) 0%, rgba(250,246,243,0.4) 100%)',
+                      background: 'linear-gradient(135deg, rgba(208,204,196,0.08) 0%, rgba(250,250,247,0.4) 100%)',
                     }}
                   >
                     <div className="w-2 h-2 rounded-full bg-warm-gray/40" />
@@ -640,7 +640,7 @@ export default function CurateScreen() {
               <div
                 className="shrink-0 px-6 py-4 flex items-center justify-between border-t border-muted-border/10"
                 style={{
-                  background: 'linear-gradient(0deg, rgba(250,246,243,0.98) 0%, rgba(250,246,243,0.9) 100%)',
+                  background: 'linear-gradient(0deg, rgba(250,250,247,0.98) 0%, rgba(250,250,247,0.9) 100%)',
                   backdropFilter: 'blur(12px)',
                 }}
               >
@@ -667,8 +667,8 @@ export default function CurateScreen() {
                       : 'text-white shadow-lg'
                   }`}
                   style={selectedPhotos.length >= 2 ? {
-                    background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
-                    boxShadow: '0 8px 24px rgba(184, 114, 90, 0.25), 0 2px 8px rgba(184, 114, 90, 0.15)',
+                    background: '#2D2926',
+                    boxShadow: '0 8px 24px rgba(26, 23, 20, 0.2), 0 2px 8px rgba(26, 23, 20, 0.1)',
                   } : undefined}
                 >
                   המשך

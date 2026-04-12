@@ -48,7 +48,7 @@ export default function UploadComplete() {
         transition={{ duration: 0.5, ease: [0.175, 0.885, 0.32, 1.275] }}
         className="w-14 h-14 rounded-full flex items-center justify-center"
         style={{
-          background: 'linear-gradient(135deg, rgba(196,135,109,0.12) 0%, rgba(196,135,109,0.04) 100%)',
+          background: 'linear-gradient(135deg, rgba(139,133,115,0.12) 0%, rgba(139,133,115,0.04) 100%)',
         }}
       >
         <Icon name="check_circle" filled size={34} className="text-sage" />
@@ -102,7 +102,7 @@ export default function UploadComplete() {
           transition={{ delay: 0.35, duration: 0.45 }}
           className="w-full rounded-2xl p-6 flex flex-col gap-5"
           style={{
-            background: 'linear-gradient(160deg, rgba(196,135,109,0.06) 0%, rgba(250,246,243,0.9) 50%, rgba(196,135,109,0.04) 100%)',
+            background: 'linear-gradient(160deg, rgba(139,133,115,0.06) 0%, rgba(250,250,247,0.9) 50%, rgba(139,133,115,0.04) 100%)',
             boxShadow: '0 2px 20px rgba(90, 80, 70, 0.06), inset 0 1px 0 rgba(255,255,255,0.7)',
           }}
         >
@@ -123,7 +123,7 @@ export default function UploadComplete() {
                 transition={{ delay: 0.5, duration: 0.7, ease: 'easeOut' }}
                 className="h-full rounded-full"
                 style={{
-                  background: 'linear-gradient(90deg, #C4876D 0%, #D4A48A 100%)',
+                  background: 'linear-gradient(90deg, #57534E 0%, #8B8573 100%)',
                 }}
               />
             </div>
@@ -142,8 +142,8 @@ export default function UploadComplete() {
               onClick={() => inputRef.current?.click()}
               className="btn-press flex-1 py-3.5 rounded-xl font-semibold text-sm text-white flex items-center justify-center gap-2 transition-shadow hover:shadow-md"
               style={{
-                background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)',
-                boxShadow: '0 4px 14px rgba(196,135,109,0.25)',
+                background: '#2D2926',
+                boxShadow: '0 4px 14px rgba(26,23,20,0.2)',
               }}
             >
               <Icon name="add_photo_alternate" size={18} />
@@ -180,13 +180,13 @@ export default function UploadComplete() {
         transition={{ delay: 0.45, duration: 0.4 }}
         className="flex items-start gap-3.5 rounded-2xl p-5 w-full"
         style={{
-          background: 'linear-gradient(135deg, rgba(242,224,214,0.25) 0%, rgba(250,246,243,0.6) 100%)',
+          background: 'linear-gradient(135deg, rgba(232,228,220,0.25) 0%, rgba(250,250,247,0.6) 100%)',
           boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.5)',
         }}
       >
         <div
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
-          style={{ background: 'linear-gradient(135deg, rgba(196,135,109,0.12) 0%, rgba(196,135,109,0.04) 100%)' }}
+          style={{ background: 'linear-gradient(135deg, rgba(139,133,115,0.12) 0%, rgba(139,133,115,0.04) 100%)' }}
         >
           <Icon name="auto_awesome" filled size={18} className="text-sage" />
         </div>
@@ -213,8 +213,8 @@ export default function UploadComplete() {
               : 'text-white'
           }`}
           style={!belowMin ? {
-            background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
-            boxShadow: '0 8px 24px rgba(184, 114, 90, 0.25), 0 2px 8px rgba(184, 114, 90, 0.15)',
+            background: '#2D2926',
+            boxShadow: '0 8px 24px rgba(26, 23, 20, 0.2), 0 2px 8px rgba(26, 23, 20, 0.1)',
           } : undefined}
         >
           המשך

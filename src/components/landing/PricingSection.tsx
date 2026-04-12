@@ -5,25 +5,19 @@ import { useUIStore } from '../../store/uiStore'
 import { PRICING } from '../../lib/constants'
 import Icon from '../shared/Icon'
 
-function AnimatedPrice({ target, isInView }: { target: number; isInView: boolean }) {
+function AnimatedPrice({ target, isInView: visible }: { target: number; isInView: boolean }) {
   const [value, setValue] = useState(0)
-
   useEffect(() => {
-    if (!isInView) return
-    let start = 0
+    if (!visible) return
     const duration = 1200
-    const startTime = performance.now()
-    const animate = (now: number) => {
-      const elapsed = now - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      const eased = 1 - Math.pow(1 - progress, 3)
-      start = Math.round(eased * target)
-      setValue(start)
-      if (progress < 1) requestAnimationFrame(animate)
+    const start = performance.now()
+    const tick = (now: number) => {
+      const p = Math.min((now - start) / duration, 1)
+      setValue(Math.round((1 - Math.pow(1 - p, 3)) * target))
+      if (p < 1) requestAnimationFrame(tick)
     }
-    requestAnimationFrame(animate)
-  }, [target, isInView])
-
+    requestAnimationFrame(tick)
+  }, [target, visible])
   return <>{value}</>
 }
 
@@ -48,17 +42,15 @@ export default function PricingSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-16"
         >
-          <p className="text-sage font-medium tracking-widest text-sm mb-4 uppercase">
-            תמחור
-          </p>
+          <p className="text-sage font-medium tracking-[0.2em] text-xs mb-4 uppercase">תמחור</p>
           <h2
             className="text-4xl md:text-5xl text-deep-brown mb-4"
             style={{ fontFamily: 'var(--font-family-headline)' }}
           >
-            פשוט, <span className="font-bold">בלי הפתעות.</span>
+            בלי אותיות קטנות.
           </h2>
           <p className="text-warm-gray text-lg max-w-md mx-auto">
-            הכל כלול — עיצוב AI, כריכה קשה, ומשלוח חינם.
+            הכל כלול. עיצוב, כריכה קשה, משלוח. נקודה.
           </p>
         </motion.div>
 
@@ -69,31 +61,23 @@ export default function PricingSection() {
               initial={{ opacity: 0, y: 30 }}
               animate={isInView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.6, delay: i * 0.12, ease: [0.22, 1, 0.36, 1] }}
-              whileHover={{
-                y: -8,
-                transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
-              }}
+              whileHover={{ y: -8, transition: { duration: 0.3 } }}
               className={`tilt-card relative rounded-3xl p-8 flex flex-col cursor-default ${
                 plan.recommended ? 'md:scale-[1.04]' : ''
               }`}
               style={{
-                background: plan.recommended
-                  ? 'linear-gradient(160deg, #352F2B 0%, #4A403A 100%)'
-                  : 'white',
+                background: plan.recommended ? '#1A1714' : 'white',
                 color: plan.recommended ? 'white' : undefined,
                 boxShadow: plan.recommended
-                  ? '0 20px 60px rgba(53,47,43,0.2)'
-                  : '0 4px 24px rgba(53,47,43,0.04)',
+                  ? '0 20px 60px rgba(26,23,20,0.2)'
+                  : '0 2px 20px rgba(26,23,20,0.03)',
                 border: plan.recommended ? 'none' : '1px solid rgba(0,0,0,0.03)',
               }}
             >
               {plan.recommended && (
                 <span
-                  className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-5 py-1.5 rounded-full"
-                  style={{
-                    background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
-                    color: 'white',
-                  }}
+                  className="absolute -top-3 left-1/2 -translate-x-1/2 text-xs font-bold px-5 py-1.5 rounded-full bg-white text-deep-brown"
+                  style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
                 >
                   הכי פופולרי
                 </span>
@@ -105,15 +89,12 @@ export default function PricingSection() {
               >
                 {plan.name}
               </h3>
-              <p className={`text-sm mb-6 ${plan.recommended ? 'text-white/60' : 'text-warm-gray'}`}>
-                {plan.id === 'basic' ? 'להתחלה מושלמת' : plan.id === 'premium' ? 'הבחירה של רוב הלקוחות' : 'לרגעים הגדולים'}
+              <p className={`text-sm mb-6 ${plan.recommended ? 'text-white/50' : 'text-warm-gray'}`}>
+                {plan.id === 'basic' ? 'להתחלה' : plan.id === 'premium' ? 'הבחירה של רוב האנשים' : 'לרגעים שלא חוזרים'}
               </p>
 
               <div className="mb-8">
-                <span
-                  className="text-5xl font-bold tabular-nums"
-                  style={{ fontFamily: 'var(--font-family-headline)' }}
-                >
+                <span className="text-5xl font-bold tabular-nums" style={{ fontFamily: 'var(--font-family-headline)' }}>
                   ₪<AnimatedPrice target={plan.price} isInView={isInView} />
                 </span>
               </div>
@@ -122,12 +103,11 @@ export default function PricingSection() {
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-center gap-2.5 text-sm">
                     <Icon
-                      name="check_circle"
-                      filled
-                      size={18}
-                      className={plan.recommended ? 'text-sage' : 'text-sage/70'}
+                      name="check"
+                      size={16}
+                      className={plan.recommended ? 'text-white/40' : 'text-sage'}
                     />
-                    <span className={plan.recommended ? 'text-white/85' : ''}>{f}</span>
+                    <span className={plan.recommended ? 'text-white/80' : ''}>{f}</span>
                   </li>
                 ))}
               </ul>
@@ -137,17 +117,13 @@ export default function PricingSection() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 className={`w-full py-3.5 rounded-xl font-semibold transition-all ${
-                  plan.recommended
-                    ? 'text-deep-brown'
-                    : 'text-white'
+                  plan.recommended ? 'text-deep-brown bg-white' : 'text-white'
                 }`}
                 style={{
-                  background: plan.recommended
-                    ? 'linear-gradient(135deg, #FAF6F3 0%, #F0E8E4 100%)'
-                    : 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
+                  background: plan.recommended ? 'white' : '#2D2926',
                   boxShadow: plan.recommended
-                    ? '0 4px 16px rgba(0,0,0,0.15)'
-                    : '0 4px 16px rgba(184,114,90,0.25)',
+                    ? '0 4px 16px rgba(0,0,0,0.1)'
+                    : '0 4px 16px rgba(26,23,20,0.15)',
                 }}
               >
                 בחירה

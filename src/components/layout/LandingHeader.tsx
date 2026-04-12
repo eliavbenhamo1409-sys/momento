@@ -41,9 +41,7 @@ export default function LandingHeader() {
     else openAuthModal('login', '/upload')
   }
 
-  const handleLogin = () => {
-    openAuthModal('login', '/dashboard')
-  }
+  const handleLogin = () => openAuthModal('login', '/dashboard')
 
   const handleLogout = () => {
     logout()
@@ -54,7 +52,6 @@ export default function LandingHeader() {
 
   return (
     <>
-      {/* Scroll progress line */}
       <motion.div
         className="fixed top-0 left-0 right-0 h-[2px] z-[60] scroll-progress origin-left"
         style={{ scaleX: progressScaleX }}
@@ -62,9 +59,7 @@ export default function LandingHeader() {
 
       <header
         className={`fixed top-0 w-full z-50 flex justify-between items-center px-8 md:px-16 py-4 transition-all duration-500 ${
-          scrolled
-            ? 'glass-header border-b border-muted-border/15'
-            : 'bg-transparent'
+          scrolled ? 'glass-header border-b border-muted-border/15' : 'bg-transparent'
         }`}
       >
         <div
@@ -97,10 +92,7 @@ export default function LandingHeader() {
                 <span className="text-sm font-medium text-deep-brown hidden sm:block">{userName}</span>
                 <div
                   className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold text-white"
-                  style={{
-                    background: 'linear-gradient(135deg, #C4876D 0%, #B07050 100%)',
-                    boxShadow: '0 2px 8px rgba(196,135,109,0.3)',
-                  }}
+                  style={{ background: '#2D2926' }}
                 >
                   {initial}
                 </div>
@@ -117,12 +109,12 @@ export default function LandingHeader() {
                     style={{
                       background: 'rgba(255,255,255,0.92)',
                       backdropFilter: 'blur(24px)',
-                      boxShadow: '0 8px 40px rgba(90,80,70,0.12), 0 2px 12px rgba(90,80,70,0.06)',
-                      border: '1px solid rgba(216,208,207,0.3)',
+                      boxShadow: '0 8px 40px rgba(26,23,20,0.1), 0 2px 12px rgba(26,23,20,0.05)',
+                      border: '1px solid rgba(0,0,0,0.05)',
                     }}
                   >
                     <DropdownItem icon="dashboard" label="דשבורד" onClick={() => { navigate('/dashboard'); setMenuOpen(false) }} />
-                    <DropdownItem icon="add_circle" label="צור אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
+                    <DropdownItem icon="add_circle" label="אלבום חדש" onClick={() => { navigate('/upload'); setMenuOpen(false) }} />
                     <div className="h-px bg-muted-border/15 my-1 mx-2" />
                     <DropdownItem icon="logout" label="התנתקות" onClick={handleLogout} danger />
                   </motion.div>
@@ -141,11 +133,8 @@ export default function LandingHeader() {
                 onClick={handleCreate}
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
-                className="text-on-primary px-6 py-2.5 rounded-full font-medium text-sm"
-                style={{
-                  background: 'linear-gradient(135deg, #B8725A 0%, #C4876D 100%)',
-                  boxShadow: '0 4px 16px rgba(184,114,90,0.25)',
-                }}
+                className="text-white px-6 py-2.5 rounded-full font-medium text-sm"
+                style={{ background: '#2D2926' }}
               >
                 התחל יצירה
               </motion.button>
@@ -158,18 +147,13 @@ export default function LandingHeader() {
 }
 
 function DropdownItem({ icon, label, onClick, danger }: {
-  icon: string
-  label: string
-  onClick: () => void
-  danger?: boolean
+  icon: string; label: string; onClick: () => void; danger?: boolean
 }) {
   return (
     <button
       onClick={onClick}
       className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm transition-colors ${
-        danger
-          ? 'text-error/80 hover:bg-error/5'
-          : 'text-deep-brown hover:bg-surface-container/50'
+        danger ? 'text-error/80 hover:bg-error/5' : 'text-deep-brown hover:bg-surface-container/50'
       }`}
     >
       <Icon name={icon} size={18} className={danger ? 'text-error/60' : 'text-warm-gray'} />
