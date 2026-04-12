@@ -157,19 +157,19 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
               <div key={step.num} className="flex items-center gap-5 lg:gap-7">
                 <div className="flex items-center gap-2.5">
                   <span
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/20 text-[10px] font-light tracking-[0.15em] text-white/70"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/40 text-[10px] font-light tracking-[0.15em] text-white"
                   >
                     {step.num}
                   </span>
                   <span
-                    className="whitespace-nowrap text-[13px] font-light tracking-[0.04em] text-white/85"
+                    className="whitespace-nowrap text-[13px] font-light tracking-[0.04em] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.4)]"
                     style={{ fontFamily: 'var(--font-family-headline)' }}
                   >
                     {step.text}
                   </span>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <span className="block h-px w-6 bg-white/20 lg:w-8" aria-hidden />
+                  <span className="block h-px w-6 bg-white/35 lg:w-8" aria-hidden />
                 )}
               </div>
             ))}
@@ -186,18 +186,18 @@ export default function VideoShowcase({ lead = false }: VideoShowcaseProps) {
           {STEPS.map((step, i) => (
             <div key={step.num} className="flex items-center gap-3">
               <div className="flex items-center gap-1.5">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/20 text-[8px] font-light tracking-[0.15em] text-white/70">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-white/40 text-[8px] font-light tracking-[0.15em] text-white">
                   {step.num}
                 </span>
                 <span
-                  className="whitespace-nowrap text-[10px] font-light tracking-[0.02em] text-white/80"
+                  className="whitespace-nowrap text-[10px] font-light tracking-[0.02em] text-white"
                   style={{ fontFamily: 'var(--font-family-headline)' }}
                 >
                   {step.text}
                 </span>
               </div>
               {i < STEPS.length - 1 && (
-                <span className="block h-px w-3 bg-white/20" aria-hidden />
+                <span className="block h-px w-3 bg-white/35" aria-hidden />
               )}
             </div>
           ))}
