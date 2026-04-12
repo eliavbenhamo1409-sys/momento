@@ -152,6 +152,22 @@ body {
   transform: translateY(-6px);
 }
 
+/* ── Trust strip: seamless marquee (CSS, measured strip width) ── */
+@keyframes trust-marquee-shift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(calc(-1 * var(--trust-strip-px, 0px)), 0, 0);
+  }
+}
+.trust-marquee-track.trust-marquee-running {
+  animation-name: trust-marquee-shift;
+  animation-duration: var(--trust-marquee-sec, 20s);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
 /* ── Underline reveal on hover ────────────────────── */
 .hover-underline {
   position: relative;
