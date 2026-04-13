@@ -5,7 +5,7 @@ import type { LayoutTemplate, PageRules, SlotDefinition, TemplateCategory, Desig
 export const PAGE_RULES: PageRules = {
   bleedMm: 3,
   safeMarginMm: 8,
-  gutterMm: 12,
+  gutterMm: 0,
   firstSpreadTemplate: 'cover-hero',
   lastSpreadTemplate: 'closing',
   maxConsecutiveSameCategory: 2,
@@ -420,7 +420,7 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     minPhotos: 1,
     maxPhotos: 1,
     acceptsQuote: false,
-    cannotRepeatWithin: 999,
+    cannotRepeatWithin: 5,
     bestForMood: ['dramatic', 'serene', 'romantic', 'nostalgic', 'tender', 'joyful'],
     bestForScene: ['landscape_scenic', 'outdoor', 'portrait', 'group', 'detail'],
     spanning: true,
@@ -1056,6 +1056,528 @@ export const LAYOUT_TEMPLATES: LayoutTemplate[] = [
     ],
   },
 
+  // ═══════════════════════════════════════════════════════════════════
+  // NEW TEMPLATES — Full-spread, 6-photo, spanning, and variety
+  // All layouts assume continuous 60×30 cm print (no gutter)
+  // ═══════════════════════════════════════════════════════════════════
+
+  // ── 52. Full Bleed Single (reusable full-spread hero) ─────────────
+  {
+    id: 'full-bleed-single',
+    name: 'תמונה מלאה על כל הדף',
+    category: 'hero',
+    minPhotos: 1,
+    maxPhotos: 1,
+    acceptsQuote: true,
+    quotePosition: 'right-center',
+    cannotRepeatWithin: 4,
+    bestForMood: ['dramatic', 'serene', 'romantic', 'nostalgic', 'tender'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'portrait', 'group'],
+    spanning: true,
+    slots: [
+      slot('full', 'left', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 7, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 53. Full Spread + Bottom Strip (hero + 3 accents) ─────────────
+  {
+    id: 'full-spread-bottom-strip',
+    name: 'פנורמה + רצועה תחתונה',
+    category: 'hero',
+    minPhotos: 3,
+    maxPhotos: 4,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'romantic', 'nostalgic', 'dramatic'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'group', 'portrait'],
+    spanning: true,
+    spanningSlotIds: ['span-hero'],
+    slots: [
+      slot('span-hero', 'left', 0, 0, 100, 65, {
+        importance: 'hero', minQuality: 6, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('strip-1', 'left', 0, 65, 50, 35, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('strip-2', 'left', 50, 65, 50, 35, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('strip-3', 'right', 0, 65, 100, 35, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 54. Full Spread + Corner Accents ──────────────────────────────
+  {
+    id: 'full-spread-corner-duo',
+    name: 'פנורמה + אקסנטים בפינות',
+    category: 'hero',
+    minPhotos: 2,
+    maxPhotos: 3,
+    acceptsQuote: true,
+    quotePosition: 'right-bottom',
+    cannotRepeatWithin: 5,
+    bestForMood: ['dramatic', 'romantic', 'serene', 'tender'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'portrait'],
+    spanning: true,
+    slots: [
+      slot('bg-span', 'left', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 7, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('corner-bl', 'left', 5, 70, 25, 25, {
+        importance: 'accent', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('corner-tr', 'right', 70, 5, 25, 25, {
+        importance: 'accent', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 55. Cinematic Bars (letterbox hero + side strips) ─────────────
+  {
+    id: 'cinematic-bars',
+    name: 'קולנועי',
+    category: 'balanced',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: false,
+    cannotRepeatWithin: 5,
+    bestForMood: ['dramatic', 'serene', 'nostalgic', 'romantic'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'portrait', 'architecture'],
+    spanning: true,
+    spanningSlotIds: ['center-hero'],
+    slots: [
+      slot('top-strip', 'left', 0, 0, 100, 20, {
+        importance: 'accent', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('center-hero', 'left', 0, 20, 100, 60, {
+        importance: 'hero', minQuality: 7, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-strip', 'right', 0, 80, 100, 20, {
+        importance: 'accent', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 56. Duo Full (2 photos, each filling one page) ────────────────
+  {
+    id: 'duo-full',
+    name: 'זוג עמודים מלאים',
+    category: 'balanced',
+    minPhotos: 2,
+    maxPhotos: 2,
+    acceptsQuote: false,
+    cannotRepeatWithin: 3,
+    bestForMood: ['romantic', 'dramatic', 'serene', 'tender', 'joyful'],
+    bestForScene: ['portrait', 'outdoor', 'landscape_scenic', 'group'],
+    slots: [
+      slot('left-full', 'left', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('right-full', 'right', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 57. Grid 3×2 Spanning (6 equal cells across both pages) ───────
+  {
+    id: 'grid-3x2-spanning',
+    name: 'רשת 3×2 רציפה',
+    category: 'grid',
+    minPhotos: 5,
+    maxPhotos: 6,
+    acceptsQuote: false,
+    cannotRepeatWithin: 3,
+    bestForMood: ['joyful', 'energetic', 'nostalgic'],
+    bestForScene: ['detail', 'food', 'group', 'outdoor', 'indoor'],
+    spanning: true,
+    slots: [
+      slot('tl', 'left', 0, 0, 50, 50, { importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('tc', 'left', 50, 0, 50, 50, { importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('tr', 'right', 0, 0, 100, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('bl', 'left', 0, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('bc', 'left', 50, 50, 50, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('br', 'right', 0, 50, 100, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 58. Hero Span + 5 Bottom (spanning hero + bottom strip) ───────
+  {
+    id: 'hero-span-plus-5',
+    name: 'ראשית רציפה + 5',
+    category: 'hero',
+    minPhotos: 5,
+    maxPhotos: 6,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'romantic', 'dramatic', 'nostalgic'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'group', 'portrait'],
+    spanning: true,
+    spanningSlotIds: ['hero-top'],
+    slots: [
+      slot('hero-top', 'left', 0, 0, 100, 55, {
+        importance: 'hero', minQuality: 6, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('b1', 'left', 0, 55, 33.33, 45, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('b2', 'left', 33.33, 55, 33.34, 45, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('b3', 'left', 66.67, 55, 33.33, 45, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('b4', 'right', 0, 55, 50, 45, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('b5', 'right', 50, 55, 50, 45, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 59. Mosaic 6 Asymmetric (large + stacked + strip) ─────────────
+  {
+    id: 'mosaic-6-asymmetric',
+    name: 'מוזאיקה 6 א-סימטרית',
+    category: 'mosaic',
+    minPhotos: 5,
+    maxPhotos: 6,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'energetic', 'nostalgic', 'romantic'],
+    bestForScene: ['outdoor', 'group', 'portrait', 'detail'],
+    slots: [
+      slot('l-big', 'left', 0, 0, 60, 60, { importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-side-top', 'left', 60, 0, 40, 30, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-side-bot', 'left', 60, 30, 40, 30, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bottom', 'left', 0, 60, 100, 40, { importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+      slot('r-top', 'right', 0, 0, 100, 55, { importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom', 'right', 0, 55, 100, 45, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 60. Editorial 6 Magazine (mirrored tall + stacked) ────────────
+  {
+    id: 'editorial-6-magazine',
+    name: 'מגזין 6 אדיטוריאלי',
+    category: 'balanced',
+    minPhotos: 5,
+    maxPhotos: 6,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['dramatic', 'romantic', 'joyful', 'energetic'],
+    bestForScene: ['portrait', 'outdoor', 'group', 'indoor'],
+    slots: [
+      slot('l-tall', 'left', 0, 0, 40, 100, { importance: 'hero', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+      slot('l-top-r', 'left', 40, 0, 60, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('l-bot-r', 'left', 40, 50, 60, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-top-l', 'right', 0, 0, 60, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bot-l', 'right', 0, 50, 60, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-tall', 'right', 60, 0, 40, 100, { importance: 'hero', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 61. Six Equal Spanning (2 rows × 3 columns across center) ─────
+  {
+    id: 'six-equal-spanning',
+    name: '6 שוות רציפות',
+    category: 'grid',
+    minPhotos: 6,
+    maxPhotos: 6,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'energetic', 'nostalgic', 'neutral'],
+    bestForScene: ['detail', 'food', 'group', 'outdoor', 'indoor'],
+    spanning: true,
+    slots: [
+      slot('r1c1', 'left', 0, 0, 33.33, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r1c2', 'left', 33.33, 0, 33.34, 50, { importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r1c3', 'left', 66.67, 0, 33.33, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r2c1', 'right', 0, 50, 33.33, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r2c2', 'right', 33.33, 50, 33.34, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r2c3', 'right', 66.67, 50, 33.33, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 62. Hero Left + Five Right (1 hero + 5 grid) ──────────────────
+  {
+    id: 'hero-left-five-right',
+    name: 'ראשית שמאל + 5 ימין',
+    category: 'hero',
+    minPhotos: 5,
+    maxPhotos: 6,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'romantic', 'nostalgic', 'energetic'],
+    bestForScene: ['outdoor', 'portrait', 'group', 'detail'],
+    slots: [
+      slot('l-hero', 'left', 0, 0, 100, 100, {
+        importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('r-tl', 'right', 0, 0, 50, 33.33, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-tr', 'right', 50, 0, 50, 33.33, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-ml', 'right', 0, 33.33, 50, 33.34, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-mr', 'right', 50, 33.33, 50, 33.34, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r-bottom', 'right', 0, 66.67, 100, 33.33, { importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 63. Center Hero + Wings (cross-center hero with side accents) ──
+  {
+    id: 'center-hero-wings',
+    name: 'גיבור מרכזי + כנפיים',
+    category: 'hero',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: true,
+    quotePosition: 'left-bottom',
+    cannotRepeatWithin: 4,
+    bestForMood: ['dramatic', 'romantic', 'serene', 'tender'],
+    bestForScene: ['portrait', 'outdoor', 'landscape_scenic'],
+    spanning: true,
+    spanningSlotIds: ['center-span'],
+    slots: [
+      slot('wing-left', 'left', 0, 0, 20, 100, {
+        importance: 'accent', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('center-span', 'left', 20, 0, 80, 100, {
+        importance: 'hero', minQuality: 7, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('wing-right', 'right', 80, 0, 20, 100, {
+        importance: 'accent', accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 64. Panoramic Trio (3 horizontal bands spanning both pages) ────
+  {
+    id: 'panoramic-trio',
+    name: 'שלישייה פנורמית',
+    category: 'balanced',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['serene', 'dramatic', 'nostalgic', 'romantic'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'architecture', 'group'],
+    spanning: true,
+    slots: [
+      slot('top-band', 'left', 0, 0, 100, 33, {
+        importance: 'primary', minQuality: 5, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('mid-band', 'left', 0, 33, 100, 34, {
+        importance: 'hero', minQuality: 6, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bot-band', 'left', 0, 67, 100, 33, {
+        importance: 'secondary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 65. T-Shape Span (spanning top band + 2 tall photos below) ────
+  {
+    id: 't-shape-span',
+    name: 'צורת T רציפה',
+    category: 'balanced',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: true,
+    quotePosition: 'left-bottom',
+    cannotRepeatWithin: 4,
+    bestForMood: ['romantic', 'dramatic', 'serene', 'tender'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'portrait', 'group'],
+    spanning: true,
+    spanningSlotIds: ['top-span'],
+    slots: [
+      slot('top-span', 'left', 0, 0, 100, 40, {
+        importance: 'hero', minQuality: 6, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-left', 'left', 0, 40, 100, 60, {
+        importance: 'primary', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-right', 'right', 0, 40, 100, 60, {
+        importance: 'primary', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 66. Triptych Vertical (3 equal columns spanning both pages) ───
+  {
+    id: 'triptych-vertical',
+    name: 'טריפטיך אנכי',
+    category: 'grid',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['dramatic', 'serene', 'romantic', 'nostalgic'],
+    bestForScene: ['portrait', 'outdoor', 'landscape_scenic', 'architecture'],
+    spanning: true,
+    slots: [
+      slot('col-left', 'left', 0, 0, 50, 100, {
+        importance: 'primary', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('col-center', 'left', 50, 0, 50, 100, {
+        importance: 'hero', minQuality: 6, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('col-right', 'right', 0, 0, 100, 100, {
+        importance: 'primary', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 67. Asymmetric Cascade (4 photos, large to small spanning) ────
+  {
+    id: 'asymmetric-cascade',
+    name: 'מפל א-סימטרי',
+    category: 'balanced',
+    minPhotos: 4,
+    maxPhotos: 4,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['dramatic', 'energetic', 'joyful', 'romantic'],
+    bestForScene: ['outdoor', 'portrait', 'group', 'action'],
+    spanning: true,
+    spanningSlotIds: ['cascade-hero'],
+    slots: [
+      slot('cascade-hero', 'left', 0, 0, 100, 55, {
+        importance: 'hero', minQuality: 6, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('cascade-mid', 'left', 0, 55, 40, 45, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('cascade-small-1', 'left', 40, 55, 60, 45, {
+        importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('cascade-small-2', 'right', 0, 55, 100, 45, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 68. Filmstrip Horizontal (4-5 photos in a row spanning) ───────
+  {
+    id: 'filmstrip-horizontal',
+    name: 'רצועת פילם',
+    category: 'grid',
+    minPhotos: 4,
+    maxPhotos: 5,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['nostalgic', 'joyful', 'energetic', 'romantic'],
+    bestForScene: ['outdoor', 'portrait', 'group', 'detail', 'action'],
+    spanning: true,
+    slots: [
+      slot('f1', 'left', 0, 15, 50, 70, { importance: 'primary', minQuality: 4, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('f2', 'left', 50, 15, 50, 70, { importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('f3', 'right', 0, 15, 33.33, 70, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('f4', 'right', 33.33, 15, 33.34, 70, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('f5', 'right', 66.67, 15, 33.33, 70, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 69. Inverted T (2 tall photos top + spanning bottom band) ─────
+  {
+    id: 'inverted-t-span',
+    name: 'T הפוך רציף',
+    category: 'balanced',
+    minPhotos: 3,
+    maxPhotos: 3,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['dramatic', 'romantic', 'serene', 'joyful'],
+    bestForScene: ['portrait', 'outdoor', 'landscape_scenic', 'group'],
+    spanning: true,
+    spanningSlotIds: ['bottom-span'],
+    slots: [
+      slot('top-left', 'left', 0, 0, 100, 60, {
+        importance: 'hero', minQuality: 6, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('top-right', 'right', 0, 0, 100, 60, {
+        importance: 'primary', minQuality: 5, accepts: ['portrait', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('bottom-span', 'left', 0, 60, 100, 40, {
+        importance: 'primary', accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
+  // ── 70. Grid 2×4 (8 equal cells across both pages) ────────────────
+  {
+    id: 'grid-2x4',
+    name: 'רשת 2×4',
+    category: 'grid',
+    minPhotos: 7,
+    maxPhotos: 8,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'energetic', 'nostalgic', 'neutral'],
+    bestForScene: ['detail', 'food', 'group', 'outdoor', 'indoor'],
+    spanning: true,
+    slots: [
+      slot('r1c1', 'left', 0, 0, 25, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r1c2', 'left', 25, 0, 25, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r1c3', 'left', 50, 0, 25, 50, { importance: 'hero', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r1c4', 'left', 75, 0, 25, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r2c1', 'right', 0, 50, 25, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r2c2', 'right', 25, 50, 25, 50, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r2c3', 'right', 50, 50, 25, 50, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('r2c4', 'right', 75, 50, 25, 50, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 71. Hero Span + Quad Bottom (spanning hero + 4 below) ─────────
+  {
+    id: 'hero-span-quad',
+    name: 'ראשית רציפה + 4',
+    category: 'hero',
+    minPhotos: 4,
+    maxPhotos: 5,
+    acceptsQuote: false,
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'romantic', 'dramatic', 'nostalgic'],
+    bestForScene: ['landscape_scenic', 'outdoor', 'group', 'portrait'],
+    spanning: true,
+    spanningSlotIds: ['hero-top'],
+    slots: [
+      slot('hero-top', 'left', 0, 0, 100, 60, {
+        importance: 'hero', minQuality: 6, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('q1', 'left', 0, 60, 50, 40, { importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('q2', 'left', 50, 60, 50, 40, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('q3', 'right', 0, 60, 50, 40, { importance: 'secondary', accepts: ['any'], safeZone: SAFE_BLEED }),
+      slot('q4', 'right', 50, 60, 50, 40, { importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED }),
+    ],
+  },
+
+  // ── 72. Cross Grid 5 (L-shape spanning + accents) ─────────────────
+  {
+    id: 'cross-grid-5',
+    name: 'רשת חוצה 5',
+    category: 'balanced',
+    minPhotos: 4,
+    maxPhotos: 5,
+    acceptsQuote: true,
+    quotePosition: 'right-bottom',
+    cannotRepeatWithin: 4,
+    bestForMood: ['joyful', 'romantic', 'nostalgic', 'dramatic'],
+    bestForScene: ['outdoor', 'portrait', 'group', 'detail'],
+    spanning: true,
+    spanningSlotIds: ['span-top'],
+    slots: [
+      slot('span-top', 'left', 0, 0, 100, 45, {
+        importance: 'hero', minQuality: 6, accepts: ['landscape', 'any'], safeZone: SAFE_BLEED,
+      }),
+      slot('mid-left', 'left', 0, 45, 60, 55, {
+        importance: 'primary', minQuality: 5, accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('mid-right-top', 'left', 60, 45, 40, 27.5, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('mid-right-bot', 'left', 60, 72.5, 40, 27.5, {
+        importance: 'accent', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+      slot('r-full', 'right', 0, 45, 100, 55, {
+        importance: 'primary', accepts: ['any'], safeZone: SAFE_BLEED,
+      }),
+    ],
+  },
+
 ]
 
 // ─── Template Lookup ────────────────────────────────────────────────
@@ -1107,27 +1629,41 @@ export function isTemplateAllowedAtPosition(
 /** Deterministic fallback sequence when AI is unavailable */
 export const FALLBACK_SEQUENCE: string[] = [
   'cover-hero',
+  'full-bleed-single',
   'editorial-hero-mosaic',
-  'photo-over-photo',
+  'duo-full',
   'hero-top-grid-bottom',
+  'panoramic-trio',
   'editorial-grid-duo',
+  'full-spread-bottom-strip',
   'dynamic-trio',
+  'hero-span-plus-5',
   'portrait-hero-grid',
+  't-shape-span',
   'editorial-magazine',
+  'filmstrip-horizontal',
   'hero-left-grid-right',
+  'triptych-vertical',
   'editorial-stagger-3',
+  'center-hero-wings',
   'l-shape',
-  'photo-over-photo-right',
+  'six-equal-spanning',
+  'photo-over-photo',
+  'editorial-6-magazine',
   'portrait-trio',
+  'asymmetric-cascade',
   'mosaic-5',
-  'editorial-hero-mosaic',
+  'hero-span-quad',
   'balanced-4',
+  'inverted-t-span',
   'trio-left-hero-right',
-  'grid-3x2',
+  'grid-3x2-spanning',
   'editorial-grid-duo',
+  'cross-grid-5',
   'detail-grid',
+  'cinematic-bars',
   'hero-left-grid-right',
-  'editorial-magazine',
+  'mosaic-6-asymmetric',
 ]
 
 /** Get a deterministic template for a given spread index (fallback mode) */

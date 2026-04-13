@@ -50,10 +50,12 @@ DESIGN VOCABULARY (from this family):
 ${describePrimitivesForPrompt()}
 
 COORDINATE SYSTEM:
-- The spread is divided into two pages: LEFT (x: 0-48%) and RIGHT (x: 52-100%).
-- The GUTTER is at x: 48-52%. NEVER place important elements there.
+- The spread is a CONTINUOUS surface (printed on a single 60×30 cm sheet — no physical seam at the center).
+- It is divided into two rendering pages: LEFT (x: 0-50%) and RIGHT (x: 50-100%).
+- Photos and elements CAN freely cross the center. Spanning across both pages is encouraged for hero/panoramic shots.
 - All x, y, w, h values are PERCENTAGES of the full spread (0-100).
-- Page "left" means the element's x should be in 0-48%. Page "right" means 52-100%.
+- Page "left" means the element starts on the left half. Page "right" means it starts on the right half.
+- For spanning elements, place them on page "left" with width that extends across the center.
 
 ROLE-BASED DESIGN RULES:
 - "cover": 1 hero photo, centered or asymmetric, dramatic. May include album title text.
@@ -244,8 +246,8 @@ IMPORTANT RULES:
 - Each spread should feel unique — vary layouts, photo sizes, and composition.
 - Stay within the design family's color palette and styling vocabulary.
 - All coordinates are percentages (0-100) of the full spread.
-- LEFT page: x values 0-48%. RIGHT page: x values 52-100%.
-- Respect gutter zone: no important content at x 48-52%.
+- LEFT page: x values 0-50%. RIGHT page: x values 50-100%.
+- The spread is continuous (no gutter) — elements can freely span across the center.
 
 Return valid JSON only.`
 

@@ -1964,25 +1964,7 @@ export default function EditorCanvas() {
             )}
           </AnimatePresence>
 
-          {coverView === 'none' && (
-            <>
-              {/* Spine divider */}
-              <div
-                className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px pointer-events-none z-30"
-                style={{
-                  background: 'linear-gradient(to bottom, transparent 4%, rgba(0,0,0,0.10) 15%, rgba(0,0,0,0.13) 50%, rgba(0,0,0,0.10) 85%, transparent 96%)',
-                }}
-              />
-              <div
-                className="absolute top-0 bottom-0 left-1/2 pointer-events-none z-30"
-                style={{
-                  width: 6,
-                  transform: 'translateX(-50%)',
-                  background: 'linear-gradient(to right, rgba(0,0,0,0.03), transparent 35%, transparent 65%, rgba(0,0,0,0.03))',
-                }}
-              />
-            </>
-          )}
+          {/* Spine divider removed — album prints on continuous 60×30 cm sheets */}
         </div>
 
         <SpreadNavArrow

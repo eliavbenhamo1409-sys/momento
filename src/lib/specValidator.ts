@@ -124,12 +124,6 @@ function validatePhotoSlot(
   const h = clamp(slot.h ?? 30, bounds.h[0], bounds.h[1])
 
   const page = slot.page === 'right' ? 'right' : 'left'
-  if (page === 'left' && x + w > 48) {
-    /* slot bleeds into gutter — clamp width */
-  }
-  if (page === 'right' && x < 52) {
-    /* slot starts in gutter — will be okay if mostly on right */
-  }
 
   const rotation = family.layoutBehavior.canRotatePhotos
     ? clamp(slot.rotation ?? 0, bounds.rotation[0], bounds.rotation[1])

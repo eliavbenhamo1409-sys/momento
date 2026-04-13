@@ -75,7 +75,7 @@ export const PRIMITIVE_CATALOG: PrimitiveSchema[] = [
 
 export const SPREAD_CONSTRAINTS = {
   pageAspectRatio: '10.5:9 (each page is half of a 21:9 spread)',
-  gutterZone: { xMin: 48, xMax: 52, rule: 'No important elements should sit in the gutter zone' },
+  continuousPrint: true,
   maxElementsPerSpread: 18,
   minMarginPercent: 2,
   maxPhotosPerSpread: 6,
@@ -105,7 +105,7 @@ export function describePrimitivesForPrompt(): string {
 
   lines.push('SPREAD CONSTRAINTS:')
   lines.push(`- Each page is ${SPREAD_CONSTRAINTS.pageAspectRatio}`)
-  lines.push(`- Gutter zone: x ${SPREAD_CONSTRAINTS.gutterZone.xMin}-${SPREAD_CONSTRAINTS.gutterZone.xMax}% — ${SPREAD_CONSTRAINTS.gutterZone.rule}`)
+  lines.push('- The spread is printed on a continuous sheet — NO gutter. Elements can freely cross the center.')
   lines.push(`- Max ${SPREAD_CONSTRAINTS.maxElementsPerSpread} elements per spread`)
   lines.push(`- Max ${SPREAD_CONSTRAINTS.maxPhotosPerSpread} photo slots per spread`)
   lines.push(`- Max ${SPREAD_CONSTRAINTS.maxTextBlocksPerSpread} text blocks per spread`)
