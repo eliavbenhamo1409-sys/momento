@@ -31,11 +31,11 @@ async function getHuman() {
     debug: false,
     face: {
       enabled: true,
-      detector: { enabled: true, rotation: true, maxDetected: 20, minConfidence: 0.25 },
+      detector: { enabled: true, rotation: true, maxDetected: 20, minConfidence: 0.15 },
       mesh: { enabled: true },
       attention: { enabled: false },
       iris: { enabled: false },
-      description: { enabled: true, minConfidence: 0.2 },
+      description: { enabled: true, minConfidence: 0 },
       emotion: { enabled: false },
       antispoof: { enabled: false },
       liveness: { enabled: false },
@@ -114,6 +114,44 @@ function cropFace(
 
 /* ─── Detection ──────────────────────────────────────────────────────── */
 
+const RETRY_CROP_SIZE = 512
+const MIN_FACE_SCORE = 0.15
+
+/**
+ * When the descriptor fails to produce an embedding for a detected face,
+ * crop and enlarge just that face region and re-run detection to get the embedding.
+ */
+async function retryEmbeddingForFace(
+  human: import('@vladmandic/human').default,
+  origImg: HTMLImageElement,
+  box: [number, number, number, number],
+  scale: number,
+): Promise<number[] | null> {
+  try {
+    const [bx, by, bw, bh] = box.map((v) => v / scale)
+    const pad = Math.max(bw, bh) * 0.6
+    const cx = bx + bw / 2
+    const cy = by + bh / 2
+    const side = Math.max(bw, bh) + pad * 2
+    const sx = Math.max(0, cx - side / 2)
+    const sy = Math.max(0, cy - side / 2)
+    const sw = Math.min(side, origImg.naturalWidth - sx)
+    const sh = Math.min(side, origImg.naturalHeight - sy)
+
+    const canvas = document.createElement('canvas')
+    canvas.width = RETRY_CROP_SIZE
+    canvas.height = RETRY_CROP_SIZE
+    const ctx = canvas.getContext('2d')!
+    ctx.drawImage(origImg, sx, sy, sw, sh, 0, 0, RETRY_CROP_SIZE, RETRY_CROP_SIZE)
+
+    const result = await human.detect(canvas)
+    if (result.face?.[0]?.embedding?.length) {
+      return result.face[0].embedding
+    }
+  } catch { /* ignore retry failures */ }
+  return null
+}
+
 export async function detectFacesInPhotos(
   photos: Photo[],
   onProgress?: ProgressCb,
@@ -124,6 +162,7 @@ export async function detectFacesInPhotos(
   let loadFailures = 0
   let detectFailures = 0
   let noEmbeddings = 0
+  let retriedEmbeddings = 0
 
   for (let i = 0; i < photos.length; i++) {
     const photo = photos[i]
@@ -137,13 +176,26 @@ export async function detectFacesInPhotos(
       const result = await human.detect(canvas)
 
       if (result.face && result.face.length > 0) {
-        const validFaces = result.face
-          .filter((f) => f.embedding?.length && (f.score ?? 0) >= 0.3)
+        console.log(
+          `[FaceDetection] Photo ${photo.id}: detected ${result.face.length} raw faces, ` +
+          `scores: [${result.face.map((f) => (f.score ?? 0).toFixed(2)).join(', ')}], ` +
+          `embeddings: [${result.face.map((f) => f.embedding?.length ?? 0).join(', ')}]`,
+        )
+
+        const scoredFaces = result.face
+          .filter((f) => (f.score ?? 0) >= MIN_FACE_SCORE)
           .sort((a, b) => (b.box[2] * b.box[3]) - (a.box[2] * a.box[3]))
 
-        for (let fi = 0; fi < validFaces.length; fi++) {
-          const face = validFaces[fi]
-          if (!face.embedding || face.embedding.length === 0) {
+        let faceIdx = 0
+        for (const face of scoredFaces) {
+          let embedding = face.embedding?.length ? face.embedding : null
+
+          if (!embedding) {
+            embedding = await retryEmbeddingForFace(human, img, face.box, scale)
+            if (embedding) retriedEmbeddings++
+          }
+
+          if (!embedding) {
             noEmbeddings++
             continue
           }
@@ -153,13 +205,12 @@ export async function detectFacesInPhotos(
             photoId: photo.id,
             photoUrl: photo.fullUrl || photo.thumbnailUrl,
             box: face.box,
-            embedding: face.embedding,
+            embedding,
             cropDataUrl: cropUrl,
-            faceIndexInPhoto: fi,
+            faceIndexInPhoto: faceIdx,
           })
+          faceIdx++
         }
-
-        noEmbeddings += result.face.length - validFaces.length
       } else {
         detectFailures++
       }
@@ -173,7 +224,8 @@ export async function detectFacesInPhotos(
 
   console.log(
     `[FaceDetection] Summary: ${all.length} faces from ${photos.length} photos ` +
-    `(${loadFailures} load failures, ${detectFailures} no-face, ${noEmbeddings} no-embedding)`
+    `(${loadFailures} load failures, ${detectFailures} no-face, ` +
+    `${noEmbeddings} no-embedding, ${retriedEmbeddings} recovered via retry)`,
   )
 
   return all
