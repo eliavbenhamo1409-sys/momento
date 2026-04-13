@@ -325,11 +325,33 @@ export function placePhotosInSpreads(
 
   const globalUsed = new Set<string>()
 
-  return plans.map((plan, idx) => {
+  // Collect all assigned photo IDs across every plan for the spare-pool later
+  const allAssignedIds = new Set<string>()
+  for (const plan of plans) {
+    for (const id of plan.assignedPhotoIds) allAssignedIds.add(id)
+  }
+
+  // Spare pool: curated photos that weren't assigned to any plan
+  const sparePool: PhotoScore[] = []
+  for (const [id, score] of allScores) {
+    if (!allAssignedIds.has(id) && photoUrlMap.has(id)) sparePool.push(score)
+  }
+  sparePool.sort((a, b) => b.overallQuality - a.overallQuality)
+
+  const spreads = plans.map((plan, idx) => {
     const template = getTemplate(plan.templateId) ?? getFallbackTemplate(idx, totalSpreads)
     const planScores = plan.assignedPhotoIds
       .map((id) => allScores.get(id))
       .filter(Boolean) as PhotoScore[]
+
+    // Pad from spare pool if plan has fewer photos than template slots
+    const realSlotCount = template.slots.filter(s => !s.id.endsWith('-mirror')).length
+    while (planScores.length < realSlotCount && sparePool.length > 0) {
+      const spare = sparePool.shift()!
+      if (!globalUsed.has(spare.photoId)) {
+        planScores.push(spare)
+      }
+    }
 
     const assignments = matchPhotosToSlots(template.slots, planScores, photoUrlMap, globalUsed)
     const slotDataArr = assignments.map(cropToSlotData)
@@ -353,7 +375,6 @@ export function placePhotosInSpreads(
     const hasRight = rightPhotos.some(p => p !== null)
 
     if ((!hasLeft || !hasRight) && !template.spanning) {
-      // 1-photo spread: duplicate onto both pages as a cinematic duo
       if (planScores.length === 1) {
         const singleUrl = photoUrlMap.get(planScores[0].photoId) ?? ''
         const crop = computeCrop(planScores[0], { id: 'forced', page: 'left', x: 0, y: 0, width: 100, height: 100, importance: 'hero', minQuality: 1, accepts: ['any'], safeZone: { top: 0, bottom: 0, left: 0, right: 0 } })
@@ -398,7 +419,6 @@ export function placePhotosInSpreads(
       }
     }
 
-    // Last resort: if one page is still empty, force a simple 50/50 split
     const finalHasLeft = leftPhotos.some(p => p !== null)
     const finalHasRight = rightPhotos.some(p => p !== null)
 
@@ -430,6 +450,8 @@ export function placePhotosInSpreads(
       theme: plan.theme,
     }
   })
+
+  return spreads
 }
 
 // ─── Empty / Sparse Page Validation ─────────────────────────────────

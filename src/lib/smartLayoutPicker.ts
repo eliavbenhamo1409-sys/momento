@@ -356,9 +356,48 @@ export function buildSmartSpreadPlans(
       spreadIndex: i,
       templateId: template.id,
       theme: group.theme,
-      assignedPhotoIds: group.photoIds,
+      assignedPhotoIds: [...group.photoIds],
       quote: null,
     })
+  }
+
+  // Redistribute: fill any spread that has fewer photos than template slots
+  // by pulling from over-stocked neighbours (cross-date is acceptable)
+  for (let i = 0; i < plans.length; i++) {
+    const plan = plans[i]
+    const tpl = getTemplate(plan.templateId)
+    if (!tpl) continue
+    const slotCount = tpl.slots.filter(s => !s.id.endsWith('-mirror')).length
+    const deficit = slotCount - plan.assignedPhotoIds.length
+    if (deficit <= 0) continue
+
+    for (let d = 0; d < deficit; d++) {
+      let donorIdx = -1
+      let donorExcess = 0
+      for (let j = 0; j < plans.length; j++) {
+        if (j === i) continue
+        const dt = getTemplate(plans[j].templateId)
+        if (!dt) continue
+        const dSlots = dt.slots.filter(s => !s.id.endsWith('-mirror')).length
+        const excess = plans[j].assignedPhotoIds.length - dSlots
+        if (excess > donorExcess) {
+          donorExcess = excess
+          donorIdx = j
+        }
+      }
+      if (donorIdx < 0) break
+
+      const donorPlan = plans[donorIdx]
+      const donorScores = donorPlan.assignedPhotoIds
+        .map(id => scores.get(id))
+        .filter(Boolean) as PhotoScore[]
+      donorScores.sort((a, b) => a.overallQuality - b.overallQuality)
+      const weakest = donorScores[0]
+      if (!weakest) break
+
+      donorPlan.assignedPhotoIds = donorPlan.assignedPhotoIds.filter(id => id !== weakest.photoId)
+      plan.assignedPhotoIds.push(weakest.photoId)
+    }
   }
 
   return plans

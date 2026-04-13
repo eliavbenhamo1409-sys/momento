@@ -438,53 +438,36 @@ export function buildPageGroups(
   }
   const normalGroupsFinal = splitGroups
 
-  // Merge tiny groups (< MIN_GROUP) with same-event neighbours only
+  // Merge tiny groups (< MIN_GROUP) with neighbours — cross-date allowed to avoid empty slots
   let merged: PhotoScore[][] = []
   let pending: PhotoScore[] = []
-  let pendingSetting: string | undefined
 
   for (const group of normalGroupsFinal) {
-    const gSetting = groupDominantSetting(group)
     if (group.length >= MIN_GROUP) {
       if (pending.length > 0) {
-        if (pending.length >= MIN_GROUP || gSetting === pendingSetting) {
+        if (pending.length >= MIN_GROUP) {
           merged.push([...pending])
-        } else if (merged.length > 0) {
-          const lastSetting = groupDominantSetting(merged[merged.length - 1])
-          if (lastSetting === pendingSetting && merged[merged.length - 1].length + pending.length <= MAX_GROUP) {
-            merged[merged.length - 1].push(...pending)
-          } else {
-            merged.push([...pending])
-          }
+        } else if (merged.length > 0 && merged[merged.length - 1].length + pending.length <= MAX_GROUP) {
+          merged[merged.length - 1].push(...pending)
+        } else if (group.length + pending.length <= MAX_GROUP) {
+          group.unshift(...pending)
         } else {
           merged.push([...pending])
         }
         pending = []
-        pendingSetting = undefined
       }
       merged.push(group)
     } else {
-      if (pending.length > 0 && pendingSetting !== gSetting) {
-        merged.push([...pending])
-        pending = []
-      }
       pending.push(...group)
-      pendingSetting = gSetting ?? pendingSetting
       if (pending.length >= MIN_GROUP) {
         merged.push([...pending])
         pending = []
-        pendingSetting = undefined
       }
     }
   }
   if (pending.length > 0) {
-    if (merged.length > 0) {
-      const lastSetting = groupDominantSetting(merged[merged.length - 1])
-      if (lastSetting === pendingSetting && merged[merged.length - 1].length + pending.length <= MAX_GROUP) {
-        merged[merged.length - 1].push(...pending)
-      } else {
-        merged.push(pending)
-      }
+    if (merged.length > 0 && merged[merged.length - 1].length + pending.length <= MAX_GROUP) {
+      merged[merged.length - 1].push(...pending)
     } else {
       merged.push(pending)
     }
@@ -576,6 +559,31 @@ export function buildPageGroups(
         break
       }
       if (merged.length + reservedSpreads <= targetSpreads) break
+    }
+  }
+
+  // Rebalance: ensure every group has >= MIN_GROUP photos (steal from largest neighbour)
+  const MIN_PHOTOS_PER_SPREAD = 3
+  for (let i = 0; i < merged.length; i++) {
+    if (merged[i].length >= MIN_PHOTOS_PER_SPREAD) continue
+    const deficit = MIN_PHOTOS_PER_SPREAD - merged[i].length
+
+    const prev = i > 0 ? merged[i - 1] : null
+    const next = i < merged.length - 1 ? merged[i + 1] : null
+
+    for (let d = 0; d < deficit; d++) {
+      const donor = (prev && next)
+        ? (prev.length >= next.length ? prev : next)
+        : (prev ?? next)
+      if (!donor || donor.length <= MIN_PHOTOS_PER_SPREAD) break
+
+      const sorted = [...donor].sort((a, b) => a.overallQuality - b.overallQuality)
+      const weakest = sorted[0]
+      const idx = donor.indexOf(weakest)
+      if (idx >= 0) {
+        donor.splice(idx, 1)
+        merged[i].push(weakest)
+      }
     }
   }
 
