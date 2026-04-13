@@ -297,6 +297,29 @@ export default function QuestionFlow() {
         ))}
       </div>
 
+      <AnimatePresence>
+        {(() => {
+          const selectedFamily = suggestedFamilies.find(f => f.id === config.designFamily)
+          if (!selectedFamily?.previewImageUrl) return null
+          return (
+            <motion.div
+              key={selectedFamily.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 8 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+              className="mb-5 rounded-xl overflow-hidden border-2 border-primary/15 shadow-lg shadow-primary/5"
+            >
+              <img
+                src={selectedFamily.previewImageUrl}
+                alt={selectedFamily.nameHe}
+                className="w-full h-auto object-cover"
+              />
+            </motion.div>
+          )
+        })()}
+      </AnimatePresence>
+
       {/* ── CTA ──────────────────────────────────────────── */}
 
       <LoadingButton

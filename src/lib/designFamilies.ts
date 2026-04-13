@@ -8,6 +8,7 @@ const contemporaryLuxury: DesignFamily = {
   nameHe: 'יוקרה מודרנית',
   description: 'Clean lines, generous whitespace, premium feel. Studio-quality with confident restraint.',
   descriptionHe: 'קווים נקיים, רווח נדיב, תחושת פרימיום. איכות סטודיו עם ריסון בטוח.',
+  previewImageUrl : '/previews/img105846.jpg',
 
   bestForType: ['wedding', 'portrait', 'family', 'newborn'],
   bestForMood: ['romantic', 'serene', 'dramatic', 'tender'],
