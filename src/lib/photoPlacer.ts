@@ -386,8 +386,8 @@ export function placePhotosInSpreads(
           rightPhotos: [singleUrl],
           quote: plan.quote,
           slots: [
-            { slotId: 'left-photo', photoUrl: singleUrl, objectFit: 'cover', objectPosition: pos, transform: '' },
-            { slotId: 'right-photo', photoUrl: singleUrl, objectFit: 'cover', objectPosition: pos, transform: '' },
+            { slotId: 'left-photo', photoUrl: singleUrl, objectFit: 'cover' as const, objectPosition: pos, transform: '' },
+            { slotId: 'right-photo', photoUrl: singleUrl, objectFit: 'cover' as const, objectPosition: pos, transform: '' },
           ],
           theme: plan.theme,
         }

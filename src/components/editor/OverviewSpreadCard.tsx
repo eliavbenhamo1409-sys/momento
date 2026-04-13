@@ -1,7 +1,8 @@
-import React, { useState, useMemo } from 'react'
-import type { PhotoElement, QuoteElement, DecorativeElement, SpreadDesignBackground } from '../../types'
+import React, { useMemo, useCallback } from 'react'
+import type { PhotoElement, QuoteElement, DecorativeElement, SpreadDesignBackground, SpreadDesign } from '../../types'
 import type { OverviewMode } from './OverviewSidebar'
 import { useEditorStore } from '../../store/editorStore'
+import { useShallow } from 'zustand/react/shallow'
 import { applyPageMarginToPercentRect } from '../../lib/layoutInset'
 import { DEFAULT_STYLE, getTexturePattern } from './editorDefaults'
 import Icon from '../shared/Icon'
@@ -34,7 +35,9 @@ function isSpreadClickMode(mode: OverviewMode) {
   return mode === 'bg-color' || mode === 'bg-ai' || mode === 'bg-ai-panel' || mode === 'delete-spread'
 }
 
-function MiniPhotoSlot({
+/* ─── Memoized sub-components ───────────────────────────────────── */
+
+const MiniPhotoSlot = React.memo(function MiniPhotoSlot({
   element,
   spreadId,
   spreadIndex,
@@ -60,9 +63,7 @@ function MiniPhotoSlot({
   collectiveBorderRadiusPx: number | null
 }) {
   const hasPhoto = !!element.photoUrl
-  const [imgLoaded, setImgLoaded] = useState(false)
   const imgSrc = thumbnailUrl || element.photoUrl
-
   const clickable = isPhotoClickMode(mode) && hasPhoto && !isSwapSource
 
   const rect = applyPageMarginToPercentRect(
@@ -72,6 +73,18 @@ function MiniPhotoSlot({
   const pad = collectivePaddingPx != null ? collectivePaddingPx : element.padding
   const radius = collectiveBorderRadiusPx != null ? collectiveBorderRadiusPx : element.borderRadius
   const scale = element.scale ?? 1
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (clickable) {
+      e.stopPropagation()
+      onClick(spreadId, element.slotId, spreadIndex)
+    }
+  }, [clickable, onClick, spreadId, element.slotId, spreadIndex])
+
+  const handleRemoveClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    onRemoveSlot(spreadId, element.slotId)
+  }, [onRemoveSlot, spreadId, element.slotId])
 
   return (
     <div
@@ -90,46 +103,33 @@ function MiniPhotoSlot({
         clipPath: element.clipPath || undefined,
         WebkitClipPath: element.clipPath || undefined,
       }}
-      onClick={(e) => {
-        if (clickable) {
-          e.stopPropagation()
-          onClick(spreadId, element.slotId, spreadIndex)
-        }
-      }}
+      onClick={handleClick}
       data-slot-id={element.slotId}
       data-spread-id={spreadId}
     >
       {hasPhoto ? (
-        <>
-          {!imgLoaded && (
-            <div className="absolute inset-0 bg-surface-container animate-pulse rounded-[inherit]" />
-          )}
-          <img
-            src={imgSrc!}
-            alt=""
-            className="w-full h-full object-cover select-none"
-            style={{
-              objectPosition: element.objectPosition || '50% 35%',
-              transform: scale > 1 ? `scale(${Math.max(1.12, scale)})` : undefined,
-              transformOrigin: element.objectPosition || '50% 35%',
-              opacity: imgLoaded ? 1 : 0,
-              transition: 'opacity 0.15s ease',
-              borderRadius: radius > 8
-                ? Math.max(4, radius * 0.6)
-                : Math.max(0, radius - (pad * 0.4)),
-            }}
-            draggable={false}
-            loading="lazy"
-            decoding="async"
-            onLoad={() => setImgLoaded(true)}
-          />
-        </>
+        <img
+          src={imgSrc!}
+          alt=""
+          className="w-full h-full object-cover select-none"
+          style={{
+            objectPosition: element.objectPosition || '50% 35%',
+            transform: scale > 1 ? `scale(${Math.max(1.12, scale)})` : undefined,
+            transformOrigin: element.objectPosition || '50% 35%',
+            borderRadius: radius > 8
+              ? Math.max(4, radius * 0.6)
+              : Math.max(0, radius - (pad * 0.4)),
+          }}
+          draggable={false}
+          loading="lazy"
+          decoding="async"
+        />
       ) : (
         <div className="w-full h-full flex items-center justify-center bg-black/[0.03] border border-dashed border-black/[0.08] rounded-[inherit]">
           <Icon name="add_photo_alternate" size={10} className="text-secondary/20" />
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onRemoveSlot(spreadId, element.slotId) }}
+            onClick={handleRemoveClick}
             className="absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-error/80 hover:bg-error flex items-center justify-center shadow-sm opacity-0 group-hover/slot:opacity-100 transition-opacity duration-150 z-20"
           >
             <Icon name="close" size={9} className="text-white" />
@@ -159,9 +159,9 @@ function MiniPhotoSlot({
       )}
     </div>
   )
-}
+})
 
-function MiniQuoteElement({ element, layoutInsetPercent }: { element: QuoteElement; layoutInsetPercent: number }) {
+const MiniQuoteElement = React.memo(function MiniQuoteElement({ element, layoutInsetPercent }: { element: QuoteElement; layoutInsetPercent: number }) {
   const rect = applyPageMarginToPercentRect(element.x, element.y, element.width, element.height, layoutInsetPercent)
   return (
     <div
@@ -192,9 +192,9 @@ function MiniQuoteElement({ element, layoutInsetPercent }: { element: QuoteEleme
       </p>
     </div>
   )
-}
+})
 
-function MiniDecorativeElement({ element, layoutInsetPercent }: { element: DecorativeElement; layoutInsetPercent: number }) {
+const MiniDecorativeElement = React.memo(function MiniDecorativeElement({ element, layoutInsetPercent }: { element: DecorativeElement; layoutInsetPercent: number }) {
   const rect = applyPageMarginToPercentRect(element.x, element.y, element.width, element.height, layoutInsetPercent)
   const base: React.CSSProperties = {
     position: 'absolute',
@@ -233,9 +233,9 @@ function MiniDecorativeElement({ element, layoutInsetPercent }: { element: Decor
     )
   }
   return null
-}
+})
 
-function MiniPageBackground({
+const MiniPageBackground = React.memo(function MiniPageBackground({
   design,
   side,
 }: {
@@ -339,7 +339,78 @@ function MiniPageBackground({
       )}
     </>
   )
+})
+
+/* ─── Memoized Page Half ────────────────────────────────────────── */
+
+interface PageHalfProps {
+  side: 'left' | 'right'
+  hasDesign: boolean
+  design: SpreadDesign | undefined
+  photos: PhotoElement[]
+  quotes: QuoteElement[]
+  decoratives: DecorativeElement[]
+  fallbackPhotos: (string | null)[]
+  spreadId: string
+  spreadIndex: number
+  activeMode: OverviewMode
+  swapSourceSlotId: string | null
+  thumbnailLookup: Record<string, string>
+  onClickPhoto: (spreadId: string, slotId: string, spreadIndex: number) => void
+  onRemoveSlot: (spreadId: string, slotId: string) => void
+  layoutInset: number
+  globalPadding: number | null
+  globalRadius: number | null
 }
+
+const PageHalf = React.memo(function PageHalf({
+  side, hasDesign, design, photos, quotes, decoratives, fallbackPhotos,
+  spreadId, spreadIndex, activeMode, swapSourceSlotId, thumbnailLookup,
+  onClickPhoto, onRemoveSlot, layoutInset, globalPadding, globalRadius,
+}: PageHalfProps) {
+  return (
+    <div className={`absolute inset-y-0 ${side === 'left' ? 'left-0' : 'right-0'} w-1/2 overflow-hidden`}>
+      {hasDesign && design && (
+        <MiniPageBackground design={design} side={side} />
+      )}
+
+      {hasDesign ? (
+        <>
+          {decoratives.map((el, i) => (
+            <MiniDecorativeElement key={`d-${i}`} element={el} layoutInsetPercent={layoutInset} />
+          ))}
+          {photos.map((el) => (
+            <MiniPhotoSlot
+              key={el.slotId}
+              element={el}
+              spreadId={spreadId}
+              spreadIndex={spreadIndex}
+              mode={activeMode}
+              isSwapSource={swapSourceSlotId === el.slotId}
+              thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
+              onClick={onClickPhoto}
+              onRemoveSlot={onRemoveSlot}
+              layoutInsetPercent={layoutInset}
+              collectivePaddingPx={globalPadding}
+              collectiveBorderRadiusPx={globalRadius}
+            />
+          ))}
+          {quotes.map((el, i) => (
+            <MiniQuoteElement key={`q-${i}`} element={el} layoutInsetPercent={layoutInset} />
+          ))}
+        </>
+      ) : (
+        fallbackPhotos.map((src, i) =>
+          src ? (
+            <img key={i} src={src} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
+          ) : null,
+        )
+      )}
+    </div>
+  )
+})
+
+/* ─── Main Card ─────────────────────────────────────────────────── */
 
 const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
   spreadIndex,
@@ -353,25 +424,33 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
   onRemoveSlot,
   onJumpToSpread,
 }: Props) {
-  const spread = useEditorStore((s) => s.spreads[spreadIndex])
-  const globalPadding = useEditorStore((s) => s.globalPhotoFramePaddingPx)
-  const globalMargin = useEditorStore((s) => s.globalPageMarginPercent)
-  const globalRadius = useEditorStore((s) => s.globalPhotoBorderRadiusPx)
+  // Stable shallow selector — only re-renders when this specific spread's data changes
+  const spreadData = useEditorStore(useShallow((s) => {
+    const sp = s.spreads[spreadIndex]
+    if (!sp) return null
+    return {
+      id: sp.id,
+      design: sp.design,
+      resolvedStyle: sp.resolvedStyle,
+      leftPhotos: sp.leftPhotos,
+      rightPhotos: sp.rightPhotos,
+    }
+  }))
 
-  if (!spread) return null
+  // Single selector for all 3 globals
+  const globals = useEditorStore(useShallow((s) => ({
+    padding: s.globalPhotoFramePaddingPx,
+    margin: s.globalPageMarginPercent,
+    radius: s.globalPhotoBorderRadiusPx,
+  })))
 
-  const design = spread.design
-  const hasDesign = design && design.elements.length > 0
-  const label = getSpreadLabel(spreadIndex, total)
-
-  const baseStyle = spread.resolvedStyle ?? DEFAULT_STYLE
-  const layoutInset = globalMargin ?? baseStyle.spacing.pageMarginPercent
-
+  // Categorise elements — stable as long as design ref is stable
   const { leftElements, rightElements, leftQuotes, rightQuotes, leftDecorative, rightDecorative } = useMemo(() => {
-    if (!hasDesign) return { leftElements: [] as PhotoElement[], rightElements: [] as PhotoElement[], leftQuotes: [] as QuoteElement[], rightQuotes: [] as QuoteElement[], leftDecorative: [] as DecorativeElement[], rightDecorative: [] as DecorativeElement[] }
-    const photos = design.elements.filter((e) => e.type === 'photo') as PhotoElement[]
-    const quotes = design.elements.filter((e) => e.type === 'quote') as QuoteElement[]
-    const decoratives = design.elements.filter((e) => e.type !== 'photo' && e.type !== 'quote') as DecorativeElement[]
+    const elements = spreadData?.design?.elements
+    if (!elements || elements.length === 0) return { leftElements: [] as PhotoElement[], rightElements: [] as PhotoElement[], leftQuotes: [] as QuoteElement[], rightQuotes: [] as QuoteElement[], leftDecorative: [] as DecorativeElement[], rightDecorative: [] as DecorativeElement[] }
+    const photos = elements.filter((e) => e.type === 'photo') as PhotoElement[]
+    const quotes = elements.filter((e) => e.type === 'quote') as QuoteElement[]
+    const decoratives = elements.filter((e) => e.type !== 'photo' && e.type !== 'quote') as DecorativeElement[]
     return {
       leftElements: photos.filter((e) => e.page === 'left' || e.page === 'full'),
       rightElements: photos.filter((e) => e.page === 'right'),
@@ -380,72 +459,33 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
       leftDecorative: decoratives.filter((e) => e.page === 'left'),
       rightDecorative: decoratives.filter((e) => e.page === 'right'),
     }
-  }, [hasDesign, design?.elements])
+  }, [spreadData?.design?.elements])
 
-  const bgColor = hasDesign ? design.background.color : baseStyle.background.color
+  if (!spreadData) return null
+
+  const design = spreadData.design
+  const hasDesign = !!design && design.elements.length > 0
+  const label = getSpreadLabel(spreadIndex, total)
+
+  const baseStyle = spreadData.resolvedStyle ?? DEFAULT_STYLE
+  const layoutInset = globals.margin ?? baseStyle.spacing.pageMarginPercent
+  const bgColor = hasDesign ? design!.background.color : baseStyle.background.color
 
   const spreadClickable = isSpreadClickMode(activeMode)
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (spreadClickable) {
-      onClickSpread(spread.id, spreadIndex)
+      onClickSpread(spreadData.id, spreadIndex)
     } else if (activeMode === 'idle') {
       onJumpToSpread(spreadIndex)
     }
-  }
+  }, [spreadClickable, activeMode, onClickSpread, onJumpToSpread, spreadData.id, spreadIndex])
 
   const ringClass = spreadClickable
     ? 'ring-1 ring-primary/30 shadow-overview-card hover:ring-2 hover:ring-primary/50 hover:shadow-overview-card-hover'
     : isCurrent
       ? 'ring-2 ring-primary/30 shadow-overview-card-active'
       : 'ring-1 ring-black/[0.06] shadow-overview-card hover:shadow-overview-card-hover hover:ring-black/[0.10]'
-
-  const renderPage = (side: 'left' | 'right') => {
-    const photos = side === 'left' ? leftElements : rightElements
-    const quotes = side === 'left' ? leftQuotes : rightQuotes
-    const decoratives = side === 'left' ? leftDecorative : rightDecorative
-
-    return (
-      <div className={`absolute inset-y-0 ${side === 'left' ? 'left-0' : 'right-0'} w-1/2 overflow-hidden`}>
-        {hasDesign && (
-          <MiniPageBackground design={design} side={side} />
-        )}
-
-        {hasDesign ? (
-          <>
-            {decoratives.map((el, i) => (
-              <MiniDecorativeElement key={`d-${i}`} element={el} layoutInsetPercent={layoutInset} />
-            ))}
-            {photos.map((el) => (
-              <MiniPhotoSlot
-                key={el.slotId}
-                element={el}
-                spreadId={spread.id}
-                spreadIndex={spreadIndex}
-                mode={activeMode}
-                isSwapSource={swapSourceSlotId === el.slotId}
-                thumbnailUrl={el.photoId ? (thumbnailLookup[el.photoId] || null) : null}
-                onClick={onClickPhoto}
-                onRemoveSlot={onRemoveSlot}
-                layoutInsetPercent={layoutInset}
-                collectivePaddingPx={globalPadding}
-                collectiveBorderRadiusPx={globalRadius}
-              />
-            ))}
-            {quotes.map((el, i) => (
-              <MiniQuoteElement key={`q-${i}`} element={el} layoutInsetPercent={layoutInset} />
-            ))}
-          </>
-        ) : (
-          (side === 'left' ? spread.leftPhotos : spread.rightPhotos).map((src, i) =>
-            src ? (
-              <img key={i} src={src} alt="" className="w-full h-full object-cover" loading="lazy" decoding="async" />
-            ) : null,
-          )
-        )}
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col gap-2">
@@ -460,8 +500,44 @@ const OverviewSpreadCard = React.memo(function OverviewSpreadCard({
         {/* Spine */}
         <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-px bg-black/[0.08] z-20 pointer-events-none" />
 
-        {renderPage('left')}
-        {renderPage('right')}
+        <PageHalf
+          side="left"
+          hasDesign={hasDesign}
+          design={design}
+          photos={leftElements}
+          quotes={leftQuotes}
+          decoratives={leftDecorative}
+          fallbackPhotos={spreadData.leftPhotos}
+          spreadId={spreadData.id}
+          spreadIndex={spreadIndex}
+          activeMode={activeMode}
+          swapSourceSlotId={swapSourceSlotId}
+          thumbnailLookup={thumbnailLookup}
+          onClickPhoto={onClickPhoto}
+          onRemoveSlot={onRemoveSlot}
+          layoutInset={layoutInset}
+          globalPadding={globals.padding}
+          globalRadius={globals.radius}
+        />
+        <PageHalf
+          side="right"
+          hasDesign={hasDesign}
+          design={design}
+          photos={rightElements}
+          quotes={rightQuotes}
+          decoratives={rightDecorative}
+          fallbackPhotos={spreadData.rightPhotos}
+          spreadId={spreadData.id}
+          spreadIndex={spreadIndex}
+          activeMode={activeMode}
+          swapSourceSlotId={swapSourceSlotId}
+          thumbnailLookup={thumbnailLookup}
+          onClickPhoto={onClickPhoto}
+          onRemoveSlot={onRemoveSlot}
+          layoutInset={layoutInset}
+          globalPadding={globals.padding}
+          globalRadius={globals.radius}
+        />
 
         {/* Current badge */}
         {isCurrent && activeMode === 'idle' && (
