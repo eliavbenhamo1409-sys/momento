@@ -1,27 +1,8 @@
-import {
-  RekognitionClient,
-  IndexFacesCommand,
-  SearchFacesByFaceIdCommand,
-} from 'npm:@aws-sdk/client-rekognition'
-
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
-
-const COLLECTION_ID =
-  Deno.env.get('AWS_REKOGNITION_COLLECTION_ID') || 'albums-prod'
-const MATCH_THRESHOLD = Number(Deno.env.get('AWS_REKOGNITION_MATCH_THRESHOLD') || '95')
-const MAX_FACES_PER_IMAGE = 20
-
-const rekognition = new RekognitionClient({
-  region: Deno.env.get('AWS_REGION') || 'eu-west-1',
-  credentials: {
-    accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID')!,
-    secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY')!,
-  },
-})
 
 interface FaceResult {
   awsFaceId: string
@@ -36,6 +17,21 @@ function base64ToUint8Array(b64: string): Uint8Array {
   const arr = new Uint8Array(raw.length)
   for (let i = 0; i < raw.length; i++) arr[i] = raw.charCodeAt(i)
   return arr
+}
+
+let _client: any = null
+
+async function getRekognitionClient() {
+  if (_client) return _client
+  const { RekognitionClient } = await import('npm:@aws-sdk/client-rekognition')
+  _client = new RekognitionClient({
+    region: Deno.env.get('AWS_REGION') || 'eu-west-1',
+    credentials: {
+      accessKeyId: Deno.env.get('AWS_ACCESS_KEY_ID')!,
+      secretAccessKey: Deno.env.get('AWS_SECRET_ACCESS_KEY')!,
+    },
+  })
+  return _client
 }
 
 Deno.serve(async (req: Request) => {
@@ -53,6 +49,18 @@ Deno.serve(async (req: Request) => {
       )
     }
 
+    const { IndexFacesCommand, SearchFacesCommand } =
+      await import('npm:@aws-sdk/client-rekognition')
+
+    const rekognition = await getRekognitionClient()
+
+    const COLLECTION_ID =
+      Deno.env.get('AWS_REKOGNITION_COLLECTION_ID') || 'albums-prod'
+    const MATCH_THRESHOLD = Number(
+      Deno.env.get('AWS_REKOGNITION_MATCH_THRESHOLD') || '95',
+    )
+    const MAX_FACES = 20
+
     const imageBytes = base64ToUint8Array(imageBase64)
 
     const indexResult = await rekognition.send(
@@ -60,7 +68,7 @@ Deno.serve(async (req: Request) => {
         CollectionId: COLLECTION_ID,
         Image: { Bytes: imageBytes },
         ExternalImageId: photoId,
-        MaxFaces: MAX_FACES_PER_IMAGE,
+        MaxFaces: MAX_FACES,
         DetectionAttributes: ['DEFAULT'],
         QualityFilter: 'AUTO',
       }),
@@ -80,22 +88,27 @@ Deno.serve(async (req: Request) => {
       let matches: FaceResult['matches'] = []
       try {
         const searchResult = await rekognition.send(
-          new SearchFacesByFaceIdCommand({
+          new SearchFacesCommand({
             CollectionId: COLLECTION_ID,
             FaceId: awsFaceId,
-            MaxFaces: MAX_FACES_PER_IMAGE,
+            MaxFaces: MAX_FACES,
             FaceMatchThreshold: MATCH_THRESHOLD,
           }),
         )
 
         matches = (searchResult.FaceMatches ?? [])
-          .filter((m) => m.Face?.FaceId && m.Face.FaceId !== awsFaceId)
-          .map((m) => ({
+          .filter(
+            (m: any) => m.Face?.FaceId && m.Face.FaceId !== awsFaceId,
+          )
+          .map((m: any) => ({
             awsFaceId: m.Face!.FaceId!,
             similarity: m.Similarity ?? 0,
           }))
       } catch (searchErr) {
-        console.error(`[detect-faces] SearchFaces failed for ${awsFaceId}:`, searchErr)
+        console.error(
+          `[detect-faces] SearchFaces failed for ${awsFaceId}:`,
+          searchErr,
+        )
       }
 
       faces.push({
@@ -112,17 +125,19 @@ Deno.serve(async (req: Request) => {
       })
     }
 
-    console.log(`[detect-faces] photo=${photoId}: indexed ${faces.length} faces`)
-
-    return new Response(
-      JSON.stringify({ faces }),
-      { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+    console.log(
+      `[detect-faces] photo=${photoId}: indexed ${faces.length} faces`,
     )
+
+    return new Response(JSON.stringify({ faces }), {
+      status: 200,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    })
   } catch (err) {
     console.error('[detect-faces] Error:', err)
-    return new Response(
-      JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
-    )
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' },
+    })
   }
 })
