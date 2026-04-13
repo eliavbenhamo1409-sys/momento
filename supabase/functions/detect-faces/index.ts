@@ -34,13 +34,60 @@ async function getRekognitionClient() {
   return _client
 }
 
+async function ensureCollection(rekognition: any, collectionId: string) {
+  const { ListCollectionsCommand, CreateCollectionCommand } =
+    await import('npm:@aws-sdk/client-rekognition')
+
+  const listResult = await rekognition.send(new ListCollectionsCommand({}))
+  const existing = listResult.CollectionIds ?? []
+
+  if (!existing.includes(collectionId)) {
+    await rekognition.send(new CreateCollectionCommand({ CollectionId: collectionId }))
+    console.log(`[detect-faces] Created collection: ${collectionId}`)
+  }
+}
+
+async function purgeCollection(rekognition: any, collectionId: string) {
+  const { DeleteCollectionCommand, CreateCollectionCommand } =
+    await import('npm:@aws-sdk/client-rekognition')
+
+  try {
+    await rekognition.send(new DeleteCollectionCommand({ CollectionId: collectionId }))
+    console.log(`[detect-faces] Deleted collection: ${collectionId}`)
+  } catch (_e) {
+    // Collection might not exist yet
+  }
+
+  await rekognition.send(new CreateCollectionCommand({ CollectionId: collectionId }))
+  console.log(`[detect-faces] Created fresh collection: ${collectionId}`)
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS })
   }
 
   try {
-    const { photoId, imageBase64 } = await req.json()
+    const body = await req.json()
+    const { action } = body
+
+    const rekognition = await getRekognitionClient()
+
+    // ── Purge action: delete and recreate collection ──
+    if (action === 'purge') {
+      const collectionId = body.collectionId ||
+        Deno.env.get('AWS_REKOGNITION_COLLECTION_ID') || 'albums-prod'
+
+      await purgeCollection(rekognition, collectionId)
+
+      return new Response(
+        JSON.stringify({ success: true, collectionId }),
+        { status: 200, headers: { ...CORS_HEADERS, 'Content-Type': 'application/json' } },
+      )
+    }
+
+    // ── Detect action (default): index faces and search matches ──
+    const { photoId, imageBase64, collectionId: reqCollectionId } = body
 
     if (!photoId || !imageBase64) {
       return new Response(
@@ -52,14 +99,14 @@ Deno.serve(async (req: Request) => {
     const { IndexFacesCommand, SearchFacesCommand } =
       await import('npm:@aws-sdk/client-rekognition')
 
-    const rekognition = await getRekognitionClient()
-
-    const COLLECTION_ID =
+    const COLLECTION_ID = reqCollectionId ||
       Deno.env.get('AWS_REKOGNITION_COLLECTION_ID') || 'albums-prod'
     const MATCH_THRESHOLD = Number(
-      Deno.env.get('AWS_REKOGNITION_MATCH_THRESHOLD') || '95',
+      Deno.env.get('AWS_REKOGNITION_MATCH_THRESHOLD') || '80',
     )
     const MAX_FACES = 20
+
+    await ensureCollection(rekognition, COLLECTION_ID)
 
     const imageBytes = base64ToUint8Array(imageBase64)
 
@@ -126,7 +173,7 @@ Deno.serve(async (req: Request) => {
     }
 
     console.log(
-      `[detect-faces] photo=${photoId}: indexed ${faces.length} faces`,
+      `[detect-faces] photo=${photoId}: ${faces.length} faces, matches: [${faces.map(f => `${f.awsFaceId.slice(0,8)}→${f.matches.length}`).join(', ')}]`,
     )
 
     return new Response(JSON.stringify({ faces }), {

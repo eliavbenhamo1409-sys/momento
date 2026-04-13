@@ -104,6 +104,18 @@ interface RekognitionFaceResult {
   matches: Array<{ awsFaceId: string; similarity: number }>
 }
 
+async function purgeCollection(): Promise<void> {
+  console.log('[FaceDetection] Purging Rekognition collection for fresh start...')
+  const { data, error } = await supabase.functions.invoke('detect-faces', {
+    body: { action: 'purge' },
+  })
+  if (error) {
+    console.warn('[FaceDetection] Purge failed (non-fatal):', error)
+    return
+  }
+  console.log('[FaceDetection] Collection purged:', data?.collectionId)
+}
+
 async function callDetectFaces(
   photoId: string,
   imageBase64: string,
@@ -127,6 +139,8 @@ export async function detectFacesInPhotos(
   onProgress?: ProgressCb,
 ): Promise<DetectedFace[]> {
   const all: DetectedFace[] = []
+
+  await purgeCollection()
 
   let loadFailures = 0
   let detectFailures = 0
@@ -191,7 +205,7 @@ export async function detectFacesInPhotos(
 
 /* ─── Clustering by Rekognition match graph ──────────────────────────── */
 
-const MIN_PHOTOS_FOR_PERSON = 3
+const MIN_PHOTOS_FOR_PERSON = 2
 
 /**
  * Union-Find for grouping faces by Rekognition match results.
@@ -240,14 +254,19 @@ export function clusterFaces(
     }
   }
 
+  let totalMatches = 0
+  let effectiveMatches = 0
   for (const face of faces) {
     if (!face.awsFaceId || !face.matchedFaceIds) continue
+    totalMatches += face.matchedFaceIds.length
     for (const matchId of face.matchedFaceIds) {
       if (faceIdToIdx.has(matchId)) {
+        effectiveMatches++
         uf.union(face.awsFaceId, matchId)
       }
     }
   }
+  console.log(`[FaceDetection] Clustering: ${faces.length} faces, ${totalMatches} total matches, ${effectiveMatches} effective (in current batch)`)
 
   const groups = new Map<string, DetectedFace[]>()
   for (const face of faces) {
