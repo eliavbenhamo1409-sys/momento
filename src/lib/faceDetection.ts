@@ -1,3 +1,4 @@
+import { supabase } from './supabase'
 import type { Photo, AlbumPerson } from '../types'
 
 /* ─── Types ──────────────────────────────────────────────────────────── */
@@ -11,45 +12,13 @@ export interface DetectedFace {
   cropDataUrl: string
   /** 0-based index among faces detected in the same photo (sorted by box area desc) */
   faceIndexInPhoto: number
+  /** AWS Rekognition face ID (used for match-based clustering) */
+  awsFaceId?: string
+  /** Face IDs that Rekognition matched this face to */
+  matchedFaceIds?: string[]
 }
 
 type ProgressCb = (done: number, total: number, msg?: string) => void
-
-/* ─── Lazy singleton ─────────────────────────────────────────────────── */
-
-let humanInstance: import('@vladmandic/human').default | null = null
-
-async function getHuman() {
-  if (humanInstance) return humanInstance
-
-  const { default: Human } = await import('@vladmandic/human')
-
-  humanInstance = new Human({
-    modelBasePath: 'https://cdn.jsdelivr.net/npm/@vladmandic/human/models/',
-    backend: 'webgl' as const,
-    cacheModels: true,
-    debug: false,
-    face: {
-      enabled: true,
-      detector: { enabled: true, rotation: true, maxDetected: 20, minConfidence: 0.15 },
-      mesh: { enabled: true },
-      attention: { enabled: false },
-      iris: { enabled: false },
-      description: { enabled: true, minConfidence: 0 },
-      emotion: { enabled: false },
-      antispoof: { enabled: false },
-      liveness: { enabled: false },
-    },
-    body: { enabled: false },
-    hand: { enabled: false },
-    gesture: { enabled: false },
-    segmentation: { enabled: false },
-  } as import('@vladmandic/human').Config)
-
-  await humanInstance.load()
-  await humanInstance.warmup()
-  return humanInstance
-}
 
 /* ─── Image helpers ──────────────────────────────────────────────────── */
 
@@ -66,10 +35,6 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   })
 }
 
-/**
- * Resize an image for WebGL detection — caps at DETECT_MAX_DIM on longest side.
- * Returns the canvas and the scale factor used.
- */
 function resizeForDetection(img: HTMLImageElement): { canvas: HTMLCanvasElement; scale: number } {
   const { naturalWidth: w, naturalHeight: h } = img
   const scale = Math.min(1, DETECT_MAX_DIM / Math.max(w, h))
@@ -82,6 +47,23 @@ function resizeForDetection(img: HTMLImageElement): { canvas: HTMLCanvasElement;
   const ctx = canvas.getContext('2d')!
   ctx.drawImage(img, 0, 0, cw, ch)
   return { canvas, scale }
+}
+
+/**
+ * Convert Rekognition BoundingBox (relative 0-1) to absolute pixels
+ * in the resized canvas coordinate system.
+ */
+function rekognitionBoxToAbsolute(
+  bbox: { Width: number; Height: number; Left: number; Top: number },
+  canvasWidth: number,
+  canvasHeight: number,
+): [number, number, number, number] {
+  return [
+    bbox.Left * canvasWidth,
+    bbox.Top * canvasHeight,
+    bbox.Width * canvasWidth,
+    bbox.Height * canvasHeight,
+  ]
 }
 
 /**
@@ -112,57 +94,42 @@ function cropFace(
   return canvas.toDataURL('image/jpeg', 0.88)
 }
 
-/* ─── Detection ──────────────────────────────────────────────────────── */
+/* ─── Edge function call ─────────────────────────────────────────────── */
 
-const RETRY_CROP_SIZE = 512
-const MIN_FACE_SCORE = 0.15
-
-/**
- * When the descriptor fails to produce an embedding for a detected face,
- * crop and enlarge just that face region and re-run detection to get the embedding.
- */
-async function retryEmbeddingForFace(
-  human: import('@vladmandic/human').default,
-  origImg: HTMLImageElement,
-  box: [number, number, number, number],
-  scale: number,
-): Promise<number[] | null> {
-  try {
-    const [bx, by, bw, bh] = box.map((v) => v / scale)
-    const pad = Math.max(bw, bh) * 0.6
-    const cx = bx + bw / 2
-    const cy = by + bh / 2
-    const side = Math.max(bw, bh) + pad * 2
-    const sx = Math.max(0, cx - side / 2)
-    const sy = Math.max(0, cy - side / 2)
-    const sw = Math.min(side, origImg.naturalWidth - sx)
-    const sh = Math.min(side, origImg.naturalHeight - sy)
-
-    const canvas = document.createElement('canvas')
-    canvas.width = RETRY_CROP_SIZE
-    canvas.height = RETRY_CROP_SIZE
-    const ctx = canvas.getContext('2d')!
-    ctx.drawImage(origImg, sx, sy, sw, sh, 0, 0, RETRY_CROP_SIZE, RETRY_CROP_SIZE)
-
-    const result = await human.detect(canvas)
-    if (result.face?.[0]?.embedding?.length) {
-      return result.face[0].embedding
-    }
-  } catch { /* ignore retry failures */ }
-  return null
+interface RekognitionFaceResult {
+  awsFaceId: string
+  confidence: number
+  boundingBox: { Width: number; Height: number; Left: number; Top: number }
+  faceIndexInPhoto: number
+  matches: Array<{ awsFaceId: string; similarity: number }>
 }
+
+async function callDetectFaces(
+  photoId: string,
+  imageBase64: string,
+): Promise<RekognitionFaceResult[]> {
+  const { data, error } = await supabase.functions.invoke('detect-faces', {
+    body: { photoId, imageBase64 },
+  })
+
+  if (error) {
+    console.error(`[FaceDetection] Edge function error for ${photoId}:`, error)
+    throw error
+  }
+
+  return data?.faces ?? []
+}
+
+/* ─── Detection ──────────────────────────────────────────────────────── */
 
 export async function detectFacesInPhotos(
   photos: Photo[],
   onProgress?: ProgressCb,
 ): Promise<DetectedFace[]> {
-  const human = await getHuman()
   const all: DetectedFace[] = []
 
   let loadFailures = 0
   let detectFailures = 0
-  let noEmbeddings = 0
-  let retriedEmbeddings = 0
 
   for (let i = 0; i < photos.length; i++) {
     const photo = photos[i]
@@ -173,43 +140,35 @@ export async function detectFacesInPhotos(
       const img = await loadImage(url)
       const { canvas, scale } = resizeForDetection(img)
 
-      const result = await human.detect(canvas)
+      const jpegDataUrl = canvas.toDataURL('image/jpeg', 0.85)
+      const imageBase64 = jpegDataUrl.replace(/^data:image\/jpeg;base64,/, '')
 
-      if (result.face && result.face.length > 0) {
+      const faces = await callDetectFaces(photo.id, imageBase64)
+
+      if (faces.length > 0) {
         console.log(
-          `[FaceDetection] Photo ${photo.id}: detected ${result.face.length} raw faces, ` +
-          `scores: [${result.face.map((f) => (f.score ?? 0).toFixed(2)).join(', ')}], ` +
-          `embeddings: [${result.face.map((f) => f.embedding?.length ?? 0).join(', ')}]`,
+          `[FaceDetection] Photo ${photo.id}: ${faces.length} faces, ` +
+          `confidence: [${faces.map((f) => f.confidence.toFixed(1)).join(', ')}]`,
         )
 
-        const scoredFaces = result.face
-          .filter((f) => (f.score ?? 0) >= MIN_FACE_SCORE)
-          .sort((a, b) => (b.box[2] * b.box[3]) - (a.box[2] * a.box[3]))
+        for (const face of faces) {
+          const box = rekognitionBoxToAbsolute(
+            face.boundingBox,
+            canvas.width,
+            canvas.height,
+          )
+          const cropUrl = cropFace(img, box, scale)
 
-        let faceIdx = 0
-        for (const face of scoredFaces) {
-          let embedding = face.embedding?.length ? face.embedding : null
-
-          if (!embedding) {
-            embedding = await retryEmbeddingForFace(human, img, face.box, scale)
-            if (embedding) retriedEmbeddings++
-          }
-
-          if (!embedding) {
-            noEmbeddings++
-            continue
-          }
-
-          const cropUrl = cropFace(img, face.box, scale)
           all.push({
             photoId: photo.id,
             photoUrl: photo.fullUrl || photo.thumbnailUrl,
-            box: face.box,
-            embedding,
+            box,
+            embedding: [],
             cropDataUrl: cropUrl,
-            faceIndexInPhoto: faceIdx,
+            faceIndexInPhoto: face.faceIndexInPhoto,
+            awsFaceId: face.awsFaceId,
+            matchedFaceIds: face.matches.map((m) => m.awsFaceId),
           })
-          faceIdx++
         }
       } else {
         detectFailures++
@@ -224,39 +183,40 @@ export async function detectFacesInPhotos(
 
   console.log(
     `[FaceDetection] Summary: ${all.length} faces from ${photos.length} photos ` +
-    `(${loadFailures} load failures, ${detectFailures} no-face, ` +
-    `${noEmbeddings} no-embedding, ${retriedEmbeddings} recovered via retry)`,
+    `(${loadFailures} failures, ${detectFailures} no-face)`,
   )
 
   return all
 }
 
-/* ─── Clustering by embedding similarity ─────────────────────────────── */
+/* ─── Clustering by Rekognition match graph ──────────────────────────── */
 
-function cosineSimilarity(a: number[], b: number[]): number {
-  let dot = 0
-  let magA = 0
-  let magB = 0
-  for (let i = 0; i < a.length; i++) {
-    dot += a[i] * b[i]
-    magA += a[i] * a[i]
-    magB += b[i] * b[i]
-  }
-  const denom = Math.sqrt(magA) * Math.sqrt(magB)
-  return denom === 0 ? 0 : dot / denom
-}
-
-const SIMILARITY_THRESHOLD = 0.44
 const MIN_PHOTOS_FOR_PERSON = 3
 
-function avgEmbedding(faces: DetectedFace[]): number[] {
-  const dim = faces[0].embedding.length
-  const avg = new Array(dim).fill(0)
-  for (const f of faces) {
-    for (let i = 0; i < dim; i++) avg[i] += f.embedding[i]
+/**
+ * Union-Find for grouping faces by Rekognition match results.
+ */
+class UnionFind {
+  private parent: Map<string, string> = new Map()
+
+  find(x: string): string {
+    if (!this.parent.has(x)) this.parent.set(x, x)
+    let root = x
+    while (this.parent.get(root) !== root) root = this.parent.get(root)!
+    let cur = x
+    while (cur !== root) {
+      const next = this.parent.get(cur)!
+      this.parent.set(cur, root)
+      cur = next
+    }
+    return root
   }
-  for (let i = 0; i < dim; i++) avg[i] /= faces.length
-  return avg
+
+  union(a: string, b: string): void {
+    const ra = this.find(a)
+    const rb = this.find(b)
+    if (ra !== rb) this.parent.set(rb, ra)
+  }
 }
 
 /**
@@ -269,27 +229,34 @@ export function clusterFaces(
 ): AlbumPerson[] {
   if (faces.length === 0) return []
 
-  const clusters: DetectedFace[][] = []
+  const uf = new UnionFind()
+  const faceIdToIdx = new Map<string, number>()
 
-  for (const face of faces) {
-    let bestCluster = -1
-    let bestSim = -1
-
-    for (let ci = 0; ci < clusters.length; ci++) {
-      const centroid = avgEmbedding(clusters[ci])
-      const sim = cosineSimilarity(face.embedding, centroid)
-      if (sim > bestSim) {
-        bestSim = sim
-        bestCluster = ci
-      }
-    }
-
-    if (bestSim >= SIMILARITY_THRESHOLD && bestCluster >= 0) {
-      clusters[bestCluster].push(face)
-    } else {
-      clusters.push([face])
+  for (let i = 0; i < faces.length; i++) {
+    const f = faces[i]
+    if (f.awsFaceId) {
+      faceIdToIdx.set(f.awsFaceId, i)
+      uf.find(f.awsFaceId)
     }
   }
+
+  for (const face of faces) {
+    if (!face.awsFaceId || !face.matchedFaceIds) continue
+    for (const matchId of face.matchedFaceIds) {
+      if (faceIdToIdx.has(matchId)) {
+        uf.union(face.awsFaceId, matchId)
+      }
+    }
+  }
+
+  const groups = new Map<string, DetectedFace[]>()
+  for (const face of faces) {
+    const key = face.awsFaceId ? uf.find(face.awsFaceId) : `solo_${face.photoId}_${face.faceIndexInPhoto}`
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key)!.push(face)
+  }
+
+  const clusters = [...groups.values()]
 
   const people: AlbumPerson[] = []
   const unidentifiedPhotoIds = new Set<string>()
