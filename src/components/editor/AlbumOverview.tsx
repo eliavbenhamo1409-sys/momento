@@ -11,25 +11,6 @@ import Icon from '../shared/Icon'
 import { generateAutoBackgroundsForAllSpreads, imageUrlToDataUrl } from '../../lib/openai'
 import type { PhotoElement } from '../../types'
 
-/* ── Stable action accessor — avoids per-render store subscriptions ── */
-function getEditorActions() {
-  const s = useEditorStore.getState()
-  return {
-    setCurrentSpread: s.setCurrentSpread,
-    replacePhotoInSlotBySpread: s.replacePhotoInSlotBySpread,
-    removePhotoFromSlotBySpread: s.removePhotoFromSlotBySpread,
-    swapPhotosAcrossSpreads: s.swapPhotosAcrossSpreads,
-    movePhotoToEmptySlot: s.movePhotoToEmptySlot,
-    deleteSpread: s.deleteSpread,
-    setSpreadBgColor: s.setSpreadBgColor,
-    removePhotoSlotBySpread: s.removePhotoSlotBySpread,
-    batchApplySpreadGeneratedBgs: s.batchApplySpreadGeneratedBgs,
-  }
-}
-function toast(...args: Parameters<ReturnType<typeof useUIStore.getState>['addToast']>) {
-  useUIStore.getState().addToast(...args)
-}
-
 const BANNER_CONFIG: Record<string, { icon: string; title: string; subtitle: string }> = {
   replace:        { icon: 'swap_horiz',    title: 'החלפת תמונה',            subtitle: 'לחצו על התמונה שברצונכם להחליף' },
   'swap-source':  { icon: 'touch_app',     title: 'העברת תמונה',            subtitle: 'לחצו על התמונה שברצונכם להעביר' },
