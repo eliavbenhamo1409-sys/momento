@@ -58,7 +58,7 @@
 
   --color-sage: #8B8573;
   --color-warm-gray: #87827C;
-  --color-deep-brown: #1A1714;
+  --color-deep-brown: #FFFFFF;
   --color-soft-cream: #FAFAF7;
   --color-muted-border: #E0DCD6;
   --color-accent: #B5A48A;
@@ -390,9 +390,9 @@ body {
   transform: scale(0.96);
 }
 
-.shadow-overview-card         { box-shadow: 0 2px 8px rgba(0,0,0,0,); }
-.shadow-overview-card-hover   { box-shadow: 0 6px 20px rgba(0,0,0,0,); }
-.shadow-overview-card-active  { box-shadow: 0 4px 20px rgba(0,0,0,0); }
+.shadow-overview-card         { box-shadow: 0 2px 8px rgba(45,40,35,0.05); }
+.shadow-overview-card-hover   { box-shadow: 0 6px 20px rgba(45,40,35,0.10); }
+.shadow-overview-card-active  { box-shadow: 0 4px 20px rgba(45,41,38,0.1); }
 
 /* ── cover-active: hide flipbook so dot-grid background shows ──── */
 .book-cover-active .album-flipbook {
