@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { EditorSpread, SidebarMode, SpreadDesign, PhotoElement, QuoteElement } from '../types'
 import { EDITOR_SPREADS } from '../lib/constants'
 import { getTemplate } from '../lib/layoutGrammar'
+import { DEFAULT_GLOBAL_PAGE_EDGE_MARGIN_PERCENT } from '../components/editor/editorDefaults'
 
 function buildEmptyPhotoElement(
   slotId: string,
@@ -140,7 +141,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   pendingPhotoSwap: null,
 
   globalPhotoFramePaddingPx: null,
-  globalPageMarginPercent: null,
+  globalPageMarginPercent: DEFAULT_GLOBAL_PAGE_EDGE_MARGIN_PERCENT,
   globalPhotoBorderRadiusPx: null,
   setGlobalPhotoFramePadding: (paddingPx) => set({ globalPhotoFramePaddingPx: paddingPx }),
   setGlobalPageMargin: (margin) => set({ globalPageMarginPercent: margin }),
@@ -157,6 +158,7 @@ export const useEditorStore = create<EditorState>((set) => ({
       selectedPhotoId: null,
       sidebarMode: 'page',
       isGenerated: true,
+      globalPageMarginPercent: DEFAULT_GLOBAL_PAGE_EDGE_MARGIN_PERCENT,
     }),
 
   setCurrentSpread: (index) =>

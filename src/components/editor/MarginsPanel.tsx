@@ -1,6 +1,7 @@
 import { useState, useCallback, useRef } from 'react'
 import { motion } from 'motion/react'
 import { useEditorStore } from '../../store/editorStore'
+import { DEFAULT_GLOBAL_PAGE_EDGE_MARGIN_PERCENT } from './editorDefaults'
 import Icon from '../shared/Icon'
 
 /** White frame around each photo (px) */
@@ -14,7 +15,7 @@ const FRAME_PRESETS = [
 
 const MARGIN_PRESETS = [
   { label: 'ללא', value: 0 },
-  { label: 'צר', value: 2 },
+  { label: 'צר', value: 1 },
   { label: 'רגיל', value: 6 },
   { label: 'רחב', value: 10 },
   { label: 'מרווח', value: 16 },
@@ -206,7 +207,7 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
   const initialRadius = useRef(storeRadius)
 
   const [framePx, setFramePx] = useState(storeFrame ?? 8)
-  const [margin, setMargin] = useState(storeMargin ?? 1)
+  const [margin, setMargin] = useState(storeMargin ?? DEFAULT_GLOBAL_PAGE_EDGE_MARGIN_PERCENT)
   const [cornerPx, setCornerPx] = useState(storeRadius ?? 12)
   const [dirty, setDirty] = useState(false)
 
@@ -237,11 +238,11 @@ export default function MarginsPanel({ onClose }: { onClose: () => void }) {
 
   const handleReset = useCallback(() => {
     setFramePx(8)
-    setMargin(1)
+    setMargin(DEFAULT_GLOBAL_PAGE_EDGE_MARGIN_PERCENT)
     setCornerPx(12)
     setDirty(true)
     setGlobalPhotoFramePadding(null)
-    setGlobalPageMargin(null)
+    setGlobalPageMargin(DEFAULT_GLOBAL_PAGE_EDGE_MARGIN_PERCENT)
     setGlobalPhotoBorderRadius(null)
   }, [setGlobalPhotoFramePadding, setGlobalPageMargin, setGlobalPhotoBorderRadius])
 
