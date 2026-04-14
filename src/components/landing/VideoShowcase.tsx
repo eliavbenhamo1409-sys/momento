@@ -13,7 +13,7 @@ interface Slot {
 const slots: Slot[] = [
   {
     id: 'v1',
-    videoSrc: '/static-wooden.mp4',
+    videoSrc: '/video.mp4',
     bg: '#E8E3DC',
   },
   {
