@@ -3,6 +3,7 @@ import { Outlet, NavLink, useNavigate } from 'react-router'
 import { motion } from 'motion/react'
 import { useAdminGuard } from './useAdminGuard'
 import { useUIStore } from '../store/uiStore'
+import BrandLogo from '../components/shared/BrandLogo'
 
 const ADMIN_BASE = '/admin.eliav'
 const GATE_KEY = 'momento_admin_gate'
@@ -55,7 +56,9 @@ function GateScreen({ onVerify }: { onVerify: (user: string, pass: string) => bo
           <div className="w-12 h-12 rounded-xl bg-[#111827] flex items-center justify-center mx-auto mb-3">
             <span className="material-symbols-outlined text-white text-[22px]">lock</span>
           </div>
-          <img src="/momento-logo.png" alt="Momento" className="h-7 w-auto mx-auto object-contain invert mb-2" decoding="async" />
+          <div className="flex justify-center mb-2">
+            <BrandLogo heightClass="h-7" />
+          </div>
           <h1 className="text-[14px] font-semibold text-[#111827]">ניהול</h1>
           <p className="text-[12px] text-[#6b7280] mt-1">הזן פרטי כניסה</p>
         </div>
@@ -118,7 +121,7 @@ export default function AdminLayout() {
     <div dir="rtl" className="min-h-screen bg-[#f8f9fa] flex">
       <aside className="w-60 bg-white border-l border-[#e5e7eb] flex flex-col shrink-0 sticky top-0 h-screen">
         <div className="px-5 py-5 border-b border-[#e5e7eb]">
-          <img src="/momento-logo.png" alt="Momento" className="h-6 w-auto object-contain invert" decoding="async" />
+          <BrandLogo heightClass="h-6" />
           <p className="text-[11px] text-[#6b7280] mt-0.5">ניהול הזמנות</p>
         </div>
 

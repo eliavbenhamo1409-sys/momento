@@ -52,13 +52,11 @@ export default function EditorTopBar() {
   return (
     <header className="w-full z-20 bg-white/75 backdrop-blur-xl flex justify-between items-center px-4 md:px-8 py-2.5 md:py-3 border-b border-outline-variant/8 shrink-0 relative">
       <div className="flex items-center gap-3 md:gap-5 min-w-0">
-        <button
-          type="button"
+        <BrandLogo
+          heightClass="h-7 md:h-8"
           onClick={() => navigate('/')}
-          className="btn-press flex items-center gap-2 shrink-0"
-        >
-          <BrandLogo heightClass="h-7 md:h-8" />
-        </button>
+          className="shrink-0"
+        />
 
         <div className="h-7 w-px bg-outline-variant/20 hidden sm:block" />
 

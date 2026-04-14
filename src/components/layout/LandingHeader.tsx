@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'motion/react'
 import { useUIStore } from '../../store/uiStore'
 import { useShallow } from 'zustand/react/shallow'
 import Icon from '../shared/Icon'
+import BrandLogo from '../shared/BrandLogo'
 
 export default function LandingHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -46,22 +47,7 @@ export default function LandingHeader() {
     <header
       className="fixed top-0 z-50 flex w-full items-center justify-between bg-white/95 px-4 py-1.5 backdrop-blur-md transition-colors duration-300 md:px-8 md:py-2 lg:px-12"
     >
-      <button
-        type="button"
-        onClick={() => navigate('/')}
-        className="btn-press border-0 bg-transparent p-0 leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-deep-brown/40 focus-visible:ring-offset-2"
-        aria-label="Momento — דף הבית"
-      >
-        <span
-          lang="en"
-          dir="ltr"
-          translate="no"
-          className="block font-normal text-[1.5rem] text-deep-brown sm:text-[1.7rem] md:text-[1.95rem] lg:text-[2.2rem]"
-          style={{ fontFamily: "'Allura', cursive" }}
-        >
-          Momento.
-        </span>
-      </button>
+      <BrandLogo heightClass="landing" onClick={() => navigate('/')} />
 
       <nav className="hidden items-center gap-5 md:flex lg:gap-7">
         {['איך זה עובד', 'מחירים', 'שאלות נפוצות'].map((item) => (
