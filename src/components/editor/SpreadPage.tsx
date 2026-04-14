@@ -342,6 +342,20 @@ function AbsolutePageElements({
         }
       }
       state.setPendingPhotoSwap(null)
+    } else if (state.pendingUnplacedPhoto) {
+      const { pendingUnplacedPhoto: src, spreads: allSpreads, currentSpreadIndex } = state
+      const tgtSpread = allSpreads[currentSpreadIndex]
+      if (tgtSpread?.design) {
+        const elements = tgtSpread.design.elements.map((el) => {
+          if (el.type !== 'photo' || el.slotId !== slotId) return el
+          return { ...el, photoUrl: src.photoUrl, photoId: src.photoId } as import('../../types').PhotoElement
+        })
+        const spreads = [...allSpreads]
+        spreads[currentSpreadIndex] = { ...tgtSpread, design: { ...tgtSpread.design, elements } }
+        useEditorStore.setState({ spreads, pendingUnplacedPhoto: null })
+      } else {
+        state.setPendingUnplacedPhoto(null)
+      }
     } else if (isSwapping && onSwapClick) {
       onSwapClick(slotId)
     } else {

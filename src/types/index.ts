@@ -636,7 +636,6 @@ export interface DesignFamily {
   textBehavior: FamilyTextBehavior
   spreadRoles: Partial<Record<SpreadRole, SpreadRoleOverride>>
   constraints: FamilyConstraints
-  previewImageUrl? : string
 }
 
 // ─── Template Variant System ─────────────────────────────────────────

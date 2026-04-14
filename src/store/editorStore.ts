@@ -59,6 +59,10 @@ interface EditorState {
   /** Cross-spread photo swap initiated from people panel */
   pendingPhotoSwap: { spreadId: string; slotId: string } | null
 
+  /** Place an unplaced photo (not on any spread) into a clicked slot */
+  pendingUnplacedPhoto: { photoUrl: string; photoId: string } | null
+  setPendingUnplacedPhoto: (source: { photoUrl: string; photoId: string } | null) => void
+
   /** Collective white frame (px) around each photo; null = use per-element / family defaults */
   globalPhotoFramePaddingPx: number | null
   globalPageMarginPercent: number | null
@@ -139,6 +143,8 @@ export const useEditorStore = create<EditorState>((set) => ({
   swapPhase: 'off' as SwapPhase,
   swapSourceSlotId: null,
   pendingPhotoSwap: null,
+  pendingUnplacedPhoto: null,
+  setPendingUnplacedPhoto: (source) => set({ pendingUnplacedPhoto: source }),
 
   globalPhotoFramePaddingPx: null,
   globalPageMarginPercent: DEFAULT_GLOBAL_PAGE_EDGE_MARGIN_PERCENT,
@@ -183,7 +189,7 @@ export const useEditorStore = create<EditorState>((set) => ({
   })),
   setSaving: (val) => set({ isSaving: val }),
   setLastSaved: (date) => set({ lastSaved: date, isSaving: false }),
-  deselectAll: () => set({ selectedPhotoId: null, selectedTextIndex: null, sidebarMode: 'page', pendingPhotoSwap: null }),
+  deselectAll: () => set({ selectedPhotoId: null, selectedTextIndex: null, sidebarMode: 'page', pendingPhotoSwap: null, pendingUnplacedPhoto: null }),
 
   addSpread: () =>
     set((s) => {
