@@ -15,7 +15,8 @@ type Phase = 'choose' | 'processing' | 'curate'
 
 interface PhotoCard {
   id: string
-  thumbnailUrl: string
+  /** Full-res preview for the grid (thumbnails are ~300px and look soft when scaled). */
+  previewUrl: string
   score: PhotoScore | null
   reason?: string
 }
@@ -158,9 +159,10 @@ function PhotoTile({
       className="relative group aspect-square rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-black/[0.04]"
     >
       <img
-        src={photo.thumbnailUrl}
+        src={photo.previewUrl}
         alt=""
         loading="lazy"
+        decoding="async"
         className="w-full h-full object-cover"
       />
 
@@ -464,7 +466,7 @@ export default function CurateScreen() {
       .filter((p) => selectedIds.has(p.id))
       .map((p) => ({
         id: p.id,
-        thumbnailUrl: p.thumbnailUrl,
+        previewUrl: p.fullUrl || p.thumbnailUrl,
         score: scoreMap.get(p.id) ?? null,
       }))
 
@@ -481,7 +483,7 @@ export default function CurateScreen() {
         .filter((p) => removedIds.has(p.id))
         .map((p) => ({
           id: p.id,
-          thumbnailUrl: p.thumbnailUrl,
+          previewUrl: p.fullUrl || p.thumbnailUrl,
           score: scoreMap.get(p.id) ?? null,
           reason: removedReasons.get(p.id),
         })),
