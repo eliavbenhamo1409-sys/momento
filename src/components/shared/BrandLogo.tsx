@@ -12,7 +12,7 @@ interface BrandLogoProps {
 }
 
 const HEIGHT_TO_TEXT: Record<string, string> = {
-  landing: 'text-[1.5rem] sm:text-[1.7rem] md:text-[1.95rem] lg:text-[2.2rem]',
+  landing: 'text-[1.4rem] sm:text-[1.58rem] md:text-[1.8rem] lg:text-[2.05rem]',
   'h-6': 'text-[1.05rem]',
   'h-7': 'text-[1.22rem]',
   'h-7 md:h-8': 'text-[1.22rem] md:text-[1.42rem]',
