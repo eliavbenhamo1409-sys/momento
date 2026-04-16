@@ -618,6 +618,8 @@ export interface DesignFamily {
   nameHe: string
   description: string
   descriptionHe: string
+  /** Optional hero preview in setup flow (local path or URL). */
+  previewImageUrl?: string
 
   bestForType: string[]
   bestForMood: string[]

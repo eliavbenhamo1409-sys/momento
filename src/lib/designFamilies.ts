@@ -8,6 +8,7 @@ const contemporaryLuxury: DesignFamily = {
   nameHe: 'יוקרה מודרנית',
   description: 'Clean lines, generous whitespace, premium feel. Studio-quality with confident restraint.',
   descriptionHe: 'קווים נקיים, רווח נדיב, תחושת פרימיום. איכות סטודיו עם ריסון בטוח.',
+  previewImageUrl: '/previews/img105846.jpg',
 
   bestForType: ['wedding', 'portrait', 'family', 'newborn'],
   bestForMood: ['romantic', 'serene', 'dramatic', 'tender'],
@@ -204,6 +205,7 @@ const timelessClassic: DesignFamily = {
   nameHe: 'קלאסי נצחי',
   description: 'Formal symmetry, champagne-gold accents, visible photo mats, ornamental dividers. The album your grandparents would have treasured.',
   descriptionHe: 'סימטריה מושלמת, גוונים של שמפניה וזהב עתיק, מסגרות מט אלגנטיות, חוצצים עיטוריים. אלבום שגם הסבתא הייתה שומרת לנצח.',
+  previewImageUrl: '/hero-nature.png',
 
   bestForType: ['wedding', 'bar_mitzvah', 'family', 'memorial', 'event'],
   bestForMood: ['romantic', 'tender', 'nostalgic', 'serene', 'dramatic'],
@@ -422,6 +424,7 @@ const softPersonal: DesignFamily = {
   nameHe: 'רך ואישי',
   description: 'Warm blush tones, cloud-soft shadows, generous rounded corners. Like a handwritten letter — intimate, tactile, and full of heart.',
   descriptionHe: 'גוונים חמים של בלאש וורוד עתיק, צללים רכים כענן, פינות מעוגלות בנדיבות. כמו מכתב בכתב יד — אינטימי, מוחשי, מלא לב.',
+  previewImageUrl: '/showcase-left-shadow.png',
 
   bestForType: ['wedding', 'family', 'newborn', 'baby', 'couple', 'general'],
   bestForMood: ['tender', 'romantic', 'nostalgic', 'joyful', 'serene'],

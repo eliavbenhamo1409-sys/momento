@@ -309,7 +309,7 @@ function PersonPhotosPanel({
         <div className="p-2 max-h-[180px] overflow-y-auto" data-photos-scroll>
           {photos.length > 0 ? (
             <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
-              {photos.map((photo, i) => (
+              {photos.map((photo) => (
                 <PhotoThumb
                   key={photo.id}
                   photoId={photo.id}
@@ -408,7 +408,7 @@ function UnplacedPhotosPanel({
         <div className="p-2 max-h-[180px] overflow-y-auto" data-photos-scroll>
           {photos.length > 0 ? (
             <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
-              {photos.map((photo, i) => (
+              {photos.map((photo) => (
                 <PhotoThumb
                   key={photo.id}
                   photoId={photo.id}
