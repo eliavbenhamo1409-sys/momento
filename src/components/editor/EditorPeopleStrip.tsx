@@ -142,9 +142,35 @@ function PhotoThumb({
   onSelect: (id: string) => void
 }) {
   const [broken, setBroken] = useState(false)
+  const [inView, setInView] = useState(false)
+  const btnRef = useRef<HTMLButtonElement | null>(null)
+
+  useEffect(() => {
+    setBroken(false)
+  }, [url])
+
+  useEffect(() => {
+    const el = btnRef.current
+    if (!el) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (entry?.isIntersecting) {
+          setInView(true)
+          observer.disconnect()
+        }
+      },
+      { root: el.closest('[data-photos-scroll]') as Element | null, rootMargin: '220px' },
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   return (
     <button
+      ref={btnRef}
       type="button"
       onClick={() => onSelect(photoId)}
       className={`aspect-square rounded-md overflow-hidden cursor-pointer
@@ -164,12 +190,15 @@ function PhotoThumb({
         <div className="w-full h-full bg-surface-container-high flex items-center justify-center">
           <Icon name="broken_image" size={16} className="text-secondary/30" />
         </div>
+      ) : !inView ? (
+        <div className="w-full h-full skeleton-shimmer bg-surface-container-highest" />
       ) : (
         <img
           src={url}
           alt=""
-          loading="eager"
+          loading="lazy"
           decoding="async"
+          fetchPriority="low"
           className="w-full h-full object-cover"
           onError={() => setBroken(true)}
         />
@@ -277,7 +306,7 @@ function PersonPhotosPanel({
         </div>
 
         {/* Photos grid */}
-        <div className="p-2 max-h-[180px] overflow-y-auto">
+        <div className="p-2 max-h-[180px] overflow-y-auto" data-photos-scroll>
           {photos.length > 0 ? (
             <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
               {photos.map((photo, i) => (
@@ -376,7 +405,7 @@ function UnplacedPhotosPanel({
           </div>
         </div>
 
-        <div className="p-2 max-h-[180px] overflow-y-auto">
+        <div className="p-2 max-h-[180px] overflow-y-auto" data-photos-scroll>
           {photos.length > 0 ? (
             <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 lg:grid-cols-12 gap-1.5">
               {photos.map((photo, i) => (

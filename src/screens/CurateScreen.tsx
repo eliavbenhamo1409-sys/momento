@@ -1,6 +1,7 @@
-import { useState, useCallback, useRef, useMemo } from 'react'
+import { useState, useCallback, useRef, useMemo, useEffect, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
-import { motion, AnimatePresence, LayoutGroup } from 'motion/react'
+import { motion, AnimatePresence } from 'motion/react'
+import { useVirtualizer } from '@tanstack/react-virtual'
 import PageTransition from '../components/shared/PageTransition'
 import ProductLayout from '../components/layout/ProductLayout'
 import Icon from '../components/shared/Icon'
@@ -8,6 +9,7 @@ import { useAlbumStore } from '../store/albumStore'
 import { runPhotoScoring } from '../lib/albumGenerator'
 import { curatePhotos } from '../lib/photoScorer'
 import { extractPhotoDate } from '../lib/photoUtils'
+import { loadDecorativeFonts } from '../lib/fontLoader'
 import type { PhotoScore, CuratedPhotoSet, RankedPhoto } from '../types'
 
 type CurateMode = 'ai' | 'manual'
@@ -150,14 +152,7 @@ function PhotoTile({
   const isLowQuality = quality > 0 && quality < 4
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, scale: 0.85 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.85 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-      className="relative group aspect-square rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-black/[0.04]"
-    >
+    <div className="fade-scale-in relative group aspect-square rounded-xl overflow-hidden bg-white shadow-sm ring-1 ring-black/[0.04]">
       <img
         src={photo.previewUrl}
         alt=""
@@ -202,7 +197,115 @@ function PhotoTile({
           </span>
         </div>
       )}
-    </motion.div>
+    </div>
+  )
+}
+
+/* ─── Virtualized Grid ──────────────────────────────────────────────── */
+
+type BreakpointCols = { minWidthPx: number; cols: number }
+
+function useColumnsFromWidth(widthPx: number, breakpoints: BreakpointCols[]) {
+  const sorted = useMemo(
+    () => [...breakpoints].sort((a, b) => a.minWidthPx - b.minWidthPx),
+    [breakpoints],
+  )
+  return useMemo(() => {
+    let cols = sorted[0]?.cols ?? 1
+    for (const bp of sorted) {
+      if (widthPx >= bp.minWidthPx) cols = bp.cols
+    }
+    return Math.max(1, cols)
+  }, [sorted, widthPx])
+}
+
+function VirtualizedPhotoGrid({
+  photos,
+  side,
+  onSwap,
+  paddingPx,
+  gapPx,
+  breakpoints,
+  empty,
+}: {
+  photos: PhotoCard[]
+  side: 'selected' | 'removed'
+  onSwap: (id: string) => void
+  paddingPx: number
+  gapPx: number
+  breakpoints: BreakpointCols[]
+  empty: ReactNode
+}) {
+  const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [widthPx, setWidthPx] = useState(0)
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+
+    const ro = new ResizeObserver(() => {
+      setWidthPx(el.clientWidth)
+    })
+    ro.observe(el)
+    setWidthPx(el.clientWidth)
+
+    return () => ro.disconnect()
+  }, [])
+
+  const columns = useColumnsFromWidth(widthPx, breakpoints)
+
+  const usableWidth = Math.max(0, widthPx - paddingPx * 2)
+  const tileSize = Math.max(64, Math.floor((usableWidth - gapPx * (columns - 1)) / columns))
+  const rowHeight = tileSize + gapPx
+  const rowCount = Math.ceil(photos.length / columns)
+
+  const rowVirtualizer = useVirtualizer({
+    count: rowCount,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => rowHeight,
+    overscan: 3,
+  })
+
+  return (
+    <div ref={scrollRef} className="flex-1 overflow-y-auto" style={{ padding: paddingPx }}>
+      {photos.length === 0 ? (
+        empty
+      ) : (
+        <div style={{ height: rowVirtualizer.getTotalSize(), position: 'relative' }}>
+          {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+            const startIndex = virtualRow.index * columns
+            const rowPhotos = photos.slice(startIndex, startIndex + columns)
+
+            return (
+              <div
+                key={virtualRow.key}
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  transform: `translateY(${virtualRow.start}px)`,
+                }}
+              >
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
+                    gap: gapPx,
+                  }}
+                >
+                  {rowPhotos.map((p) => (
+                    <div key={p.id} style={{ width: tileSize, height: tileSize }}>
+                      <PhotoTile photo={p} side={side} onSwap={onSwap} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -241,6 +344,10 @@ export default function CurateScreen() {
   const navigate = useNavigate()
   const photos = useAlbumStore((s) => s.photos)
   const config = useAlbumStore((s) => s.config)
+
+  useEffect(() => {
+    void loadDecorativeFonts()
+  }, [])
 
   const [phase, setPhase] = useState<Phase>('choose')
   const [mode, setMode] = useState<CurateMode | null>(null)
@@ -587,23 +694,25 @@ export default function CurateScreen() {
                     <span className="text-sm font-semibold text-deep-brown">באלבום</span>
                     <span className="text-xs text-warm-gray mr-1">({selectedPhotos.length})</span>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <LayoutGroup id="selected">
-                      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2.5">
-                        <AnimatePresence mode="popLayout">
-                          {selectedPhotos.map((p) => (
-                            <PhotoTile key={p.id} photo={p} side="selected" onSwap={handleSwap} />
-                          ))}
-                        </AnimatePresence>
-                      </div>
-                    </LayoutGroup>
-                    {selectedPhotos.length === 0 && (
+                  <VirtualizedPhotoGrid
+                    photos={selectedPhotos}
+                    side="selected"
+                    onSwap={handleSwap}
+                    paddingPx={16}
+                    gapPx={10}
+                    breakpoints={[
+                      { minWidthPx: 0, cols: 3 },
+                      { minWidthPx: 768, cols: 4 },
+                      { minWidthPx: 1024, cols: 5 },
+                      { minWidthPx: 1280, cols: 6 },
+                    ]}
+                    empty={(
                       <div className="flex flex-col items-center justify-center h-full text-center py-20">
                         <Icon name="photo_library" size={48} className="text-outline-variant/30 mb-3" />
                         <p className="text-sm text-warm-gray">אין תמונות נבחרות</p>
                       </div>
                     )}
-                  </div>
+                  />
                 </div>
 
                 {/* Left column — Removed */}
@@ -618,23 +727,23 @@ export default function CurateScreen() {
                     <span className="text-sm font-semibold text-on-surface-variant">מחוץ לאלבום</span>
                     <span className="text-xs text-warm-gray mr-1">({removedPhotos.length})</span>
                   </div>
-                  <div className="flex-1 overflow-y-auto p-3">
-                    <LayoutGroup id="removed">
-                      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2">
-                        <AnimatePresence mode="popLayout">
-                          {removedPhotos.map((p) => (
-                            <PhotoTile key={p.id} photo={p} side="removed" onSwap={handleSwap} />
-                          ))}
-                        </AnimatePresence>
-                      </div>
-                    </LayoutGroup>
-                    {removedPhotos.length === 0 && (
+                  <VirtualizedPhotoGrid
+                    photos={removedPhotos}
+                    side="removed"
+                    onSwap={handleSwap}
+                    paddingPx={12}
+                    gapPx={8}
+                    breakpoints={[
+                      { minWidthPx: 0, cols: 2 },
+                      { minWidthPx: 1024, cols: 3 },
+                    ]}
+                    empty={(
                       <div className="flex flex-col items-center justify-center h-full text-center py-16">
                         <Icon name="filter_list_off" size={36} className="text-outline-variant/20 mb-2" />
                         <p className="text-xs text-warm-gray">כל התמונות נבחרו</p>
                       </div>
                     )}
-                  </div>
+                  />
                 </div>
               </div>
 

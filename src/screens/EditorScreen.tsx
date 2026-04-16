@@ -12,6 +12,7 @@ import AlbumOverview from '../components/editor/AlbumOverview'
 import DotGrid from '../components/editor/DotGrid'
 import EditorPeopleStrip from '../components/editor/EditorPeopleStrip'
 import { contentReveal } from '../lib/animations'
+import { loadDecorativeFonts } from '../lib/fontLoader'
 import { useEditorStore } from '../store/editorStore'
 import { useAlbumStore } from '../store/albumStore'
 import { useAutoSave, useAlbumLoad } from '../hooks/useAlbumPersistence'
@@ -19,6 +20,9 @@ import { calcAlbumPrice, ALBUM_SIZES } from '../lib/constants'
 
 export default function EditorScreen() {
   useAutoSave(25000)
+  useEffect(() => {
+    void loadDecorativeFonts()
+  }, [])
   const { albumId } = useParams<{ albumId?: string }>()
   const navigate = useNavigate()
   const loadAlbum = useAlbumLoad()
