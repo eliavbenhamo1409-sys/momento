@@ -47,7 +47,7 @@ export default function LandingHeader() {
     <header
       className="fixed top-0 z-50 flex w-full items-center justify-between bg-white/95 px-4 py-1.5 backdrop-blur-md transition-colors duration-300 md:px-8 md:py-2 lg:px-12"
     >
-      <BrandLogo heightClass="landing" onClick={() => navigate('/')} />
+      <BrandLogo onClick={() => navigate('/')} />
 
       <nav className="hidden items-center gap-5 md:flex lg:gap-7">
         {['איך זה עובד', 'מחירים', 'שאלות נפוצות'].map((item) => (

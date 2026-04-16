@@ -9,7 +9,7 @@ export default function PrivacyPage() {
         <header className="sticky top-0 z-50 backdrop-blur-xl bg-surface/80 border-b border-outline-variant/20">
           <div className="max-w-4xl mx-auto px-6 h-16 flex items-center justify-between">
             <Link to="/" className="inline-flex items-center">
-              <BrandLogo heightClass="h-8" />
+              <BrandLogo />
             </Link>
             <Link to="/" className="text-sm text-primary hover:underline">חזרה לדף הבית</Link>
           </div>

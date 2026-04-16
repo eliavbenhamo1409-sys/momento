@@ -45,7 +45,7 @@ export default function DashboardHeader() {
           : 'bg-transparent'
       }`}
     >
-      <BrandLogo heightClass="h-9" onClick={() => navigate('/')} />
+      <BrandLogo onClick={() => navigate('/')} />
 
       <div className="relative" ref={menuRef}>
         <button

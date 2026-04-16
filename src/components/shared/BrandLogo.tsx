@@ -28,7 +28,8 @@ function textSizeClass(heightClass: string): string {
 export default function BrandLogo({
   tone = 'dark',
   className = '',
-  heightClass = 'h-8',
+  /** אחיד עם דף הבית — responsive כמו `LandingHeader`. */
+  heightClass = 'landing',
   onClick,
   ariaLabel = 'Momento — דף הבית',
 }: BrandLogoProps) {

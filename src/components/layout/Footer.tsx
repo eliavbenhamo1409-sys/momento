@@ -9,7 +9,7 @@ export default function Footer() {
         <div className="flex flex-col md:flex-row-reverse justify-between items-start gap-14 mb-16">
           <div>
             <div className="mb-5">
-              <BrandLogo tone="light" heightClass="h-10 md:h-11" />
+              <BrandLogo tone="light" />
             </div>
             <p
               className="text-[12px] tracking-[0.35em] uppercase text-white/20 mb-3"

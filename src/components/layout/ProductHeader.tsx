@@ -35,7 +35,7 @@ export default function ProductHeader({ showBack, backTo, backLabel, onBack }: P
   return (
     <header className="h-[60px] w-full glass-header border-b border-muted-border/10 flex items-center justify-between px-8 shrink-0 z-40">
       <div className="flex items-center gap-4">
-        <BrandLogo heightClass="h-7" onClick={() => navigate('/')} />
+        <BrandLogo onClick={() => navigate('/')} />
         {showBack && (
           <>
             <div className="h-5 w-px bg-outline-variant/30" />

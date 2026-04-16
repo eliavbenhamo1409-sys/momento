@@ -57,7 +57,7 @@ function GateScreen({ onVerify }: { onVerify: (user: string, pass: string) => bo
             <span className="material-symbols-outlined text-white text-[22px]">lock</span>
           </div>
           <div className="flex justify-center mb-2">
-            <BrandLogo heightClass="h-7" />
+            <BrandLogo />
           </div>
           <h1 className="text-[14px] font-semibold text-[#111827]">ניהול</h1>
           <p className="text-[12px] text-[#6b7280] mt-1">הזן פרטי כניסה</p>
@@ -121,7 +121,7 @@ export default function AdminLayout() {
     <div dir="rtl" className="min-h-screen bg-[#f8f9fa] flex">
       <aside className="w-60 bg-white border-l border-[#e5e7eb] flex flex-col shrink-0 sticky top-0 h-screen">
         <div className="px-5 py-5 border-b border-[#e5e7eb]">
-          <BrandLogo heightClass="h-6" />
+          <BrandLogo />
           <p className="text-[11px] text-[#6b7280] mt-0.5">ניהול הזמנות</p>
         </div>
 
