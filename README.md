@@ -92,49 +92,106 @@ Momento collapses that work into ~10 minutes. It is a fully realized product tha
 
 ## System Architecture
 
+The product is a thin browser shell over a layered photo-orchestration engine. The client never talks to AWS directly — every privileged call is fronted by a Supabase Edge Function. The AI pipeline is split between an **album-level orchestrator** (rhythm, mood, sequence) and a **spread-level designer** (slot binding, visual cascade), so a 40-page album is a graph of decisions, not a sequence of templates.
+
 ```mermaid
 flowchart LR
-    User([User])
+    User([👤 User])
+    Vercel[[Vercel Edge CDN<br/>SPA + asset pipeline]]
 
-    subgraph Client["Client · React 19 + Vite + Tailwind v4"]
-        UI[UI Layer]
-        Store[Zustand Stores]
-        AIClient[AI Designer Client]
-        FaceClient[Face Detection Client]
-        Export[Export Engine<br/>html2canvas + jszip]
+    subgraph Client["Client · React 19 + Vite 8 + Tailwind v4"]
+        direction TB
+
+        subgraph UI["UI Layer"]
+            Landing[Landing]
+            Upload[Upload + people-strip]
+            Curate[Curate]
+            Generation[Generation]
+            Editor[Editor · 3D pageflip]
+            Checkout[Checkout]
+            Dashboard[Dashboard]
+            Admin[Admin Console]
+        end
+
+        subgraph State["Zustand Stores · persisted"]
+            AlbumStore[albumStore]
+            EditorStore[editorStore]
+            UIStore[uiStore]
+        end
+
+        subgraph Engine["Photo Orchestration Engine"]
+            direction TB
+            Scorer[photoScorer<br/>cluster · dedup · rank]
+            Rhythm[rhythmOrchestrator<br/>album sequence plan]
+            FaceClient[faceDetection<br/>Union-Find clustering]
+            SmartPicker[smartLayoutPicker<br/>template selection]
+            Placer[photoPlacer<br/>orientation · face-safe · importance]
+            Concept[conceptPicker<br/>mood × scene × family]
+            Designer[aiDesigner<br/>AISpreadSpec generation]
+            Validator[specValidator<br/>clamp + repair]
+            Resolver[resolveSpreadVisuals<br/>3-level cascade]
+            Composer[compositionBuilder<br/>absolute element graph]
+            Export[exportSpread<br/>html2canvas → ZIP]
+        end
+
+        UI <--> State
+        UI -.invokes.-> Engine
     end
 
-    subgraph Edge["Supabase Edge Functions · Deno"]
-        DetectFaces[detect-faces]
+    subgraph EdgeFns["Supabase Edge Functions · Deno"]
+        DetectFaces[detect-faces<br/>IndexFaces + SearchFaces]
     end
 
     subgraph SupabaseCloud["Supabase Cloud"]
-        Auth[Auth]
-        DB[(Postgres)]
-        Storage[Storage<br/>album-photos]
+        Auth[(Auth · OTP/OAuth)]
+        DB[(Postgres · albums · orders · spreads)]
+        Storage[(Storage · album-photos · exports)]
+        RLS[RLS Policies]
+        DB --- RLS
     end
 
     subgraph AWS["AWS"]
-        Rek[Rekognition<br/>Face Collection]
+        Rek[Rekognition<br/>Face Collection<br/>'albums-prod']
     end
 
     subgraph AI["External AI"]
-        OpenAI[OpenAI GPT]
-        Gemini[Google GenAI]
+        OpenAIVision[OpenAI Vision · scoring]
+        OpenAIGPT[OpenAI GPT · spread specs + captions]
+        Gemini[Google Gemini · backgrounds + scoring]
     end
 
-    Vercel[[Vercel CDN<br/>SPA + Edge]]
-
     User --> Vercel --> Client
-    UI <--> Store
-    AIClient --> OpenAI
-    AIClient -.optional.-> Gemini
-    FaceClient --> DetectFaces --> Rek
-    Client <--> Auth
-    Client <--> DB
-    Client <--> Storage
-    Export -.print files.-> Storage
+
+    Scorer -->|batched vision| OpenAIVision
+    Scorer -.fallback.-> Gemini
+    Designer -->|JSON-mode prompts| OpenAIGPT
+    Concept -.captions.-> OpenAIGPT
+
+    FaceClient -->|base64 photos| DetectFaces
+    DetectFaces -->|"AWS SDK · @aws-sdk/client-rekognition"| Rek
+
+    Client <-->|signed JWT| Auth
+    Client <-->|RLS-scoped| DB
+    Client <-->|signed URLs| Storage
+
+    Composer -.bg gen.-> Gemini
+    Export -->|print ZIP| Storage
+
+    classDef client fill:#1e293b,stroke:#475569,color:#f1f5f9
+    classDef engine fill:#312e81,stroke:#6366f1,color:#e0e7ff
+    classDef edge fill:#064e3b,stroke:#10b981,color:#d1fae5
+    classDef cloud fill:#3ecf8e22,stroke:#3ecf8e,color:#064e3b
+    classDef aws fill:#ff990022,stroke:#ff9900,color:#7c2d12
+    classDef ai fill:#41299122,stroke:#412991,color:#1e1b4b
+    class Landing,Upload,Curate,Generation,Editor,Checkout,Dashboard,Admin,AlbumStore,EditorStore,UIStore client
+    class Scorer,Rhythm,FaceClient,SmartPicker,Placer,Concept,Designer,Validator,Resolver,Composer,Export engine
+    class DetectFaces edge
+    class Auth,DB,Storage,RLS cloud
+    class Rek aws
+    class OpenAIVision,OpenAIGPT,Gemini ai
 ```
+
+The `Photo Orchestration Engine` is the heart of the product. The rest of this section documents what happens inside it.
 
 ---
 
@@ -201,38 +258,168 @@ Momento uses **AWS Rekognition** as the production face-matching engine. The ent
 
 ---
 
-## AI Design Pipeline
+## How Photos Become an Album
 
-The AI Designer in `src/lib/aiDesigner.ts` does not pick from a list of templates. It generates a complete spread design from scratch, every time, within a constrained vocabulary.
+A user drops 200 photos into the upload zone. Ten minutes later they have a 30-page art-directed book. Here is how that actually happens — every named module exists in `src/lib/`.
 
+### The 6-Stage Orchestration Pipeline
+
+```mermaid
+flowchart TB
+    subgraph Inputs["Inputs"]
+        Photos(["N photos · HEIC, EXIF"])
+        Config(["AlbumConfig · size, pages, family, mood, bg"])
+        Refs(["Optional: reference data URLs"])
+    end
+
+    subgraph S1["Stage 1 · Vision Scoring"]
+        ScoreBatch[Batched Vision API<br/>OpenAI · 5 photos/batch]
+        ScoreOut(["PhotoScore array<br/>orientation · sharpness · exposure ·<br/>composition · scene · emotion ·<br/>peopleCount · facesRegion ·<br/>recommendedDisplay · description"])
+        ScoreBatch --> ScoreOut
+    end
+
+    subgraph S2["Stage 2 · Curation"]
+        Tokenize[Tokenize description]
+        Jaccard[Jaccard similarity<br/>+ same scene + same peopleCount]
+        Dedup[Cluster-aware dedup]
+        Rank[Rank by quality<br/>vs. family constraints]
+        Roles[Assign PhotoRole<br/>hero · cover · primary · accent]
+        ScoreOut --> Tokenize --> Jaccard --> Dedup --> Rank --> Roles
+        Roles --> CuratedSet(["CuratedPhotoSet"])
+    end
+
+    subgraph SR["Rhythm · runs in parallel"]
+        Plan[planAlbumSequence<br/>maps spread index → role,<br/>density, max photos, quote slots]
+        Plan --> SeqPlan(["SpreadSequenceSlot array"])
+    end
+
+    subgraph S3["Stage 3 · Smart Grouping"]
+        Group[buildPageGroups<br/>cluster by similarity + proportion]
+        Pick[smartLayoutPicker<br/>orientation fit · template constraints ·<br/>position rules · fallback]
+        Group --> Pick --> Plans(["SpreadPlan array"])
+    end
+
+    subgraph S4["Stage 4 · Slot Binding"]
+        Faces[AWS Rekognition<br/>via detect-faces · Union-Find]
+        Match[orientationMatchScore<br/>importanceMatchScore<br/>face-safety check]
+        Crop[computeSmartFacePosition<br/>computeFaceCropSeverity<br/>findFaceSafeTemplate]
+        Photos --> Faces
+        CuratedSet --> Match
+        Plans --> Match
+        Faces --> Crop
+        Match --> Crop --> Bound(["EditorSpread array<br/>with FinalSlotData"])
+    end
+
+    subgraph S45["Stage 4.5 · Mood Concepts"]
+        Emotion[Emotion × Scene<br/>matrix lookup]
+        ConceptPick[assignMoodConcepts<br/>variation rules · no-repeat-adjacent]
+        Caption[generateHeroCaption · GPT]
+        Bound --> Emotion --> ConceptPick
+        ConceptPick --> Caption --> Concepts(["SpreadConceptAssignment array"])
+    end
+
+    subgraph S5["Stage 5 · Visual Resolution + Composition"]
+        Cascade[resolveSpreadVisuals<br/>3-level cascade · see below]
+        Build[buildSpreadDesign<br/>absolute element graph]
+        Validate[specValidator<br/>clamp + repair]
+        Bg[shouldGenerateBackground<br/>→ Gemini if AI mode]
+        Concepts --> Cascade --> Build --> Validate --> Composed
+        Build -.optional.-> Bg --> Composed(["SpreadDesign array"])
+    end
+
+    subgraph S6["Stage 6 · Assembly + Persistence"]
+        Persist[albumService<br/>upsert albums + spreads]
+        Hand[Hand off to Editor<br/>3D pageflip · undo stack]
+        Composed --> Persist --> Hand
+    end
+
+    Inputs --> S1
+    SeqPlan -.guides.-> Pick
+    SeqPlan -.guides.-> ConceptPick
+    SeqPlan -.guides.-> Cascade
+    Photos -.faces.-> S4
+    Refs -.style hints.-> S5
+
+    classDef inputs fill:#fef3c7,stroke:#f59e0b,color:#78350f
+    classDef stage fill:#1e1b4b,stroke:#6366f1,color:#e0e7ff
+    classDef output fill:#064e3b,stroke:#10b981,color:#d1fae5
+    class Photos,Config,Refs inputs
+    class S1,S2,SR,S3,S4,S45,S5,S6 stage
+    class CuratedSet,SeqPlan,Plans,Bound,Concepts,Composed output
 ```
-Photos + Album Config + Sequence Slot
-            │
-            ▼
-   ┌─────────────────────┐
-   │  Concept Picker     │  Choose mood pack + design family
-   └──────────┬──────────┘
-              ▼
-   ┌─────────────────────┐
-   │  AI Spread Designer │  Generate AISpreadSpec via OpenAI
-   └──────────┬──────────┘
-              ▼
-   ┌─────────────────────┐
-   │  Spec Validator     │  Reject invalid specs, repair where possible
-   └──────────┬──────────┘
-              ▼
-   ┌─────────────────────┐
-   │  Composition Builder│  Bind photos to slots via photoPlacer
-   └──────────┬──────────┘
-              ▼
-   ┌─────────────────────┐
-   │  Rhythm Orchestrator│  Sequence album-wide for visual variety
-   └──────────┬──────────┘
-              ▼
-        Editable Spreads
+
+Stages run **left-to-right** in time but **bidirectionally** in influence — the rhythm plan from `rhythmOrchestrator` constrains template selection, mood assignment, and the visual cascade simultaneously.
+
+### Visual Resolution Cascade
+
+The look of every spread is computed by a **CSS-specificity-style cascade**. Three independent systems contribute style tokens, and the highest-specificity rule wins per token. This is why two spreads in the same album, using the same template, can look completely different.
+
+```mermaid
+flowchart LR
+    subgraph L1["Level 1 · Family Default · lowest specificity"]
+        Family[DesignFamily<br/>palette · typography · decorations ·<br/>rhythm · constraints]
+    end
+
+    subgraph L2["Level 2 · Spread Role Override"]
+        Role[SpreadRoleOverride<br/>cover · hero · breathing · closing<br/>· text · grid · collage]
+    end
+
+    subgraph L3["Level 3 · Slot Importance · per-slot, highest specificity"]
+        Slot[SlotImportance<br/>hero · primary · secondary · accent]
+    end
+
+    Family --> Cascade((resolveSpreadVisuals))
+    Role --> Cascade
+    Slot --> Cascade
+
+    Cascade --> Resolved[ResolvedSpreadStyle<br/>palette · framing · padding ·<br/>typography · decorations ·<br/>per-slot frame · margin model]
+
+    Resolved --> Build[buildSpreadDesign<br/>compositionBuilder]
+    Build --> Final(["Final SpreadDesign<br/>absolute element positions · z-order ·<br/>background layer · script overlays"])
+
+    classDef level fill:#312e81,stroke:#6366f1,color:#e0e7ff
+    classDef result fill:#064e3b,stroke:#10b981,color:#d1fae5
+    class L1,L2,L3 level
+    class Resolved,Final result
 ```
 
-The AI works inside a vocabulary of **design families** (palette, typography, decorations) and **layout primitives** (slot grammars), so output is always *art-directed* rather than algorithmic-looking.
+### Face Pipeline · AWS Rekognition + Union-Find
+
+The face-clustering layer is what makes "show me only Dad's photos" work across 1000 uploads.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Browser
+    participant Edge as Supabase Edge Function<br/>detect-faces
+    participant Rek as AWS Rekognition
+    participant UF as Client · Union-Find
+
+    Note over Browser: User uploads N photos
+    Browser->>Browser: base64-encode photos
+    Browser->>Edge: POST { photos: [{ id, base64 }] }
+    Edge->>Rek: ensureCollection('albums-prod')
+    loop per photo
+        Edge->>Rek: IndexFaces(photo)
+        Rek-->>Edge: face IDs + bounding boxes + confidence
+        Edge->>Rek: SearchFaces(faceId, threshold=80)
+        Rek-->>Edge: matched face IDs + similarity
+    end
+    Edge-->>Browser: faces[] + match graph
+    Browser->>UF: build identity graph
+    UF->>UF: union(face, matchedFace) for each match
+    UF-->>Browser: identity clusters
+    Note over Browser: People strip · curate filters ·<br/>unplaced-photos panel
+```
+
+A failure on the AWS side **degrades gracefully** to "one face per photo" — the album flow never blocks.
+
+### Why this design
+
+- **The AI is never the only voice.** Every AI output (spread spec, caption, background) passes a deterministic validator that clamps numbers, repairs colors, and rejects out-of-vocabulary primitives.
+- **Three separable orchestrators.** `rhythmOrchestrator`, `conceptPicker`, and `aiDesigner` are independent — you can swap one without touching the others.
+- **A real design grammar.** Layout templates (`layoutGrammar.ts`), design families (`designFamilies.ts`), mood packs (`moodPacks.ts`), and primitives (`spreadPrimitives.ts`) form a closed vocabulary. The AI cannot hallucinate a layout — it can only request one from the catalog.
+- **Cascade resolution.** Style decisions compose like CSS, so per-album, per-spread, and per-slot tweaks coexist without code branches.
 
 ---
 
