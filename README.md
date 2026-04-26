@@ -38,25 +38,13 @@
 
 ## Showcase
 
-<!--
-  TODO — Embed product video here.
-  Two options that both render natively on GitHub:
-
-  1) Drag-and-drop the .mp4 directly into this README on github.com — GitHub will
-     auto-upload it and swap the `<img>` below for a `<video>` tag pointing at
-     `user-images.githubusercontent.com`.
-
-  2) Or commit a file (e.g. `public/video.mp4` already exists) and paste a link:
-
-     https://user-images.githubusercontent.com/<id>/<hash>.mp4
--->
-
 <div align="center">
 
-<!-- Replace the line below with the uploaded video URL -->
-<a href="#"><img src="public/momento-logo.png" alt="Product walkthrough — coming soon" width="720" /></a>
+<video src="https://github.com/eliavbenhamo1409-sys/momento/raw/main/public/mom.mp4" controls muted playsinline width="100%" poster="public/screenshots/cover.png"></video>
 
-<sub>A 60-second walkthrough — upload, curate, generate, edit, order.</sub>
+[▶︎ Watch the product walkthrough (mom.mp4)](https://github.com/eliavbenhamo1409-sys/momento/raw/main/public/mom.mp4)
+
+<sub>End-to-end: upload → curate → AI generate → edit → checkout.</sub>
 
 </div>
 
