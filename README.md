@@ -38,14 +38,10 @@
 
 ## Showcase
 
+https://github.com/eliavbenhamo1409-sys/momento/raw/main/public/mom.mp4
+
 <div align="center">
-
-<video src="https://github.com/eliavbenhamo1409-sys/momento/raw/main/public/mom.mp4" controls muted playsinline width="100%" poster="public/screenshots/cover.png"></video>
-
-[▶︎ Watch the product walkthrough (mom.mp4)](https://github.com/eliavbenhamo1409-sys/momento/raw/main/public/mom.mp4)
-
-<sub>End-to-end: upload → curate → AI generate → edit → checkout.</sub>
-
+<sub>End-to-end product walkthrough · upload → curate → AI generate → edit → checkout.</sub>
 </div>
 
 ---
