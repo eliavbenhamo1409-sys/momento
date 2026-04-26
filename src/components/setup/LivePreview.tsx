@@ -74,7 +74,7 @@ export default function LivePreview() {
             </motion.div>
           ) : (
             <motion.div
-              key="placeholder"
+              key="preview-skeleton"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}

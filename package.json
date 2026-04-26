@@ -1,5 +1,6 @@
 {
   "name": "momento",
+  "description": "AI-designed premium photo albums: React 19, TypeScript, Supabase, AWS Rekognition, OpenAI. RTL-first production app.",
   "private": true,
   "version": "0.1.0",
   "type": "module",

@@ -309,9 +309,9 @@ function VirtualizedPhotoGrid({
   )
 }
 
-/* ─── Placeholder score for manual mode ──────────────────────────────── */
+/* ─── Default score when curate runs in manual mode (no AI ratings yet) ─── */
 
-function createPlaceholderScore(photoId: string, width: number, height: number): PhotoScore {
+function createDefaultManualModeScore(photoId: string, width: number, height: number): PhotoScore {
   const ratio = width / height
   const orientation = ratio > 1.1 ? 'landscape' : ratio < 0.9 ? 'portrait' : 'square'
   return {
@@ -539,7 +539,7 @@ export default function CurateScreen() {
 
       const ranked: RankedPhoto[] = selectedList.map((p, i) => ({
         photoId: p.id,
-        score: createPlaceholderScore(p.id, p.width, p.height),
+        score: createDefaultManualModeScore(p.id, p.width, p.height),
         rank: i,
         role: i === 0 ? 'cover' as const : i < 3 ? 'hero' as const : 'standard' as const,
       }))

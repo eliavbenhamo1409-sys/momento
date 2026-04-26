@@ -370,7 +370,7 @@ export default function AIBackgroundPanel({
               )}
             </div>
 
-            {/* Placeholder for uploaded backgrounds */}
+            {/* Custom uploads — slot reserved (feature in progress) */}
             <div className="rounded-xl border-2 border-dashed border-black/[0.06] p-4 flex flex-col items-center gap-2 text-center">
               <Icon name="add_photo_alternate" size={24} className="text-secondary/30" />
               <span className="text-[11px] text-secondary/40 font-medium leading-snug">

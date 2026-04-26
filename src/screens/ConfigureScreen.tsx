@@ -173,7 +173,7 @@ export default function ConfigureScreen() {
               transition={{ duration: 0.4, delay: 0.15 }}
               className="w-full max-w-sm"
             >
-              {/* Album visual mock */}
+              {/* Album layout preview (configure step) */}
               <div className="relative mb-8">
                 <AnimatePresence mode="wait">
                   <motion.div

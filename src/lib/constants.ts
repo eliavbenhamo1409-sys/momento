@@ -234,65 +234,6 @@ export function calcAlbumPrice(sizeId: string, pages: number): number {
   return base + extraSpreads * PRICE_PER_EXTRA_SPREAD
 }
 
-export const MOCK_PROJECTS = [
-  {
-    id: 'proj-1',
-    title: 'החתונה של דנה ואיתי',
-    coverUrl: 'https://picsum.photos/seed/proj1/400/300',
-    size: '30x30',
-    pages: 30,
-    photosCount: 142,
-    lastEdited: '2026-03-22',
-    progress: 75,
-  },
-  {
-    id: 'proj-2',
-    title: 'טיול משפחתי ליוון',
-    coverUrl: 'https://picsum.photos/seed/proj2/400/300',
-    size: '60x60',
-    pages: 40,
-    photosCount: 86,
-    lastEdited: '2026-03-18',
-    progress: 40,
-  },
-  {
-    id: 'proj-3',
-    title: 'השנה הראשונה של עומר',
-    coverUrl: 'https://picsum.photos/seed/proj3/400/300',
-    size: '30x30',
-    pages: 20,
-    photosCount: 65,
-    lastEdited: '2026-03-10',
-    progress: 15,
-  },
-] as const
-
-export const MOCK_ORDERS = [
-  {
-    id: 'ord-1',
-    orderNumber: 'MOM-2026-0847',
-    title: 'חתונה — הגרסה הסופית',
-    coverUrl: 'https://picsum.photos/seed/ord1/400/300',
-    status: 'shipped' as const,
-    size: '30x30',
-    pages: 30,
-    price: 389,
-    orderedAt: '2026-02-14',
-    estimatedDelivery: '2026-03-28',
-  },
-  {
-    id: 'ord-2',
-    orderNumber: 'MOM-2026-0621',
-    title: 'טיול איטליה 2025',
-    coverUrl: 'https://picsum.photos/seed/ord2/400/300',
-    status: 'delivered' as const,
-    size: '60x60',
-    pages: 40,
-    price: 749,
-    orderedAt: '2026-01-05',
-  },
-] as const
-
 export const ORDER_STATUS_MAP: Record<string, { label: string; color: string; bg: string }> = {
   draft: { label: 'טיוטה', color: 'text-warm-gray', bg: 'bg-surface-container-high' },
   processing: { label: 'בעיבוד', color: 'text-primary', bg: 'bg-primary-fixed/40' },

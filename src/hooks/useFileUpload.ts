@@ -90,7 +90,8 @@ export function useFileUpload() {
     [setPhotos, addPhotos, setUploadProgress, setIsUploading, setIsUploadComplete],
   )
 
-  const simulateUpload = useCallback(
+  /** Development helper: add a batch of remote sample images (Lorem Picsum) without picking files. */
+  const addSamplePhotoBatch = useCallback(
     async (count: number = 78, append = false) => {
       setIsUploading(true)
       setUploadProgress(0)
@@ -125,5 +126,5 @@ export function useFileUpload() {
     [setPhotos, addPhotos, setUploadProgress, setIsUploading, setIsUploadComplete],
   )
 
-  return { processFiles, simulateUpload }
+  return { processFiles, addSamplePhotoBatch }
 }

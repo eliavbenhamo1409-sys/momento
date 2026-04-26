@@ -432,7 +432,7 @@ export default function CheckoutScreen() {
                     </div>
                   </div>
 
-                  {/* Payment form (placeholder) */}
+                  {/* Card capture: UI only; wire PSP (e.g. Stripe) for production */}
                   <div
                     className="rounded-2xl p-5 sm:p-6 mb-6 relative overflow-hidden"
                     style={{

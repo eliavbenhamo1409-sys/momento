@@ -1,3 +1,4 @@
+<!-- README: UTF-8, LF line endings (see .gitattributes; keeps raw.githubusercontent readable). -->
 <div align="center">
 
 <img src="public/screenshots/cover.png" alt="Momento — AI Photo Albums" width="100%" />
@@ -42,7 +43,7 @@
   Two options that both render natively on GitHub:
 
   1) Drag-and-drop the .mp4 directly into this README on github.com — GitHub will
-     auto-upload it and replace the placeholder with a `<video>` tag pointing at
+     auto-upload it and swap the `<img>` below for a `<video>` tag pointing at
      `user-images.githubusercontent.com`.
 
   2) Or commit a file (e.g. `public/video.mp4` already exists) and paste a link:

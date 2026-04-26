@@ -9,7 +9,7 @@ const MIN_PHOTOS = 20
 
 export default function UploadComplete() {
   const photos = useAlbumStore((s) => s.photos)
-  const { processFiles, simulateUpload } = useFileUpload()
+  const { processFiles, addSamplePhotoBatch } = useFileUpload()
   const navigate = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
 
@@ -150,7 +150,7 @@ export default function UploadComplete() {
               העלה תמונות נוספות
             </button>
             <button
-              onClick={() => simulateUpload(needed + 5, true)}
+              onClick={() => addSamplePhotoBatch(needed + 5, true)}
               className="btn-press py-3.5 px-5 rounded-xl text-xs font-medium text-warm-gray bg-white/60 ring-1 ring-black/[0.05] hover:bg-white/90 transition-colors"
             >
               דמו +{needed + 5}

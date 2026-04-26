@@ -7,7 +7,7 @@ import { useFileUpload } from '../../hooks/useFileUpload'
 export default function UploadDropzone() {
   const [isDragging, setIsDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
-  const { processFiles, simulateUpload } = useFileUpload()
+  const { processFiles, addSamplePhotoBatch } = useFileUpload()
 
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
@@ -86,7 +86,7 @@ export default function UploadDropzone() {
       <LoadingButton
         onClick={(e) => {
           e.stopPropagation()
-          simulateUpload(78)
+          addSamplePhotoBatch(78)
         }}
         className="mt-4 mx-auto block text-xs text-sage hover:underline"
       >

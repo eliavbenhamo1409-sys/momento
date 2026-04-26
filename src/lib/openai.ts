@@ -829,7 +829,7 @@ If the user described a scene (like a beach, forest, sunset), create that scene 
 If the user described abstract art or textures, create that.
 The result should be high quality, visually stunning, and work well as a background for an album page with photos overlaid on top.
 
-Do NOT include any text, frames, photo placeholders, or UI elements.`
+Do NOT include any text, frames, empty picture frames, or UI elements.`
 
     const contents = hasPhotos
       ? buildGeminiContents(prompt, pagePhotoDataUrls)
@@ -933,7 +933,7 @@ DESIGN RULES:
 
 This is spread ${spreadIndex + 1} of ${totalSpreads} in the album. Each spread has a UNIQUE background, but together they should feel like a cohesive visual story.
 
-CRITICAL: No objects, no people, no text, no frames, no shapes, no icons, no photo placeholders, no UI elements.
+CRITICAL: No objects, no people, no text, no frames, no shapes, no icons, no empty picture frames, no UI elements.
 Output ONLY the background image — pure color, light, and gentle texture.`
       : `Create a soft, minimalist, elegant background for a premium photo album page.
 Use warm cream and beige tones with subtle watercolor texture and gentle gradient transitions.

@@ -5,8 +5,10 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 function initClient(): SupabaseClient {
   if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY — using placeholder client')
-    return createClient('https://placeholder.supabase.co', 'placeholder-key', {
+    console.error(
+      'Missing VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY — using a no-op offline client; set env to connect Supabase.',
+    )
+    return createClient('https://offline.local.supabase.invalid', 'offline-anon-key', {
       auth: { persistSession: false },
     })
   }
